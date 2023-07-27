@@ -76,8 +76,8 @@ echo "cd $hdir/$wkdir"
 cd $hdir/$wkdir
 rm eigenvalues.dat 1> /dev/null 2>&1
 
-echo "$hdir/QS3.exe < input.dat"
-$hdir/QS3.exe < input.dat
+echo "$hdir/QS3ED2.exe < input.dat"
+$hdir/QS3ED2.exe < input.dat
 
 echo "********************"
 echo "cat eigenvalues.dat"

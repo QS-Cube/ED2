@@ -6,14 +6,14 @@ contains
 
   subroutine get_cum_ltd_rep_combination(NOS,NODmax,NODmin,m) 
     integer, intent(in) :: NOS, NODmax, NODmin, m(NOS)
-    integer :: i, j, dNODmax
-    dNODmax = NODmax-NODmin
+    integer :: i, j, dN
+    dN = NODmax-NODmin
     call get_ltd_rep_combination(NOS,NODmax,m)
     allocate(cum_ltd_rep_combination(0:NOS+1,0:NODmax+1))
     cum_ltd_rep_combination(:,:) = 0
     if(NODmin == 0)then
       j = 0
-      cum_ltd_rep_combination(:,j) = 1 !ltd_rep_combination(:,j)
+      cum_ltd_rep_combination(:,j) = 1
       do j = 1, NODmax+1
         do i = 0, NOS+1
           cum_ltd_rep_combination(i,j) = cum_ltd_rep_combination(i,j-1) + ltd_rep_combination(i,j)
@@ -21,33 +21,20 @@ contains
       end do
     else
       j = 0
-      cum_ltd_rep_combination(:,j) = 1 !ltd_rep_combination(:,j)
+      cum_ltd_rep_combination(:,j) = 1
       do j = 1, NODmax+1
-        !write(*,*) "j, dNODmax", j, dNODmax
-        if(j <= dNODmax)then
+        if(j <= dN)then
           do i = 0, NOS+1
             cum_ltd_rep_combination(i,j) = cum_ltd_rep_combination(i,j-1) + ltd_rep_combination(i,j)
           end do
         else
           do i = 0, NOS+1
-            !write(*,*) "+++++", i, j
-            !write(*,*) cum_ltd_rep_combination(i,j-1), ltd_rep_combination(i,j), ltd_rep_combination(i,j-dNODmax-1)
             cum_ltd_rep_combination(i,j) = cum_ltd_rep_combination(i,j-1) + ltd_rep_combination(i,j) - &
-              ltd_rep_combination(i,j-dNODmax-1)
+              ltd_rep_combination(i,j-dN-1)
           end do
         end if
       end do      
     end if
-    !
-    !do i = 0, NOS+1
-    !  write(*,*) ltd_rep_combination(i,0:NODmax+1)
-    !end do
-    !
-    !write(*,*)
-    !
-    !do i = 0, NOS+1
-    !  write(*,*) cum_ltd_rep_combination(i,0:NODmax+1)
-    !end do
     !
   end subroutine get_cum_ltd_rep_combination
 
@@ -55,13 +42,12 @@ contains
     integer, intent(in) :: NOS, NODmax, m(NOS)
     integer :: i, j
     integer, allocatable :: dp(:,:)
-    !*** from p.68 in programming contest challenge book 
     allocate(ltd_rep_combination(0:NOS+1,0:NODmax+1))
     allocate(dp(0:NODmax+1,0:NOS+1))
     dp(:,:) = 0
     dp(0,:) = 1
-    do i = 1, NOS+1 !NOS
-      do j = 1, NODmax+1 !NODmax+1
+    do i = 1, NOS+1
+      do j = 1, NODmax+1
         if(j-1-m(i) >= 0)then
           dp(j,i) = dp(j-1,i) + dp(j,i-1) - dp(j-1-m(i),i-1)
         else
@@ -84,8 +70,6 @@ contains
     real(8) :: p1, p2
     allocate(n(NODmax),np(NODmax))
     n = list_fly(s,NODmax,NODmin,NOS)
-    !write(*,*) "s, n, s-si(n)", s, n, s-inv_list(n,NODmax)
-    !stop 99
     np = n
     !
     ro = 0.0d0
@@ -206,8 +190,6 @@ contains
     end do
     !$omp end do
     !$omp end parallel
-    !
-    !stop 99
     !
     write(*,'(" ### Allocate work arrays for lists. ")')
     allocate(list_s(a),tmp_list_r(a))

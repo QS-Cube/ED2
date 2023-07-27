@@ -1,19 +1,19 @@
 module input_param
   implicit none
   integer :: NOS       ! number of sites
-  integer :: NODmax       ! cut off for number of down spins
+  integer :: NODmax    ! Upper limit value for number of down spins
   integer :: NODmin    ! Lower limit value for number of down spins
   integer :: NOV       ! Number of lowest eigenvectors used for computing static physical quantities.
-  integer :: THS       ! Total hilbelt space of the target space 
+  integer :: THS       ! Total Hilbelt space of the target space 
   integer :: NO_one    ! number of one-body interactions
   integer :: NO_two    ! number of two-body interactions
-  integer :: ALG       !1:Conventional Lanczos,  2:Thick-Restarted Lanczos, 3:Full diagonalization
-  integer, allocatable :: p_one(:)    ! location of one-body interaction: p_one(1:NO_one)
-  integer, allocatable :: p_two(:,:)  ! pair of two-body interaction: p_two(2,1:NO_two)
+  integer :: ALG       ! 1:Conventional Lanczos,  2:Thick-Restarted Lanczos, 3:Full diagonalization
+  integer, allocatable :: p_one(:)    ! locations of one-body interactions: p_one(1:NO_one)
+  integer, allocatable :: p_two(:,:)  ! locations of two-body interactions: p_two(2,1:NO_two)
   real(8), allocatable :: Jint(:,:)   ! Jint(1:6 [Jx,Jy,Jz,Dx,Dy,Dz],1:NO_two)
   real(8), allocatable :: hvec(:,:)   ! magnetic_field(1:3[hx,hy,hz],1:NO_one)
-  integer, allocatable :: local_NODmax(:)   ! local_NODmax(i) : max_NODmax for ith site 
-  real(8), allocatable :: local_spin(:)  ! local_spin(i) : spin for ith site 
+  integer, allocatable :: local_NODmax(:)  ! local_NODmax(i) : NODmax for ith site 
+  real(8), allocatable :: local_spin(:)    ! local_spin(i)   : spin for ith site 
   !
   integer :: cal_lm ! flag for expectation values of local magnetizations
   !
@@ -31,9 +31,9 @@ module input_param
   integer, allocatable :: shift_1(:), shift_2(:), shift_3(:)
   complex(8), allocatable :: explist(:,:,:)
   !
-  integer :: cal_cf     ! flag for expectation values of two-body correlation function
-  integer :: NO_two_cf  ! number of two-body interactions
-  integer, allocatable :: p_two_cf(:,:)  ! pair of two-body correlation function: p_two_cf(2,1:NO_two_cf)
+  integer :: cal_cf     ! flag for expectation values of two-body correlation functions
+  integer :: NO_two_cf  ! number of two-body correlation functions we want to calculate
+  integer, allocatable :: p_two_cf(:,:)  ! (i,j) pairs of two-body correlation functions: p_two_cf(2,1:NO_two_cf)
   character(100) :: FILE_two_cf
   !
   namelist /input_parameters/ NOS,NODmax,NODmin,L1,L2,L3,M1,M2,M3,NO_one,NO_two, &
