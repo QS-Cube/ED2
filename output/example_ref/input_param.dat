@@ -1,5 +1,5 @@
 &input_parameters
-wkdir="/home/h_ueda/QS-Cube/QS-Cube_2.2/output/example_1",
+wkdir="/home/h_ueda/QS-Cube/ED2/output/example_1",
 NOS=6,
 NODmax=4,
 NODmin=2,
@@ -13,4 +13,7 @@ JZ=0.7d0,
 DX=0.2d0,
 DY=0.1d0,
 DZ=5.0d0,
+GX=0.1d0,
+GY=0.3d0,
+GZ=-0.2d0,
 &end
