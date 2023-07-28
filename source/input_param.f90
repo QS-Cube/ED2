@@ -10,7 +10,7 @@ module input_param
   integer :: ALG       ! 1:Conventional Lanczos,  2:Thick-Restarted Lanczos, 3:Full diagonalization
   integer, allocatable :: p_one(:)    ! locations of one-body interactions: p_one(1:NO_one)
   integer, allocatable :: p_two(:,:)  ! locations of two-body interactions: p_two(2,1:NO_two)
-  real(8), allocatable :: Jint(:,:)   ! Jint(1:6 [Jx,Jy,Jz,Dx,Dy,Dz],1:NO_two)
+  real(8), allocatable :: Jint(:,:)   ! Jint(1:9 [Jx,Jy,Jz,Dx,Dy,Dz],1:NO_two)
   real(8), allocatable :: hvec(:,:)   ! magnetic_field(1:3[hx,hy,hz],1:NO_one)
   integer, allocatable :: local_NODmax(:)  ! local_NODmax(i) : NODmax for ith site 
   real(8), allocatable :: local_spin(:)    ! local_spin(i)   : spin for ith site 
@@ -19,7 +19,7 @@ module input_param
   !
   integer :: re_wf, wr_wf
   !
-  character(100) :: FILE_xyz_dm, FILE_hvec, FILE_p1, FILE_p12, FILE_NODmax, FILE_spin, FILE_wf
+  character(100) :: FILE_xyz_dm_gamma, FILE_hvec, FILE_p1, FILE_p12, FILE_NODmax, FILE_spin, FILE_wf
   character(100) :: FILE_S1, FILE_S2, FILE_S3
   character(100) :: OUTDIR
   !
@@ -37,7 +37,7 @@ module input_param
   character(100) :: FILE_two_cf
   !
   namelist /input_parameters/ NOS,NODmax,NODmin,L1,L2,L3,M1,M2,M3,NO_one,NO_two, &
-    ALG, FILE_xyz_dm, FILE_hvec, &
+    ALG, FILE_xyz_dm_gamma, FILE_hvec, &
     OUTDIR, FILE_S1, FILE_S2, FILE_S3, FILE_NODmax, FILE_spin, FILE_wf, re_wf, wr_wf, &
     cal_lm, cal_cf, NO_two_cf, FILE_two_cf
   !
@@ -64,17 +64,17 @@ contains
     call random_seed
     !
     write(*,'(" ### Allocation arrays. ")')
-    allocate(p_one(NO_one),p_two(2,NO_two),Jint(6,NO_two),hvec(3,NO_one),shift_1(0:NOS),&
+    allocate(p_one(NO_one),p_two(2,NO_two),Jint(9,NO_two),hvec(3,NO_one),shift_1(0:NOS),&
       shift_2(0:NOS),shift_3(0:NOS),explist(0:L1,0:L2,0:L3),local_NODmax(NOS),local_spin(NOS))
     !
     write(*,'(" ### Set phase factors. ")')
     forall(i=0:L1,j=0:L2,k=0:L3) explist(i,j,k) = &
       exp((0.0d0,1.0d0)*(rk1*dble(i)+rk2*dble(j)+rk3*dble(k)))
     !
-    write(*,'(" ### Read FILE_xyz_dm. ")')
-    open(10, file=trim(adjustl(FILE_xyz_dm)),status='old')
+    write(*,'(" ### Read FILE_xyz_dm_gamma. ")')
+    open(10, file=trim(adjustl(FILE_xyz_dm_gamma)),status='old')
     do i = 1, NO_two
-      read(10,*) p_two(1,i), p_two(2,i), Jint(1:6,i)
+      read(10,*) p_two(1,i), p_two(2,i), Jint(1:9,i)
       if( p_two(1,i) > p_two(2,i) )then
         Jint(4:6,i) = -1.0d0 * Jint(4:6,i)
         tmp = p_two(1,i)

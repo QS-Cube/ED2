@@ -29,26 +29,26 @@ contains
         n1 = count(st_list == i1)
         Ham(i,i) = Ham(i,i) + hvec(3,i1) * (local_spin(i1)-n1)
         ! - term
-        c = hvec(1,i1) + zi * hvec(2,i1)
+        c = 0.5d0 * ( hvec(1,i1) + zi * hvec(2,i1) )
         if(n1>0 .and. n0 < dN .and. abs(c) > eps)then
           ni = a_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
-            Ham(i,id) = Ham(i,id) + 0.5d0 * c &
+            Ham(i,id) = Ham(i,id) + c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) &
               * list_r(id) / list_r(i) &
               * explist(ell(1),ell(2),ell(3))
           end if
         end if
         ! + term
-        c = hvec(1,i1) - zi * hvec(2,i1)
+        c = 0.5d0 * ( hvec(1,i1) - zi * hvec(2,i1) )
         if( n0 > 0 .and. n1<local_NODmax(i1) .and. abs(c) > eps )then
           ni = c_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
-            Ham(i,id) = Ham(i,id) + 0.5d0 * c &
+            Ham(i,id) = Ham(i,id) + c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
               * list_r(id) / list_r(i) &
               * explist(ell(1),ell(2),ell(3))
@@ -66,26 +66,26 @@ contains
           (local_spin(i1)-n1)*(local_spin(i2)-n2)
         if(n1>0)then
           ! -z term
-          c = zi * Jint(4,j) - Jint(5,j)
+          c = 0.5d0 * ( zi * (Jint(4,j)+Jint(7,j)) - Jint(5,j) + Jint(8,j) )
           if(n0 < dN .and. abs(c) > eps)then
             ni = a_down_spin(i1,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              Ham(i,id) = Ham(i,id) + 0.5d0 * c &
+              Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3))
             end if
           end if
           ! -- term
-          c = Jint(1,j) - Jint(2,j)
+          c = 0.25d0*(Jint(1,j) - Jint(2,j)) + zi * 0.5d0 * Jint(9,j)
           if(n0+1 < dN .and. n2>0 .and. abs(c) > eps)then
             ni = a2_down_spin(i1,i2,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              Ham(i,id) = Ham(i,id) + 0.25d0 * c &
+              Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3))
@@ -107,13 +107,13 @@ contains
         end if
         if(n2>0)then
           ! z- term
-          c = -zi * Jint(4,j) + Jint(5,j)
+          c = 0.5d0 * ( -zi * (Jint(4,j) - Jint(7,j)) + Jint(5,j) + Jint(8,j) )
           if(n0 < dN .and. abs(c) > eps)then
             ni = a_down_spin(i2,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              Ham(i,id) = Ham(i,id) + 0.5d0 * c &
+              Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3))
@@ -136,13 +136,13 @@ contains
         end if
         if( n0>0 )then
           ! +z term
-          c = -zi * Jint(4,j) - Jint(5,j)
+          c = 0.5d0 * ( -zi * ( Jint(4,j) + Jint(7,j) ) - Jint(5,j) + Jint(8,j) )
           if( n1<local_NODmax(i1) .and. abs(c) > eps )then
             ni = c_down_spin(i1,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              Ham(i,id) = Ham(i,id) + 0.5d0 * c &
+              Ham(i,id) = Ham(i,id) + c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3))
@@ -150,26 +150,26 @@ contains
           end if
           if( n2<local_NODmax(i2) )then
             ! z+ term
-            c = zi * Jint(4,j) + Jint(5,j)
+            c = 0.5d0 * ( zi * ( Jint(4,j) - Jint(7,j) ) + Jint(5,j) + Jint(8,j) )
             if( abs(c) > eps )then
               ni = c_down_spin(i2,st_list,NODmax)
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
-                Ham(i,id) = Ham(i,id) + 0.5d0 * c &
+                Ham(i,id) = Ham(i,id) + c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
                   * list_r(id) / list_r(i) &
                   * explist(ell(1),ell(2),ell(3))
               end if
             end if
             ! ++ term
-            c = Jint(1,j) - Jint(2,j)
+            c = 0.25d0 * ( Jint(1,j) - Jint(2,j) ) - zi * 0.5d0 * Jint(9,j)
             if( n1<local_NODmax(i1) .and. n0>1 .and. abs(c) > eps )then
               ni = c2_down_spin(i1,i2,st_list,NODmax)
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
-                Ham(i,id) = Ham(i,id) + 0.25d0 * c &
+                Ham(i,id) = Ham(i,id) + c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
                   * list_r(id) / list_r(i) &
                   * explist(ell(1),ell(2),ell(3))
@@ -215,25 +215,25 @@ contains
         n1 = count(st_list == i1)
         v0(i) = v0(i) + hvec(3,i1) * (local_spin(i1)-n1) * v1(i)
         ! - term
-        c = hvec(1,i1) + zi * hvec(2,i1)
+        c = 0.5d0 * ( hvec(1,i1) + zi * hvec(2,i1) )
         if(n0 < dN .and. n1>0 .and. abs(c) > eps)then
           ni = a_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
-            v0(i) = v0(i) + 0.5d0 * c &
+            v0(i) = v0(i) + c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
               * explist(ell(1),ell(2),ell(3)) * v1(id)
           end if
         end if
         ! + term
-        c = hvec(1,i1) - zi * hvec(2,i1)
+        c = 0.5d0 * ( hvec(1,i1) - zi * hvec(2,i1) )
         if( n0>0 .and. n1<local_NODmax(i1) .and. abs(c) > eps )then
           ni = c_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
-            v0(i) = v0(i) + 0.5d0 * c &
+            v0(i) = v0(i) + c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
               * list_r(id) / list_r(i) &
               * explist(ell(1),ell(2),ell(3)) * v1(id)
@@ -251,26 +251,26 @@ contains
           (local_spin(i1)-n1)*(local_spin(i2)-n2) * v1(i)
         if(n1>0)then
           ! -z term
-          c = zi * Jint(4,j) - Jint(5,j)
+          c = 0.5d0 * ( zi * (Jint(4,j)+Jint(7,j)) - Jint(5,j) + Jint(8,j) )
           if(n0 < dN .and. abs(c) > eps)then
             ni = a_down_spin(i1,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              v0(i) = v0(i) + 0.5d0 * c &
+              v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3)) * v1(id)
             end if
           end if
           ! -- term
-          c = Jint(1,j) - Jint(2,j)
+          c = 0.25d0*(Jint(1,j) - Jint(2,j)) + zi * 0.5d0 * Jint(9,j)
           if(n0+1<dN .and. n2>0 .and. abs(c) > eps)then
             ni = a2_down_spin(i1,i2,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              v0(i) = v0(i) + 0.25d0 * c &
+              v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3)) * v1(id)
@@ -292,13 +292,13 @@ contains
         end if
         if(n2>0)then
           ! z- term
-          c = -zi * Jint(4,j) + Jint(5,j)
+          c = 0.5d0 * ( -zi * (Jint(4,j) - Jint(7,j)) + Jint(5,j) + Jint(8,j) )
           if(n0<dN .and. abs(c) > eps)then
             ni = a_down_spin(i2,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              v0(i) = v0(i) + 0.5d0 * c &
+              v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3)) * v1(id)
@@ -321,13 +321,13 @@ contains
         end if
         if( n0>0 )then
           ! +z term
-          c = -zi * Jint(4,j) - Jint(5,j)
+          c = 0.5d0 * ( -zi * ( Jint(4,j) + Jint(7,j) ) - Jint(5,j) + Jint(8,j) )
           if( n1<local_NODmax(i1) .and. abs(c) > eps )then
             ni = c_down_spin(i1,st_list,NODmax)
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              v0(i) = v0(i) + 0.5d0 * c &
+              v0(i) = v0(i) + c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3)) * v1(id)
@@ -335,26 +335,26 @@ contains
           end if
           if( n2<local_NODmax(i2) )then
             ! z+ term
-            c = zi * Jint(4,j) + Jint(5,j)
+            c = 0.5d0 * ( zi * ( Jint(4,j) - Jint(7,j) ) + Jint(5,j) + Jint(8,j) )
             if( abs(c) > eps )then
               ni = c_down_spin(i2,st_list,NODmax)
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
-                v0(i) = v0(i) + 0.5d0 * c &
+                v0(i) = v0(i) + c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
                   * list_r(id) / list_r(i) &
                   * explist(ell(1),ell(2),ell(3)) * v1(id)
               end if
             end if
             ! ++ term
-            c = Jint(1,j) - Jint(2,j)
+            c = 0.25d0 * ( Jint(1,j) - Jint(2,j) ) - zi * 0.5d0 * Jint(9,j)
             if( n1<local_NODmax(i1) .and. n0>1 .and. abs(c) > eps )then
               ni = c2_down_spin(i1,i2,st_list,NODmax)
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
-                v0(i) = v0(i) + 0.25d0 * c &
+                v0(i) = v0(i) + c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
                   * list_r(id) / list_r(i) &
                   * explist(ell(1),ell(2),ell(3)) * v1(id)

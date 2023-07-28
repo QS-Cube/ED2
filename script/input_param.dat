@@ -13,4 +13,7 @@ JZ=NJZ,
 DX=NDX,
 DY=NDY,
 DZ=NDZ,
+GX=NGX,
+GY=NGY,
+GZ=NGZ,
 &end
