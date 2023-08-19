@@ -1,8 +1,8 @@
 &input_parameters
-wkdir="/home/h_ueda/QS-Cube/ED2/output/example_1",
+wkdir="/home/h_ueda/QS-Cube/ED2/output/example_ref",
 NOS=6,
-NODmax=4,
-NODmin=2,
+NODmax=6,
+NODmin=0,
 SPIN=0.5d0,
 HX=-0.1d0,
 HY=-0.1d0,

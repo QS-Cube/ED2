@@ -5,6 +5,7 @@ program main
     write_index_ene, read_wf, re_wf, wr_wf, cal_lm, cal_cf
   use eigen_solver, only: my_trlanczos_routines_complex, i_vec_min, i_vec_max, NOE, &
     read_input_TRLan, Full_diag_routines
+  use ham2vec, only: make_wk_loc_and_ele
   use lanczos, only: read_lanczos_para, lanczos_routines
   use get_expectation_values, only: get_lm, get_cf
   implicit none
@@ -29,6 +30,9 @@ program main
   write(*,'(" ### Allocate and Set arrays for state_list. ")')
   call allocate_lists_omp_SQ 
   write(*,*) "  THS(k)   = ", THS
+  !
+  write(*,'(" ### Make wk_loc and wk_ele array. ")')
+  call make_wk_loc_and_ele(THS)
   !
   If(ALG.eq.1)then !Conventional Lanczos
     if(re_wf.ne.1)then

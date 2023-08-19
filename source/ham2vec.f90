@@ -1,8 +1,220 @@
 module ham2vec
   implicit none
-  complex(8), parameter :: zu = (1.0d0,0.0d0), zi = (0.0d0,1.0d0)
+  complex(8), parameter :: zu = (1.0d0,0.0d0), zi = (0.0d0,1.0d0), zz = (0.0d0,0.0d0)
   real(8), parameter :: eps = 1.0d-15
+  integer, allocatable :: wk_loc(:,:)
+  complex(8), allocatable :: wk_ele(:,:)
+  !
 contains
+
+  subroutine make_wk_loc_and_ele(lv)
+    use state_lists, only: j_flip_ni, representative_SQ, findstate, list_fly, a_down_spin, &
+      c_down_spin, a2_down_spin, c2_down_spin
+    use input_param, only: NODmax,NODmin,NO_one,NO_two,p_one,p_two,list_s,list_r,explist, &
+      Jint,hvec,NOS,local_NODmax,local_spin,wk_dim
+    implicit none
+    integer, intent(in)::lv
+    integer :: s, id, wk_dim1
+    integer :: n0, n1, n2, i1, i2, dN
+    integer :: i, j, ell(3), jd
+    integer, allocatable :: ni(:), st_list(:)
+    complex(8) :: c
+    !
+    wk_dim = min(wk_dim,lv)
+    wk_dim1= 2*NO_one+8*NO_two+1
+    !
+    allocate(wk_loc(wk_dim1,wk_dim))
+    allocate(wk_ele(wk_dim1,wk_dim))
+    !
+    allocate(ni(NODmax),st_list(NODmax))
+    dN = NODmax-NODmin
+
+    !$omp parallel do private(n0,n1,n2,i1,i2,s,ni,id,ell,i,j,st_list,c,jd)
+    do i = 1, wk_dim
+      wk_loc(1,i)  = i
+      wk_loc(2:,i) = 0
+      wk_ele(:,i) = zz
+      jd = 2
+      st_list = list_fly(list_s(i),NODmax,NODmin,NOS)
+      n0 = count(st_list == 0 )
+      !
+      do j = 1, NO_one
+        i1 = p_one(j)
+        n1 = count(st_list == i1)
+        wk_ele(1,i) = wk_ele(1,i) + hvec(3,i1) * (local_spin(i1)-n1)
+        ! - term
+        c = 0.5d0 * ( hvec(1,i1) + zi * hvec(2,i1) )
+        if(n0 < dN .and. n1>0 .and. abs(c) > eps)then
+          ni = a_down_spin(i1,st_list,NODmax)
+          call representative_SQ(NODmax,s,ell,ni)
+          call findstate(s,list_s,id,lv)
+          if(id > 0)then
+            wk_loc(jd,i) = id
+            wk_ele(jd,i) = c &
+              * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
+              * explist(ell(1),ell(2),ell(3))
+            jd = jd + 1
+          end if
+        end if
+        ! + term
+        c = 0.5d0 * ( hvec(1,i1) - zi * hvec(2,i1) )
+        if( n0>0 .and. n1<local_NODmax(i1) .and. abs(c) > eps )then
+          ni = c_down_spin(i1,st_list,NODmax)
+          call representative_SQ(NODmax,s,ell,ni)
+          call findstate(s,list_s,id,lv)
+          if(id > 0)then
+            wk_loc(jd,i) = id
+            wk_ele(jd,i) = c &
+              * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
+              * list_r(id) / list_r(i) &
+              * explist(ell(1),ell(2),ell(3))
+            jd = jd + 1
+          end if
+        end if
+      end do
+      !
+      do j = 1, NO_two
+        i1 = p_two(1,j)
+        i2 = p_two(2,j)
+        n1 = count(st_list == i1)
+        n2 = count(st_list == i2)
+        ! zz term
+        wk_ele(1,i) = wk_ele(1,i) + Jint(3,j) * &
+          (local_spin(i1)-n1)*(local_spin(i2)-n2)
+        if(n1>0)then
+          ! -z term
+          c = 0.5d0 * ( zi * (Jint(4,j)+Jint(7,j)) - Jint(5,j) + Jint(8,j) )
+          if(n0 < dN .and. abs(c) > eps)then
+            ni = a_down_spin(i1,st_list,NODmax)
+            call representative_SQ(NODmax,s,ell,ni)
+            call findstate(s,list_s,id,lv)
+            if(id > 0)then
+              wk_loc(jd,i) = id
+              wk_ele(jd,i) = c &
+                * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
+                * list_r(id) / list_r(i) &
+                * explist(ell(1),ell(2),ell(3))
+              jd = jd + 1
+            end if
+          end if
+          ! -- term
+          c = 0.25d0*(Jint(1,j) - Jint(2,j)) + zi * 0.5d0 * Jint(9,j)
+          if(n0+1<dN .and. n2>0 .and. abs(c) > eps)then
+            ni = a2_down_spin(i1,i2,st_list,NODmax)
+            call representative_SQ(NODmax,s,ell,ni)
+            call findstate(s,list_s,id,lv)
+            if(id > 0)then
+              wk_loc(jd,i) = id
+              wk_ele(jd,i) = c &
+                * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
+                * list_r(id) / list_r(i) &
+                * explist(ell(1),ell(2),ell(3))
+              jd = jd + 1
+            end if
+          end if
+          ! -+ term
+          c = 0.25d0*(Jint(1,j)+Jint(2,j)) - zi*0.5d0*Jint(6,j)
+          if(n2<local_NODmax(i2) .and. abs(c) > eps)then
+            ni = j_flip_ni(i1,i2,st_list,NODmax)
+            call representative_SQ(NODmax,s,ell,ni)
+            call findstate(s,list_s,id,lv)
+            if(id > 0)then
+              wk_loc(jd,i) = id
+              wk_ele(jd,i) = c &
+                * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
+                * list_r(id) / list_r(i) &
+                * explist(ell(1),ell(2),ell(3))
+              jd = jd + 1
+            end if
+          end if
+        end if
+        if(n2>0)then
+          ! z- term
+          c = 0.5d0 * ( -zi * (Jint(4,j) - Jint(7,j)) + Jint(5,j) + Jint(8,j) )
+          if(n0<dN .and. abs(c) > eps)then
+            ni = a_down_spin(i2,st_list,NODmax)
+            call representative_SQ(NODmax,s,ell,ni)
+            call findstate(s,list_s,id,lv)
+            if(id > 0)then
+              wk_loc(jd,i) = id
+              wk_ele(jd,i) = c &
+                * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
+                * list_r(id) / list_r(i) &
+                * explist(ell(1),ell(2),ell(3))
+              jd = jd + 1
+            end if
+          end if
+          ! +- term
+          c = 0.25d0*(Jint(1,j)+Jint(2,j)) + zi*0.5d0*Jint(6,j)
+          if(n1<local_NODmax(i1) .and. abs(c) > eps)then
+            ni = j_flip_ni(i2,i1,st_list,NODmax)
+            call representative_SQ(NODmax,s,ell,ni)
+            call findstate(s,list_s,id,lv)
+            if(id > 0)then
+              wk_loc(jd,i) = id
+              wk_ele(jd,i) = c &
+                * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
+                * list_r(id) / list_r(i) &
+                * explist(ell(1),ell(2),ell(3))
+              jd = jd + 1
+            end if
+          end if
+        end if
+        if( n0>0 )then
+          ! +z term
+          c = 0.5d0 * ( -zi * ( Jint(4,j) + Jint(7,j) ) - Jint(5,j) + Jint(8,j) )
+          if( n1<local_NODmax(i1) .and. abs(c) > eps )then
+            ni = c_down_spin(i1,st_list,NODmax)
+            call representative_SQ(NODmax,s,ell,ni)
+            call findstate(s,list_s,id,lv)
+            if(id > 0)then
+              wk_loc(jd,i) = id
+              wk_ele(jd,i) = c &
+                * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
+                * list_r(id) / list_r(i) &
+                * explist(ell(1),ell(2),ell(3))
+              jd = jd + 1
+            end if
+          end if
+          if( n2<local_NODmax(i2) )then
+            ! z+ term
+            c = 0.5d0 * ( zi * ( Jint(4,j) - Jint(7,j) ) + Jint(5,j) + Jint(8,j) )
+            if( abs(c) > eps )then
+              ni = c_down_spin(i2,st_list,NODmax)
+              call representative_SQ(NODmax,s,ell,ni)
+              call findstate(s,list_s,id,lv)
+              if(id > 0)then
+                wk_loc(jd,i) = id
+                wk_ele(jd,i) = c &
+                  * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
+                  * list_r(id) / list_r(i) &
+                  * explist(ell(1),ell(2),ell(3))
+                jd = jd + 1
+              end if
+            end if
+            ! ++ term
+            c = 0.25d0 * ( Jint(1,j) - Jint(2,j) ) - zi * 0.5d0 * Jint(9,j)
+            if( n1<local_NODmax(i1) .and. n0>1 .and. abs(c) > eps )then
+              ni = c2_down_spin(i1,i2,st_list,NODmax)
+              call representative_SQ(NODmax,s,ell,ni)
+              call findstate(s,list_s,id,lv)
+              if(id > 0)then
+                wk_loc(jd,i) = id
+                wk_ele(jd,i) = c &
+                  * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
+                  * list_r(id) / list_r(i) &
+                  * explist(ell(1),ell(2),ell(3))
+                jd = jd + 1
+              end if
+            end if
+          end if
+        end if
+        !
+      end do
+    end do
+
+    return
+  end subroutine make_wk_loc_and_ele
 
   subroutine make_full_hamiltonian(lv,Ham) 
     use state_lists, only: j_flip_ni, representative_SQ, findstate, list_fly, a_down_spin, &
@@ -187,7 +399,7 @@ contains
   subroutine ham_to_vec_wave_vector(v0,v1,lv,NODmax,NODmin,list_s,list_r,explist) 
     use state_lists, only: j_flip_ni, representative_SQ, findstate, list_fly,a_down_spin,c_down_spin,&
       a2_down_spin, c2_down_spin
-    use input_param, only: NO_one,NO_two,p_one,p_two,Jint,hvec,NOS,local_NODmax,local_spin,L1,L2,L3
+    use input_param, only: NO_one,NO_two,p_one,p_two,Jint,hvec,NOS,local_NODmax,local_spin,L1,L2,L3,wk_dim
     integer, intent(in) :: lv
     complex(8), intent(in) :: v1(lv)
     complex(8), intent(out) :: v0(lv)
@@ -197,15 +409,27 @@ contains
     complex(8),intent(in)::explist(0:L1,0:L2,0:L3)
     integer :: j, i, ell(3)
     integer, allocatable ::ni(:), st_list(:)
-    integer :: s,id
+    integer :: s,id,wk_dim1
     integer :: n0, n1, n2, i1, i2, dN
     complex(8) :: c
     
     allocate(ni(NODmax),st_list(NODmax))
     dN = NODmax - NODmin
 
+    wk_dim1= size(wk_ele,1)
+
+    !$omp parallel do private(i,j)
+    do i = 1, wk_dim
+      v0(i) = 0.0d0
+      do j = 1, wk_dim1
+        if(wk_loc(j,i) == 0) exit
+        v0(i) = v0(i) + wk_ele(j,i) * v1(wk_loc(j,i))
+      end do
+    end do
+    !
+
     !$omp parallel do private(n0,n1,n2,i1,i2,s,ni,id,ell,i,j,st_list,c)
-    do i = 1, lv
+    do i = wk_dim+1, lv
       v0(i) = (0.0d0, 0.0d0)
       st_list = list_fly(list_s(i),NODmax,NODmin,NOS)
       n0 = count(st_list == 0 )

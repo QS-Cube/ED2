@@ -4,8 +4,8 @@
 ##################################################
     wkdir="output/example_1"
       NOS=6      # Number of Sites
-   NODmax=4      # Upper limit value for the number of down spins
-   NODmin=2      # Lower limit value for the number of down spins
+   NODmax=6      # Upper limit value for the number of down spins
+   NODmin=0      # Lower limit value for the number of down spins
      SPIN=0.5d0  # Spin
        JX=1.0d0  # NN SX SX interaction
        JY=0.8d0  # NN SY SY interaction
@@ -15,7 +15,7 @@
        DZ=5.0d0  # Z component of NN DM interaction
        GX=0.1d0  # X component of NN Gamma interaction
        GY=0.3d0  # Y component of NN Gamma interaction
-       GZ=-0.2d0  # Z component of NN Gamma interaction
+       GZ=-0.2d0 # Z component of NN Gamma interaction
        HX=-0.1d0 # Magnetic field along X direction
        HY=-0.1d0 # Magnetic field along Y direction
        HZ=-0.3d0 # Magnetic field along Z direction
@@ -24,6 +24,8 @@
       NOE=10     # Number of eigenvalues : Active only when ALG=2.
 NO_two_cf=5      # Number of expectation values of <S_i S_j>
                  # Your set of (i j) is stored in "list_ij_cf.dat".
+   wk_dim=14     # Number of columns in the work array
+                 # Required mem.: (8+16)*(wk_dim)*(2*NO_one + 8*NO_two + 1) [Byte]
 ##################################################
 
 cd ../
@@ -71,7 +73,8 @@ sed -e "s/NNO_two/$NO_two/g" | \
 sed -e "s/NALG/$ALG/g" | \
 sed -e "s/NNOE/$NOE/g" | \
 sed -e "s/NNOK/$NOK/g" | \
-sed -e "s/NNOM/$NOM/g" > $hdir/$wkdir/input.dat
+sed -e "s/NNOM/$NOM/g" | \
+sed -e "s/Nwk_dim/$wk_dim/g" > $hdir/$wkdir/input.dat
 
 cp list_ij_cf.dat $hdir/$wkdir/list_ij_cf.dat
 
