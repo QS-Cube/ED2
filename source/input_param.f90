@@ -8,6 +8,7 @@ module input_param
   integer :: NO_one    ! number of one-body interactions
   integer :: NO_two    ! number of two-body interactions
   integer :: wk_dim    ! dimensions of the work array
+  integer :: MNTE      ! Maximum number of transitional elements for a representative state
   integer :: ALG       ! 1:Conventional Lanczos,  2:Thick-Restarted Lanczos, 3:Full diagonalization
   integer, allocatable :: p_one(:)    ! locations of one-body interactions: p_one(1:NO_one)
   integer, allocatable :: p_two(:,:)  ! locations of two-body interactions: p_two(2,1:NO_two)
@@ -37,7 +38,7 @@ module input_param
   integer, allocatable :: p_two_cf(:,:)  ! (i,j) pairs of two-body correlation functions: p_two_cf(2,1:NO_two_cf)
   character(100) :: FILE_two_cf
   !
-  namelist /input_parameters/ NOS,NODmax,NODmin,L1,L2,L3,M1,M2,M3,NO_one,NO_two,wk_dim, &
+  namelist /input_parameters/ NOS,NODmax,NODmin,L1,L2,L3,M1,M2,M3,NO_one,NO_two,wk_dim,MNTE,&
     ALG, FILE_xyz_dm_gamma, FILE_hvec, &
     OUTDIR, FILE_S1, FILE_S2, FILE_S3, FILE_NODmax, FILE_spin, FILE_wf, re_wf, wr_wf, &
     cal_lm, cal_cf, NO_two_cf, FILE_two_cf

@@ -11,7 +11,7 @@ program main
   implicit none
   !$ real(8) :: st, en
   !$ st = omp_get_wtime()
-  write(*,'("********************************* Start QS^3 ***************************************")')
+  write(*,'("******************************* Start QS^3 ED2 *************************************")')
   call read_ip
   !
   write(*,'(" ### Store cum_ltd_rep_combination numbers. ")')

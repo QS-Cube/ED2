@@ -11,25 +11,31 @@ contains
     use state_lists, only: j_flip_ni, representative_SQ, findstate, list_fly, a_down_spin, &
       c_down_spin, a2_down_spin, c2_down_spin
     use input_param, only: NODmax,NODmin,NO_one,NO_two,p_one,p_two,list_s,list_r,explist, &
-      Jint,hvec,NOS,local_NODmax,local_spin,wk_dim
+      Jint,hvec,NOS,local_NODmax,local_spin,wk_dim,MNTE
     implicit none
     integer, intent(in)::lv
     integer :: s, id, wk_dim1
     integer :: n0, n1, n2, i1, i2, dN
-    integer :: i, j, ell(3), jd
+    integer :: i, j, ell(3), jd, max_jd
     integer, allocatable :: ni(:), st_list(:)
     complex(8) :: c
     !
     wk_dim = min(wk_dim,lv)
-    wk_dim1= 2*NO_one+8*NO_two+1
+    if(MNTE <= 0)then
+      wk_dim1= 2*NO_one+8*NO_two+1
+    else
+      wk_dim1= MNTE + 1
+    end if
     !
     allocate(wk_loc(wk_dim1,wk_dim))
     allocate(wk_ele(wk_dim1,wk_dim))
     !
     allocate(ni(NODmax),st_list(NODmax))
     dN = NODmax-NODmin
-
-    !$omp parallel do private(n0,n1,n2,i1,i2,s,ni,id,ell,i,j,st_list,c,jd)
+    !
+    max_jd = 1
+    !
+    !$omp parallel do private(n0,n1,n2,i1,i2,s,ni,id,ell,i,j,st_list,c,jd) reduction(max:max_jd)
     do i = 1, wk_dim
       wk_loc(1,i)  = i
       wk_loc(2:,i) = 0
@@ -49,6 +55,7 @@ contains
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
+            if(jd > wk_dim1) stop "MNTE is too small!!"
             wk_loc(jd,i) = id
             wk_ele(jd,i) = c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
@@ -63,6 +70,7 @@ contains
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
+            if(jd > wk_dim1) stop "MNTE is too small!!"
             wk_loc(jd,i) = id
             wk_ele(jd,i) = c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
@@ -89,6 +97,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
+              if(jd > wk_dim1) stop "MNTE is too small!!"
               wk_loc(jd,i) = id
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
@@ -104,6 +113,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
+              if(jd > wk_dim1) stop "MNTE is too small!!"
               wk_loc(jd,i) = id
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
@@ -119,6 +129,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
+              if(jd > wk_dim1) stop "MNTE is too small!!"
               wk_loc(jd,i) = id
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
@@ -136,6 +147,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
+              if(jd > wk_dim1) stop "MNTE is too small!!"
               wk_loc(jd,i) = id
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
@@ -151,6 +163,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
+              if(jd > wk_dim1) stop "MNTE is too small!!"
               wk_loc(jd,i) = id
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
@@ -168,6 +181,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
+              if(jd > wk_dim1) stop "MNTE is too small!!"
               wk_loc(jd,i) = id
               wk_ele(jd,i) = c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
@@ -184,6 +198,7 @@ contains
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
+                if(jd > wk_dim1) stop "MNTE is too small!!"
                 wk_loc(jd,i) = id
                 wk_ele(jd,i) = c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
@@ -199,6 +214,7 @@ contains
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
+                if(jd > wk_dim1) stop "MNTE is too small!!"
                 wk_loc(jd,i) = id
                 wk_ele(jd,i) = c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
@@ -211,7 +227,12 @@ contains
         end if
         !
       end do
+      !
+      if(jd > max_jd) max_jd = jd
     end do
+
+    write(*,*) "Current MNTE = ", wk_dim1 - 1
+    write(*,*) "Optimal MNTE = ", max_jd - 1
 
     return
   end subroutine make_wk_loc_and_ele

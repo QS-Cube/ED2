@@ -25,7 +25,9 @@
 NO_two_cf=5      # Number of expectation values of <S_i S_j>
                  # Your set of (i j) is stored in "list_ij_cf.dat".
    wk_dim=14     # Number of columns in the work array
-                 # Required mem.: (8+16)*(wk_dim)*(2*NO_one + 8*NO_two + 1) [Byte]
+                 # Required mem.: (8+16)*(wk_dim)*(MNTE+1) [Byte]
+     MNTE=-1     # Maximum number of transitional elements for a representative state
+                 # if MNTE<=0 then MNTE = 2*NO_one + 8*NO_two
 ##################################################
 
 cd ../
@@ -74,6 +76,7 @@ sed -e "s/NALG/$ALG/g" | \
 sed -e "s/NNOE/$NOE/g" | \
 sed -e "s/NNOK/$NOK/g" | \
 sed -e "s/NNOM/$NOM/g" | \
+sed -e "s/NMNTE/$MNTE/g" | \
 sed -e "s/Nwk_dim/$wk_dim/g" > $hdir/$wkdir/input.dat
 
 cp list_ij_cf.dat $hdir/$wkdir/list_ij_cf.dat
