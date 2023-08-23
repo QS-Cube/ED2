@@ -16,12 +16,17 @@ contains
     integer, intent(in)::lv
     integer :: s, id, wk_dim1
     integer :: n0, n1, n2, i1, i2, dN
-    integer :: i, j, ell(3), jd, max_jd
+    integer :: i, j, ell(6), jd, max_jd
     integer, allocatable :: ni(:), st_list(:)
     complex(8) :: c
     !
-    wk_dim = min(wk_dim,lv)
-    if(MNTE <= 0)then
+    if(wk_dim < 0)then
+      wk_dim = lv
+    else
+      wk_dim = min(wk_dim,lv)
+    end if
+    !
+    if(MNTE < 0)then
       wk_dim1= 2*NO_one+8*NO_two+1
     else
       wk_dim1= MNTE + 1
@@ -59,7 +64,7 @@ contains
             wk_loc(jd,i) = id
             wk_ele(jd,i) = c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3))
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             jd = jd + 1
           end if
         end if
@@ -75,7 +80,7 @@ contains
             wk_ele(jd,i) = c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
               * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3))
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             jd = jd + 1
           end if
         end if
@@ -102,7 +107,7 @@ contains
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               jd = jd + 1
             end if
           end if
@@ -118,7 +123,7 @@ contains
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               jd = jd + 1
             end if
           end if
@@ -134,7 +139,7 @@ contains
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               jd = jd + 1
             end if
           end if
@@ -152,7 +157,7 @@ contains
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               jd = jd + 1
             end if
           end if
@@ -168,7 +173,7 @@ contains
               wk_ele(jd,i) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               jd = jd + 1
             end if
           end if
@@ -186,7 +191,7 @@ contains
               wk_ele(jd,i) = c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               jd = jd + 1
             end if
           end if
@@ -203,7 +208,7 @@ contains
                 wk_ele(jd,i) = c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
                   * list_r(id) / list_r(i) &
-                  * explist(ell(1),ell(2),ell(3))
+                  * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
                 jd = jd + 1
               end if
             end if
@@ -219,7 +224,7 @@ contains
                 wk_ele(jd,i) = c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
                   * list_r(id) / list_r(i) &
-                  * explist(ell(1),ell(2),ell(3))
+                  * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
                 jd = jd + 1
               end if
             end if
@@ -247,7 +252,7 @@ contains
     complex(8),intent(inout)::Ham(lv,lv)
     integer::s,id
     integer :: n0, n1, n2, i1, i2, dN
-    integer :: i, j, ell(3)
+    integer :: i, j, ell(6)
     integer, allocatable :: ni(:), st_list(:)
     complex(8) :: c
     allocate(ni(NODmax),st_list(NODmax))
@@ -271,7 +276,7 @@ contains
             Ham(i,id) = Ham(i,id) + c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) &
               * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3))
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
           end if
         end if
         ! + term
@@ -284,7 +289,7 @@ contains
             Ham(i,id) = Ham(i,id) + c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
               * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3))
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
           end if
         end if
       end do
@@ -308,7 +313,7 @@ contains
               Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             end if
           end if
           ! -- term
@@ -321,7 +326,7 @@ contains
               Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             end if
           end if
           ! -+ term
@@ -334,7 +339,7 @@ contains
               Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             end if
           end if
         end if
@@ -349,7 +354,7 @@ contains
               Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             end if
           end if
           ! +- term
@@ -362,7 +367,7 @@ contains
               Ham(i,id) = Ham(i,id) + c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             end if
           end if
           !
@@ -378,7 +383,7 @@ contains
               Ham(i,id) = Ham(i,id) + c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3))
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             end if
           end if
           if( n2<local_NODmax(i2) )then
@@ -392,7 +397,7 @@ contains
                 Ham(i,id) = Ham(i,id) + c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
                   * list_r(id) / list_r(i) &
-                  * explist(ell(1),ell(2),ell(3))
+                  * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               end if
             end if
             ! ++ term
@@ -405,7 +410,7 @@ contains
                 Ham(i,id) = Ham(i,id) + c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
                   * list_r(id) / list_r(i) &
-                  * explist(ell(1),ell(2),ell(3))
+                  * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
               end if
             end if
           end if
@@ -420,15 +425,16 @@ contains
   subroutine ham_to_vec_wave_vector(v0,v1,lv,NODmax,NODmin,list_s,list_r,explist) 
     use state_lists, only: j_flip_ni, representative_SQ, findstate, list_fly,a_down_spin,c_down_spin,&
       a2_down_spin, c2_down_spin
-    use input_param, only: NO_one,NO_two,p_one,p_two,Jint,hvec,NOS,local_NODmax,local_spin,L1,L2,L3,wk_dim
+    use input_param, only: NO_one,NO_two,p_one,p_two,Jint,hvec,NOS,local_NODmax,local_spin,&
+      L1,L2,L3,L4,L5,L6,wk_dim
     integer, intent(in) :: lv
     complex(8), intent(in) :: v1(lv)
     complex(8), intent(out) :: v0(lv)
     integer, intent(in) :: NODmax,NODmin
     real(8), intent(in) :: list_r(1:lv)           
     integer, intent(in)::list_s(1:lv)          
-    complex(8),intent(in)::explist(0:L1,0:L2,0:L3)
-    integer :: j, i, ell(3)
+    complex(8),intent(in)::explist(L1,L2,L3,L4,L5,L6)
+    integer :: j, i, ell(6)
     integer, allocatable ::ni(:), st_list(:)
     integer :: s,id,wk_dim1
     integer :: n0, n1, n2, i1, i2, dN
@@ -468,7 +474,7 @@ contains
           if(id > 0)then
             v0(i) = v0(i) + c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3)) * v1(id)
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
           end if
         end if
         ! + term
@@ -481,7 +487,7 @@ contains
             v0(i) = v0(i) + c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
               * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3)) * v1(id)
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
           end if
         end if
       end do
@@ -505,7 +511,7 @@ contains
               v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           ! -- term
@@ -518,7 +524,7 @@ contains
               v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           ! -+ term
@@ -531,7 +537,7 @@ contains
               v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
         end if
@@ -546,7 +552,7 @@ contains
               v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           ! +- term
@@ -559,7 +565,7 @@ contains
               v0(i) = v0(i) + c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           !
@@ -575,7 +581,7 @@ contains
               v0(i) = v0(i) + c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           if( n2<local_NODmax(i2) )then
@@ -589,7 +595,7 @@ contains
                 v0(i) = v0(i) + c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
                   * list_r(id) / list_r(i) &
-                  * explist(ell(1),ell(2),ell(3)) * v1(id)
+                  * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
               end if
             end if
             ! ++ term
@@ -602,7 +608,7 @@ contains
                 v0(i) = v0(i) + c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
                   * list_r(id) / list_r(i) &
-                  * explist(ell(1),ell(2),ell(3)) * v1(id)
+                  * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
               end if
             end if
           end if
@@ -622,7 +628,7 @@ contains
     complex(8), intent(in) :: v1(lv)
     integer, intent(in) :: list_n(non)
     real(8), intent(inout) :: expe_lm(3,NOS)
-    integer :: s, j, i, i1, id, ell(3)
+    integer :: s, j, i, i1, id, ell(6)
     integer :: n0, n1, dN
     real(8) :: expval(3)
     integer, allocatable :: ni(:), st_list(:)
@@ -650,7 +656,7 @@ contains
           if(id > 0)then
             c = conjg(v1(i)) * 0.5d0 &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3)) * v1(id)
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             expval(1) = expval(1) + dble(c)
             expval(2) = expval(2) - aimag(c)
           end if
@@ -664,7 +670,7 @@ contains
             c = conjg(v1(i)) * 0.5d0 &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
               * list_r(id) / list_r(i) &
-              * explist(ell(1),ell(2),ell(3)) * v1(id)
+              * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             expval(1) = expval(1) + dble(c)
             expval(2) = expval(2) + aimag(c)
           end if
@@ -692,7 +698,7 @@ contains
     complex(8), intent(in) :: v1(lv)
     complex(8), intent(inout) :: expe_cf(3,3)
     integer, intent(in) :: p_two_cf(2)
-    integer :: i1,i2,n0,n1,n2,s,i,id,ell(3),j,V,a,b,dN
+    integer :: i1,i2,n0,n1,n2,s,i,id,ell(6),j,V,a,b,dN
     complex(8) :: expval(3,3)
     integer, allocatable :: ni(:), st_list(:), p_two(:,:)
     logical, allocatable :: fswap(:)
@@ -728,7 +734,7 @@ contains
               expval(a,b) = expval(a,b) + conjg(v1(i)) &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           ! -- term
@@ -740,7 +746,7 @@ contains
               expval(2,2) = expval(2,2) + conjg(v1(i)) &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           ! -+ term
@@ -753,7 +759,7 @@ contains
               expval(a,b) = expval(a,b) + conjg(v1(i)) &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
         end if
@@ -768,7 +774,7 @@ contains
               expval(a,b) = expval(a,b) + conjg(v1(i)) &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           ! +- term
@@ -781,7 +787,7 @@ contains
               expval(a,b) = expval(a,b) + conjg(v1(i)) &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           !
@@ -797,7 +803,7 @@ contains
               expval(a,b) = expval(a,b) + conjg(v1(i)) &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
           end if
           if( n2<local_NODmax(i2) )then
@@ -810,7 +816,7 @@ contains
               expval(a,b) = expval(a,b) + conjg(v1(i)) &
                 * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
-                * explist(ell(1),ell(2),ell(3)) * v1(id)
+                * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
             end if
             ! ++ term
             if( n1<local_NODmax(i1) .and. n0>1 )then
@@ -821,7 +827,7 @@ contains
                 expval(3,3) = expval(3,3) + conjg(v1(i)) &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
                   * list_r(id) / list_r(i) &
-                  * explist(ell(1),ell(2),ell(3)) * v1(id)
+                  * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6)) * v1(id)
               end if
             end if
           end if

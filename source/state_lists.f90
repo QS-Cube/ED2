@@ -46,7 +46,7 @@ contains
     allocate(dp(0:NODmax+1,0:NOS+1))
     dp(:,:) = 0
     dp(0,:) = 1
-    do i = 1, NOS+1
+    do i = 1, NOS
       do j = 1, NODmax+1
         if(j-1-m(i) >= 0)then
           dp(j,i) = dp(j-1,i) + dp(j,i-1) - dp(j-1-m(i),i-1)
@@ -58,16 +58,16 @@ contains
     ltd_rep_combination = transpose(dp)
   end subroutine get_ltd_rep_combination
 
-  subroutine checkstate_SQ(s,ro,NODmax,NODmin,pkx,pky,pkz) 
-    use input_param, only: L1,L2,L3,NOS,shift_1,shift_2,shift_3
+  subroutine checkstate_SQ(s,ro,NODmax,NODmin,pk1,pk2,pk3,pk4,pk5,pk6) 
+    use input_param, only: L1,L2,L3,L4,L5,L6,NOS,shift_1,shift_2,shift_3,shift_4,shift_5,shift_6
     integer, intent(in) :: s
     integer, intent(in) :: NODmax,NODmin
-    real(8), intent(in) :: pkx,pky,pkz
+    real(8), intent(in) :: pk1,pk2,pk3,pk4,pk5,pk6
     real(8), intent(out) :: ro
     complex(8) :: coef
-    integer :: i, j, k, l, count
+    integer :: i1,i2,i3,i4,i5,i6,l,count
     integer, allocatable :: n(:), np(:)
-    real(8) :: p1, p2
+    real(8) :: p1, p2, p3, p4, p5
     allocate(n(NODmax),np(NODmax))
     n = list_fly(s,NODmax,NODmin,NOS)
     np = n
@@ -76,33 +76,45 @@ contains
     count = 0
     coef = (0.0d0,0.0d0)
     !
-    do k = 1, L3
-      np(:) = shift_3(np(:))
-      p1 = pkz * dble(k)
-      do j = 1, L2
-        np(:) = shift_2(np(:))
-        p2 = pky * dble(j) + p1
-        do i = 1, L1
-          np(:) = shift_1(np(:))
-          call insertion_sort(np,NODmax)
-          !
-          do l = NODmax, 1, -1
-            if(np(l) < n(l))then
-              return
-            else if(np(l) > n(l))then
-              exit
-            end if
+    do i6 = 1, L6
+      np(:) = shift_6(np(:))
+      p5 = pk6 * dble(i6)
+      do i5 = 1, L5
+        np(:) = shift_5(np(:))
+        p4 = pk5 * dble(i5) + p5
+        do i4 = 1, L4
+          np(:) = shift_4(np(:))
+          p3 = pk4 * dble(i4) + p4
+          do i3 = 1, L3
+            np(:) = shift_3(np(:))
+            p2 = pk3 * dble(i3) + p3
+            do i2 = 1, L2
+              np(:) = shift_2(np(:))
+              p1 = pk2 * dble(i2) + p2
+              do i1 = 1, L1
+                np(:) = shift_1(np(:))
+                call insertion_sort(np,NODmax)
+                !
+                do l = NODmax, 1, -1
+                  if(np(l) < n(l))then
+                    return
+                  else if(np(l) > n(l))then
+                    exit
+                  end if
+                end do
+                if(l==0)then
+                  coef = coef + exp( (0.0d0,-1.0d0) * ( pk1 * dble(i1) + p1) )
+                  count = count + 1
+                end if
+                !
+              end do
+            end do
           end do
-          if(l==0)then
-            coef = coef + exp( (0.0d0,-1.0d0) * ( pkx * dble(i) + p2) )
-            count = count + 1
-          end if
-          !
         end do
       end do
     end do
     !
-    ro = (abs(coef)**2) *dble(L1*L2*L3)/dble(count)
+    ro = (abs(coef)**2) *dble(L1*L2*L3*L4*L5*L6)/dble(count)
     !NOS/count='Ra', where, T^{Ra}|s>=|s>, and  ro='Na', see the eq. (118) in the Sandvik ref.
   end subroutine checkstate_SQ
 
@@ -163,55 +175,88 @@ contains
   end subroutine qsort_w_order
 
   subroutine allocate_lists_omp_SQ 
-    use input_param, only: NODmax,NODmin,rk1,rk2,rk3,THS,NOS,list_s,list_r
+    use input_param, only: NODmax,NODmin,rk1,rk2,rk3,rk4,rk5,rk6,THS,NOS,list_s,list_r,&
+      L1,L2,L3,L4,L5,L6
     use omp_lib
-    integer :: a, i, j
+    integer :: dim, a, i, j
     real(8) :: r
     integer :: num = 1
     real(8), allocatable :: tmp_list_r(:)
     integer, allocatable :: order(:)
+    real(8), allocatable :: tmp_list_r_pre(:)
+    integer, allocatable :: list_s_pre(:)
     num = omp_get_max_threads()
     write(*,*) "********************"
     write(*,*) "max_threads", num
     write(*,*) "********************"
     !
+    dim = 2*THS/(L1*L2*L3*L4*L5*L6)
+    allocate(list_s_pre(dim),tmp_list_r_pre(dim))
     write(*,'(" ### Count # of representative states. ")')
     a = 0
     !$omp parallel
     !$omp do private(j,i,r)
     do j = 1, num
       do i = j, THS, num
-        call checkstate_SQ(i,r,NODmax,NODmin,rk1,rk2,rk3) 
-        if(r>1.0d-15) then
-          !$omp atomic
-          a = a + 1
-        end if
-      end do
-    end do
-    !$omp end do
-    !$omp end parallel
-    !
-    write(*,'(" ### Allocate work arrays for lists. ")')
-    allocate(list_s(a),tmp_list_r(a))
-    !
-    write(*,'(" ### Store representative states. ")')
-    a = 0
-    !$omp parallel
-    !$omp do private(j,i,r)
-    do j = 1, num
-      do i = j, THS, num
-        call checkstate_SQ(i,r,NODmax,NODmin,rk1,rk2,rk3) 
+        call checkstate_SQ(i,r,NODmax,NODmin,rk1,rk2,rk3,rk4,rk5,rk6)
         if(r>1.0d-15) then
           !$omp critical
           a = a + 1
-          list_s(a) = i
-          tmp_list_r(a) = r
+          list_s_pre(a) = i
+          tmp_list_r_pre(a) = r
           !$omp end critical
         end if
       end do
     end do
     !$omp end do
     !$omp end parallel
+
+    ! !$omp parallel
+    ! !$omp do private(j,i,r)
+    ! do j = 1, num
+    !   do i = j, THS, num
+    !     call checkstate_SQ(i,r,NODmax,NODmin,rk1,rk2,rk3,rk4,rk5,rk6)
+    !     if(r>1.0d-15) then
+    !       !$omp atomic
+    !       a = a + 1
+    !     end if
+    !   end do
+    ! end do
+    ! !$omp end do
+    ! !$omp end parallel
+
+    if(a==0) stop 'THS = 0.'
+
+    !
+    write(*,'(" ### Allocate work arrays for lists. ")')
+    allocate(list_s(a),tmp_list_r(a))
+    !
+    write(*,'(" ### Store representative states. ")')
+    ! a = 0
+    ! !$omp parallel
+    ! !$omp do private(j,i,r)
+    ! do j = 1, num
+    !   do i = j, THS, num
+    !     call checkstate_SQ(i,r,NODmax,NODmin,rk1,rk2,rk3,rk4,rk5,rk6) 
+    !     if(r>1.0d-15) then
+    !       !$omp critical
+    !       a = a + 1
+    !       list_s(a) = i
+    !       tmp_list_r(a) = r
+    !       !$omp end critical
+    !     end if
+    !   end do
+    ! end do
+    ! !$omp end do
+    ! !$omp end parallel
+
+    !$omp parallel do
+    do i = 1, a
+       list_s(i) = list_s_pre(i)
+       tmp_list_r(i) = tmp_list_r_pre(i)
+    end do
+    !
+    deallocate(list_s_pre,tmp_list_r_pre)    
     !
     write(*,'(" ### Allocate arrays for lists. ")')
     THS = a
@@ -384,33 +429,47 @@ contains
   end subroutine findstate
 
   subroutine representative_SQ(NODmax,t,ell,n) 
-    use input_param, only: L1,L2,L3,shift_1,shift_2,shift_3
+    use input_param, only: L1,L2,L3,L4,L5,L6,shift_1,shift_2,shift_3,shift_4,shift_5,shift_6
     integer,intent(in)::NODmax 
     integer,intent(inout)::n(NODmax) 
-    integer,intent(out) :: t, ell(3)
-    integer :: i,j,k,l
+    integer,intent(out) :: t, ell(6)
+    integer :: i1,i2,i3,i4,i5,i6,l
     integer, allocatable :: nd(:)
     allocate(nd(NODmax))
-    ell = 0
+    ell = (/L1,L2,L3,L4,L5,L6/)
     nd = n
-    do k = 1, L3
-      nd(:) = shift_3(nd(:))
-      do j = 1, L2
-        nd(:) = shift_2(nd(:))
-        do i = 1, L1
-          nd(:) = shift_1(nd(:))
-          call insertion_sort(nd,NODmax)
-          !
-          do l = NODmax, 1, -1
-            if(nd(l)>n(l))then
-              exit
-            else if(nd(l)<n(l))then
-              ell=(/i,j,k/)
-              n(1:l) = nd(1:l)
-              exit
-            end if
+    do i6 = 1, L6
+      nd(:) = shift_6(nd(:))
+      do i5 = 1, L5
+        nd(:) = shift_5(nd(:))
+        do i4 = 1, L4
+          nd(:) = shift_4(nd(:))
+          do i3 = 1, L3
+            nd(:) = shift_3(nd(:))
+            do i2 = 1, L2
+              nd(:) = shift_2(nd(:))
+              do i1 = 1, L1
+                nd(:) = shift_1(nd(:))
+                call insertion_sort(nd,NODmax)
+                !
+                do l = NODmax, 1, -1
+                  if(nd(l)>n(l))then
+                    exit
+                  else if(nd(l)<n(l))then
+                    ell(1)=i1
+                    ell(2)=i2
+                    ell(3)=i3
+                    ell(4)=i4
+                    ell(5)=i5
+                    ell(6)=i6
+                    n(1:l) = nd(1:l)
+                    exit
+                  end if
+                end do
+                !
+              end do
+            end do
           end do
-          !
         end do
       end do
     end do

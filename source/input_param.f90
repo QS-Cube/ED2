@@ -22,26 +22,28 @@ module input_param
   integer :: re_wf, wr_wf
   !
   character(100) :: FILE_xyz_dm_gamma, FILE_hvec, FILE_p1, FILE_p12, FILE_NODmax, FILE_spin, FILE_wf
-  character(100) :: FILE_S1, FILE_S2, FILE_S3
+  character(100) :: FILE_S1="", FILE_S2="", FILE_S3="", FILE_S4="", FILE_S5="", FILE_S6=""
   character(100) :: OUTDIR
   !
-  integer :: L1, L2, L3
-  integer :: M1, M2, M3
-  real(8) :: PI, rk1, rk2, rk3
+  integer :: L1=1, L2=1, L3=1, L4=1, L5=1, L6=1
+  integer :: M1=0, M2=0, M3=0, M4=0, M5=0, M6=0
+  real(8) :: PI, rk1, rk2, rk3, rk4, rk5, rk6
   integer, allocatable :: list_s(:)
   real(8), allocatable :: list_r(:)
-  integer, allocatable :: shift_1(:), shift_2(:), shift_3(:)
-  complex(8), allocatable :: explist(:,:,:)
+  integer, allocatable :: shift_1(:), shift_2(:), shift_3(:), shift_4(:), shift_5(:), shift_6(:)
+  complex(8), allocatable :: explist(:,:,:,:,:,:)
   !
   integer :: cal_cf     ! flag for expectation values of two-body correlation functions
   integer :: NO_two_cf  ! number of two-body correlation functions we want to calculate
-  integer, allocatable :: p_two_cf(:,:)  ! (i,j) pairs of two-body correlation functions: p_two_cf(2,1:NO_two_cf)
+  integer, allocatable :: p_two_cf(:,:)  
+                        ! (i,j) pairs of two-body correlation functions: p_two_cf(2,1:NO_two_cf)
+  logical, allocatable :: swap_list(:)
   character(100) :: FILE_two_cf
   !
-  namelist /input_parameters/ NOS,NODmax,NODmin,L1,L2,L3,M1,M2,M3,NO_one,NO_two,wk_dim,MNTE,&
-    ALG, FILE_xyz_dm_gamma, FILE_hvec, &
-    OUTDIR, FILE_S1, FILE_S2, FILE_S3, FILE_NODmax, FILE_spin, FILE_wf, re_wf, wr_wf, &
-    cal_lm, cal_cf, NO_two_cf, FILE_two_cf
+  namelist /input_parameters/ NOS,NODmax,NODmin,L1,L2,L3,L4,L5,L6,M1,M2,M3,M4,M5,M6,&
+    NO_one,NO_two,wk_dim,MNTE,ALG, FILE_xyz_dm_gamma, FILE_hvec, &
+    OUTDIR, FILE_S1, FILE_S2, FILE_S3, FILE_S4, FILE_S5, FILE_S6, FILE_NODmax, &
+    FILE_spin, FILE_wf, re_wf, wr_wf, cal_lm, cal_cf, NO_two_cf, FILE_two_cf
   !
   real(8), allocatable :: ene(:)
   complex(8),allocatable :: psi(:,:) 
@@ -49,7 +51,7 @@ module input_param
 contains
   !
   subroutine read_ip 
-    integer :: i,j,k
+    integer :: i,j,k,l,m,n
     integer :: tmp
     !
     write(*,'(" ### Read input_parameters. ")')
@@ -60,18 +62,22 @@ contains
     PI = acos(-1.0d0)
     rk1 = 2.0d0 * PI * dble(M1)/dble(L1) 
     rk2 = 2.0d0 * PI * dble(M2)/dble(L2) 
-    rk3 = 2.0d0 * PI * dble(M3)/dble(L3) 
+    rk3 = 2.0d0 * PI * dble(M3)/dble(L3)
+    rk4 = 2.0d0 * PI * dble(M4)/dble(L4) 
+    rk5 = 2.0d0 * PI * dble(M5)/dble(L5) 
+    rk6 = 2.0d0 * PI * dble(M6)/dble(L6) 
     !
     write(*,'(" ### Set random_seed. ")')
     call random_seed
     !
     write(*,'(" ### Allocation arrays. ")')
     allocate(p_one(NO_one),p_two(2,NO_two),Jint(9,NO_two),hvec(3,NO_one),shift_1(0:NOS),&
-      shift_2(0:NOS),shift_3(0:NOS),explist(0:L1,0:L2,0:L3),local_NODmax(NOS),local_spin(NOS))
+      shift_2(0:NOS),shift_3(0:NOS),shift_4(0:NOS),shift_5(0:NOS),shift_6(0:NOS),&
+      explist(L1,L2,L3,L4,L5,L6),local_NODmax(NOS),local_spin(NOS))
     !
     write(*,'(" ### Set phase factors. ")')
-    forall(i=0:L1,j=0:L2,k=0:L3) explist(i,j,k) = &
-      exp((0.0d0,1.0d0)*(rk1*dble(i)+rk2*dble(j)+rk3*dble(k)))
+    forall(i=1:L1,j=1:L2,k=1:L3,l=1:L4,m=1:L5,n=1:L6) explist(i,j,k,l,m,n) = &
+      exp((0.0d0,1.0d0)*(rk1*dble(i)+rk2*dble(j)+rk3*dble(k)+rk4*dble(l)+rk5*dble(m)+rk6*dble(n)))
     !
     write(*,'(" ### Read FILE_xyz_dm_gamma. ")')
     open(10, file=trim(adjustl(FILE_xyz_dm_gamma)),status='old')
@@ -94,26 +100,71 @@ contains
     close(10)
     !
     write(*,'(" ### Set translational operations. ")')
-    open(10, file=trim(adjustl(FILE_S1)),status='old')
-    shift_1(0) = 0
-    do i = 1, NOS
-      read(10,*) shift_1(i)
-    end do
-    close(10)
+    if(L1==1)then
+      call set_identity_ope(shift_1,NOS)
+    else
+      open(10, file=trim(adjustl(FILE_S1)),status='old')
+      shift_1(0) = 0
+      do i = 1, NOS
+        read(10,*) shift_1(i)
+      end do
+      close(10)
+    end if
     !
-    open(10, file=trim(adjustl(FILE_S2)),status='old')
-    shift_2(0) = 0
-    do i = 1, NOS
-      read(10,*) shift_2(i)
-    end do
-    close(10)
+    if(L2==1)then
+      call set_identity_ope(shift_2,NOS)
+    else
+      open(10, file=trim(adjustl(FILE_S2)),status='old')
+      shift_2(0) = 0
+      do i = 1, NOS
+        read(10,*) shift_2(i)
+      end do
+      close(10)
+    end if
     !
-    open(10, file=trim(adjustl(FILE_S3)),status='old')
-    shift_3(0) = 0
-    do i = 1, NOS
-      read(10,*) shift_3(i)
-    end do
-    close(10)
+    if(L3==1)then
+      call set_identity_ope(shift_3,NOS)
+    else
+      open(10, file=trim(adjustl(FILE_S3)),status='old')
+      shift_3(0) = 0
+      do i = 1, NOS
+        read(10,*) shift_3(i)
+      end do
+      close(10)
+    end if
+    !
+    if(L4==1)then
+      call set_identity_ope(shift_4,NOS)
+    else
+      open(10, file=trim(adjustl(FILE_S4)),status='old')
+      shift_4(0) = 0
+      do i = 1, NOS
+        read(10,*) shift_4(i)
+      end do
+      close(10)
+    end if
+    !
+    if(L5==1)then
+      call set_identity_ope(shift_5,NOS)
+    else
+      open(10, file=trim(adjustl(FILE_S5)),status='old')
+      shift_5(0) = 0
+      do i = 1, NOS
+        read(10,*) shift_5(i)
+      end do
+      close(10)
+    end if
+    !
+    if(L6==1)then
+      call set_identity_ope(shift_6,NOS)
+    else
+      open(10, file=trim(adjustl(FILE_S6)),status='old')
+      shift_6(0) = 0
+      do i = 1, NOS
+        read(10,*) shift_6(i)
+      end do
+      close(10)
+    end if
     !
     write(*,'(" ### Read FILE_NODmax. ")')
     open(10, file=trim(adjustl(FILE_NODmax)),status='old')
@@ -131,7 +182,7 @@ contains
     !
     if(cal_cf==1)then
       write(*,'(" ### Read FILE_two_cf. ")')
-      allocate(p_two_cf(2,NO_two_cf))
+      allocate(p_two_cf(2,NO_two_cf), swap_list(NO_two_cf))
       open(10, file=trim(adjustl(FILE_two_cf)),status='old')
       do i = 1, NO_two_cf
         read(10,*) p_two_cf(1,i), p_two_cf(2,i)
@@ -139,6 +190,9 @@ contains
           tmp = p_two_cf(1,i)
           p_two_cf(1,i) = p_two_cf(2,i)
           p_two_cf(2,i) = tmp
+          swap_list(i) = .true.
+        else
+          swap_list(i) = .false.
         end if
       end do
       close(10)
@@ -146,6 +200,17 @@ contains
     !
     return
   end subroutine read_ip
+
+  subroutine set_identity_ope(shift_n,NOS)
+    implicit none 
+    integer :: NOS
+    integer :: shift_n(0:NOS)
+    integer :: i
+    do i = 0, NOS
+      shift_n(i) = i
+    end do
+    return
+  end subroutine set_identity_ope
 
   subroutine write_wf(dim,i_vec_min,i_vec_max, NOE, ene) 
     integer,intent(in)::dim

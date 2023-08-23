@@ -44,7 +44,7 @@ contains
   end subroutine get_lm
   !
   subroutine get_cf(psi,NODmax,NODmin,dim,nvec)
-    use input_param, only: NO_two_cf, p_two_cf, OUTDIR
+    use input_param, only: NO_two_cf, p_two_cf, swap_list, OUTDIR
     use ham2vec, only: calcu_cf
     implicit none
     integer, intent(in) :: NODmax, NODmin, nvec
@@ -52,6 +52,7 @@ contains
     complex(8), intent(in) :: psi(1:dim,1:nvec)
     complex(8), allocatable :: expe_cf(:,:,:)
     integer :: j, k, non
+    integer :: t_order(9)=(/1,4,7,2,5,8,3,6,9/)
     !
     allocate(expe_cf(9,NO_two_cf,nvec))
     do k = 1, nvec
@@ -63,24 +64,43 @@ contains
     write(*,'(" ### write ouput/two_body_cf_z+-.dat. ")')
     open(10,file=trim(adjustl(OUTDIR))//'two_body_cf_z+-.dat',position='append')
     do j = 1, NO_two_cf
-      write(10,'(2i8,10000es23.15)') p_two_cf(1:2,j), ( expe_cf(1:9,j,k), k=1, nvec )
+      if(swap_list(j))then
+        write(10,'(2i8,10000es23.15)') p_two_cf(2:1:-1,j), &
+          ( expe_cf(t_order(1:9),j,k), k=1, nvec )
+      else
+        write(10,'(2i8,10000es23.15)') p_two_cf(1:2,j), ( expe_cf(1:9,j,k), k=1, nvec )
+      end if
     end do
     close(10)
     !
     write(*,'(" ### write ouput/two_body_cf_xyz.dat. ")')
     open(10,file=trim(adjustl(OUTDIR))//'two_body_cf_xyz.dat',position='append')
     do j = 1, NO_two_cf
-      write(10,'(2i8,10000es23.15)') p_two_cf(1:2,j), ( &
-        dble( ( expe_cf(9,j,k)+expe_cf(8,j,k)+expe_cf(6,j,k)+expe_cf(5,j,k) )*0.25d0 ), &
-        dble( ( expe_cf(9,j,k)-expe_cf(8,j,k)+expe_cf(6,j,k)-expe_cf(5,j,k) )*(0.0d0,-0.25d0) ), &
-        dble( ( expe_cf(7,j,k)+expe_cf(4,j,k) )*0.5d0 ), &
-        dble( ( expe_cf(9,j,k)+expe_cf(8,j,k)-expe_cf(6,j,k)-expe_cf(5,j,k) )*(0.0d0,-0.25d0) ), &
-        dble( ( expe_cf(9,j,k)-expe_cf(8,j,k)-expe_cf(6,j,k)+expe_cf(5,j,k) )*(-0.25d0) ), &
-        dble( ( expe_cf(7,j,k)-expe_cf(4,j,k) )*(0.0d0,-0.5d0) ), &
-        dble( ( expe_cf(3,j,k)+expe_cf(2,j,k) )*0.5d0 ), &
-        dble( ( expe_cf(3,j,k)-expe_cf(2,j,k) )*(0.0d0,-0.5d0) ), &
-        dble( ( expe_cf(1,j,k) ) ), &
-        k = 1, nvec )
+      if(swap_list(j))then
+        write(10,'(2i8,10000es23.15)') p_two_cf(2:1:-1,j), ( &
+          dble( ( expe_cf(9,j,k)+expe_cf(8,j,k)+expe_cf(6,j,k)+expe_cf(5,j,k) )*0.25d0 ), & ! 1
+          dble( ( expe_cf(9,j,k)+expe_cf(8,j,k)-expe_cf(6,j,k)-expe_cf(5,j,k) )*(0.0d0,-0.25d0) ), & !4
+          dble( ( expe_cf(3,j,k)+expe_cf(2,j,k) )*0.5d0 ), & !7
+          dble( ( expe_cf(9,j,k)-expe_cf(8,j,k)+expe_cf(6,j,k)-expe_cf(5,j,k) )*(0.0d0,-0.25d0) ), & !2
+          dble( ( expe_cf(9,j,k)-expe_cf(8,j,k)-expe_cf(6,j,k)+expe_cf(5,j,k) )*(-0.25d0) ), & !5
+          dble( ( expe_cf(3,j,k)-expe_cf(2,j,k) )*(0.0d0,-0.5d0) ), & !8
+          dble( ( expe_cf(7,j,k)+expe_cf(4,j,k) )*0.5d0 ), & !3
+          dble( ( expe_cf(7,j,k)-expe_cf(4,j,k) )*(0.0d0,-0.5d0) ), & !6
+          dble( ( expe_cf(1,j,k) ) ), & !9
+          k = 1, nvec )
+      else
+        write(10,'(2i8,10000es23.15)') p_two_cf(1:2,j), ( &
+          dble( ( expe_cf(9,j,k)+expe_cf(8,j,k)+expe_cf(6,j,k)+expe_cf(5,j,k) )*0.25d0 ), & ! 1
+          dble( ( expe_cf(9,j,k)-expe_cf(8,j,k)+expe_cf(6,j,k)-expe_cf(5,j,k) )*(0.0d0,-0.25d0) ), & !2
+          dble( ( expe_cf(7,j,k)+expe_cf(4,j,k) )*0.5d0 ), & !3
+          dble( ( expe_cf(9,j,k)+expe_cf(8,j,k)-expe_cf(6,j,k)-expe_cf(5,j,k) )*(0.0d0,-0.25d0) ), & !4
+          dble( ( expe_cf(9,j,k)-expe_cf(8,j,k)-expe_cf(6,j,k)+expe_cf(5,j,k) )*(-0.25d0) ), & !5
+          dble( ( expe_cf(7,j,k)-expe_cf(4,j,k) )*(0.0d0,-0.5d0) ), & !6
+          dble( ( expe_cf(3,j,k)+expe_cf(2,j,k) )*0.5d0 ), & !7
+          dble( ( expe_cf(3,j,k)-expe_cf(2,j,k) )*(0.0d0,-0.5d0) ), & !8
+          dble( ( expe_cf(1,j,k) ) ), & !9
+          k = 1, nvec )
+      end if
     end do
     close(10)
     !

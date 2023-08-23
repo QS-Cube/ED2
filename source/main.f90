@@ -31,10 +31,11 @@ program main
   call allocate_lists_omp_SQ 
   write(*,*) "  THS(k)   = ", THS
   !
-  write(*,'(" ### Make wk_loc and wk_ele array. ")')
-  call make_wk_loc_and_ele(THS)
-  !
   If(ALG.eq.1)then !Conventional Lanczos
+    !
+    write(*,'(" ### Make wk_loc and wk_ele array. ")')
+    call make_wk_loc_and_ele(THS)
+    !
     if(re_wf.ne.1)then
       write(*,'(" ### Start the Lanczos method. ")')
       call lanczos_routines(ene,THS,psi)
@@ -55,6 +56,10 @@ program main
     end if
     !
   else if(ALG.eq.2 )then 
+    !
+    write(*,'(" ### Make wk_loc and wk_ele array. ")')
+    call make_wk_loc_and_ele(THS)
+    !
     if(re_wf.ne.1)then
       write(*,'(" ### Start the thick-restarted Lanczos method. ")')
       call my_trlanczos_routines_complex(ene,psi,THS) 
