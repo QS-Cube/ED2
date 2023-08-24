@@ -28,7 +28,7 @@ echo "cd script_j1j2_chain; ./run.sh; cd -"
 cd script_j1j2_chain; ./run.sh; cd -
 #
 echo "**************"
-echo  "  ex 3) S=(1/2,3/2) XYZ+DM+Gamma+H mixed-spin model on the periodic chain"
+echo  "  ex 3) S=(3/2,1/2) XYZ+DM+Gamma+H mixed-spin model on the periodic chain"
 echo  "        See run.sh for details on parameters."
 echo "**************"
 echo "cd script_mixed_spin_chain; ./run.sh; cd -"
