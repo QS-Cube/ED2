@@ -190,7 +190,7 @@ contains
     write(*,*) "max_threads", num
     write(*,*) "********************"
     !
-    dim = max(2*THS/(L1*L2*L3*L4*L5*L6),1000)
+    dim = max(2*THS/(L1*L2*L3*L4*L5*L6),10000)
     allocate(list_s_pre(dim),tmp_list_r_pre(dim))
     write(*,'(" ### Count # of representative states. ")')
     a = 0
