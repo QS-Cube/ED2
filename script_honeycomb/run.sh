@@ -3,8 +3,8 @@
 #export OMP_NUM_THREADS=4
 ##################################################
     wkdir="examples/honeycomb"
-       L1=10     # Number of Sites along x direction
-       L2=10     # Number of Sites along y direction
+       L1=10     # Number of Sites along a1 direction
+       L2=10     # Number of Sites along a2 direction
    NODmax=3      # Upper limit value for the number of down spins
    NODmin=0      # Lower limit value for the number of down spins
      SPIN=0.5d0  # Spin
@@ -20,8 +20,8 @@
        HX=-0.1d0 # Magnetic field along X direction
        HY=-0.1d0 # Magnetic field along Y direction
        HZ=-0.3d0 # Magnetic field along Z direction
-       M1=0      # Wavenum. for trans. symm. along x direction.
-       M2=0      # Wavenum. for trans. symm. along y direction.
+       M1=0      # Wavenum. for trans. symm. along a1 direction.
+       M2=0      # Wavenum. for trans. symm. along a2 direction.
       ALG=1      # 1:Lanczos, 2:TR Lanczos, 3: Full diag.
       NOE=10     # Number of eigenvalues : Active only when ALG=2.
 NO_two_cf=9      # Number of expectation values of <S_i S_j>

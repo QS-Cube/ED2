@@ -108,26 +108,35 @@ contains
   end subroutine get_cf
   !
   subroutine mk_list_n(list_n,list_check,non,NOS,n) 
-    use input_param, only: L1,L2,L3,shift_1,shift_2,shift_3
+    use input_param, only: L1,L2,L3,L4,L5,L6,shift_1,shift_2,shift_3,shift_4,shift_5,shift_6
     integer,intent(in)  :: n, NOS 
     integer,intent(out) :: list_n(NOS), list_check(NOS), non
-    integer :: i,j,k
+    integer :: i1,i2,i3,i4,i5,i6
     integer :: nd
     if(list_check(n)==1)then
       non = 0
       return
     else
       nd = n
-      do k = 1, L3
-        nd = shift_3(nd)
-        do j = 1, L2
-          nd = shift_2(nd)
-          do i = 1, L1
-            nd = shift_1(nd)
-            if(nd<n)then
-              non = 0
-              return
-            end if
+      do i6 = 1, L6
+        nd = shift_6(nd)
+        do i5 = 1, L5
+          nd = shift_5(nd)
+          do i4 = 1, L4
+            nd = shift_4(nd)
+            do i3 = 1, L3
+              nd = shift_3(nd)
+              do i2 = 1, L2
+                nd = shift_2(nd)
+                do i1 = 1, L1
+                  nd = shift_1(nd)
+                  if(nd<n)then
+                    non = 0
+                    return
+                  end if
+                end do
+              end do
+            end do
           end do
         end do
       end do
@@ -138,17 +147,26 @@ contains
     list_check(n) = 1
     !
     nd = n
-    do k = 1, L3
-      nd = shift_3(nd)
-      do j = 1, L2
-        nd = shift_2(nd)
-        do i = 1, L1
-          nd = shift_1(nd)
-          if(list_check(nd)==0)then
-            non = non + 1
-            list_n(non) = nd
-            list_check(nd) = 1
-          end if
+    do i6 = 1, L6
+      nd = shift_6(nd)
+      do i5 = 1, L5
+        nd = shift_5(nd)
+        do i4 = 1, L4
+          nd = shift_4(nd)
+          do i3 = 1, L3
+            nd = shift_3(nd)
+            do i2 = 1, L2
+              nd = shift_2(nd)
+              do i1 = 1, L1
+                nd = shift_1(nd)
+                if(list_check(nd)==0)then
+                  non = non + 1
+                  list_n(non) = nd
+                  list_check(nd) = 1
+                end if
+              end do
+            end do
+          end do
         end do
       end do
     end do

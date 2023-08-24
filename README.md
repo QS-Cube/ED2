@@ -44,8 +44,7 @@ $ cd ED2-main
 
 A simple Makefile is provided to build the executable file "QS3ED2.exe". The following commands will build the executable file and execute sample programs:
 
-$ cd script<br>
-$ ./make.sh 
+$ ./setup.sh 
 
 Before running make.sh, open the file and select the compiler (ARG1=gfortran/ifort) and the linear algebra library (ARG2=lapack/mkl). After executing the samples, all results are stored in the output directories.
 
