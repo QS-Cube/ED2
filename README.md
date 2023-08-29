@@ -46,7 +46,7 @@ A simple Makefile is provided to build the executable file "QS3ED2.exe". The fol
 
 $ ./setup.sh 
 
-Before running make.sh, open the file and select the compiler (ARG1=gfortran/ifort) and the linear algebra library (ARG2=lapack/mkl). After executing the samples, all results are stored in the examples directories.
+Before running setup.sh, open the file and select the compiler (ARG1=gfortran/ifort) and the linear algebra library (ARG2=lapack/mkl). After executing the samples, all results are stored in the examples directories.
 
 # Developers
 Hiroshi Ueda, Daisuke Yamamoto and Tokuro Shimokawa
