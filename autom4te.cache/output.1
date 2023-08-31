@@ -3797,9 +3797,11 @@ $as_echo "$as_me: lapack... Add -Wl,--start-group -lmkl_gf_lp64 -lmkl_gnu_thread
 $as_echo "$as_me: lapack... It seems that there is -lmkl_intel_lp64 already in LIBS." >&6;}
             ;;
           *)
-            { $as_echo "$as_me:${as_lineno-$LINENO}: lapack... Add -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl at the tail of LIBS." >&5
-$as_echo "$as_me: lapack... Add -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl at the tail of LIBS." >&6;}
-            LIBS="$LIBS -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: lapack... Add -qmkl=parallel at the tail of LIBS." >&5
+$as_echo "$as_me: lapack... Add -qmkl=parallel at the tail of LIBS." >&6;}
+            LIBS="$LIBS -qmkl=parallel"
+            #AC_MSG_NOTICE([lapack... Add -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl at the tail of LIBS.])
+            #LIBS="$LIBS -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl"
             ;;
         esac
         ;;

@@ -82,6 +82,10 @@ program main
   else if(ALG.eq.3)then
     write(*,'(" ### Start the full diagonalization. ")')
     call Full_diag_routines(ene,psi,THS)
+    if(wr_wf.eq.1)then
+      write(*,'(" ### Write wavevectors. ")')
+      call write_wf(THS,1,THS,THS,ene)
+    end if
   end if
   !
   if(cal_lm==1)then
