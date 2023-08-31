@@ -1,0 +1,115 @@
+******************************* Start QS^3 ED2 *************************************
+ ### Read input_parameters. 
+ &INPUT_PARAMETERS
+ NOS     =        1000,
+ NODMAX  =           3,
+ NODMIN  =           3,
+ L1      =          10,
+ L2      =          10,
+ L3      =          10,
+ L4      =           2,
+ L5      =           2,
+ L6      =           2,
+ M1      =           0,
+ M2      =           0,
+ M3      =           0,
+ M4      =           0,
+ M5      =           0,
+ M6      =           0,
+ NO_ONE  =        1000,
+ NO_TWO  =        3000,
+ WK_DIM  =        1482,
+ MNTE    =          19,
+ ALG     =           1,
+ FILE_XYZ_DM_GAMMA       = list_xyz_dm_gamma.dat                                                                               ,
+ FILE_HVEC       = list_hvec.dat                                                                                       ,
+ OUTDIR  = ./                                                                                                  ,
+ FILE_S1 = list_p1.dat                                                                                         ,
+ FILE_S2 = list_p2.dat                                                                                         ,
+ FILE_S3 = list_p3.dat                                                                                         ,
+ FILE_S4 = list_p4.dat                                                                                         ,
+ FILE_S5 = list_p5.dat                                                                                         ,
+ FILE_S6 = list_p6.dat                                                                                         ,
+ FILE_NODMAX     = list_NODmax.dat                                                                                     ,
+ FILE_SPIN       = list_spin.dat                                                                                       ,
+ FILE_WF = ./                                                                                                  ,
+ RE_WF   =           0,
+ WR_WF   =           0,
+ CAL_LM  =           0,
+ CAL_CF  =           0,
+ NO_TWO_CF       =           9,
+ FILE_TWO_CF     = ./list_ij_cf.dat                                                                                    
+ /
+ ### Set wavevectors. 
+ ### Set random_seed. 
+ ### Allocation arrays. 
+ ### Set phase factors. 
+ ### Read FILE_xyz_dm_gamma. 
+ ### Read FILE_hvec. 
+ ### Set translational operations. 
+ ### Read FILE_NODmax. 
+ ### Read FILE_spin. 
+ ### Store cum_ltd_rep_combination numbers. 
+ ### Set THS. 
+   THS   =    166167000
+ ### Allocate and Set arrays for state_list. 
+ ********************
+ max_threads          96
+ ********************
+ ### Count # of representative states. 
+ ### Allocate work arrays for lists. 
+ ### Store representative states. 
+ ### Allocate arrays for lists. 
+ ### Store reordered lists. 
+   THS(k)   =        23719
+ ### Make wk_loc and wk_ele array. 
+ Current MNTE =           19
+ Optimal MNTE =           19
+ ### Start the Lanczos method. 
+ &INPUT_LANCZ
+ LNC_ENE_CONV    =  1.000000000000000E-014,
+ MAXITR  =       10000,
+ MINITR  =           5,
+ ITRINT  =           5
+ /
+************************************************************************************
+ Eigen solver: Lanczos
+itr, ene, conv:     5    7.377973920941497E+02    1.0E+00
+itr, ene, conv:    10    7.370749864233882E+02    9.8E-04
+itr, ene, conv:    15    7.368354666942425E+02    3.3E-04
+itr, ene, conv:    20    7.367662886900924E+02    9.4E-05
+itr, ene, conv:    25    7.367374471540514E+02    3.9E-05
+itr, ene, conv:    30    7.367313383885700E+02    8.3E-06
+itr, ene, conv:    35    7.367297807569313E+02    2.1E-06
+itr, ene, conv:    40    7.367289018252358E+02    1.2E-06
+itr, ene, conv:    45    7.367260308448562E+02    3.9E-06
+itr, ene, conv:    50    7.367239499398696E+02    2.8E-06
+itr, ene, conv:    55    7.367230796898842E+02    1.2E-06
+itr, ene, conv:    60    7.367229353666534E+02    2.0E-07
+itr, ene, conv:    65    7.367228395848343E+02    1.3E-07
+itr, ene, conv:    70    7.367226561928723E+02    2.5E-07
+itr, ene, conv:    75    7.367225151593997E+02    1.9E-07
+itr, ene, conv:    80    7.367224563000908E+02    8.0E-08
+itr, ene, conv:    85    7.367224357627962E+02    2.8E-08
+itr, ene, conv:    90    7.367224277533534E+02    1.1E-08
+itr, ene, conv:    95    7.367224224188795E+02    7.2E-09
+itr, ene, conv:   100    7.367224215089510E+02    1.2E-09
+itr, ene, conv:   105    7.367224213951584E+02    1.5E-10
+itr, ene, conv:   110    7.367224213721319E+02    3.1E-11
+itr, ene, conv:   115    7.367224213686183E+02    4.8E-12
+itr, ene, conv:   120    7.367224213681371E+02    6.5E-13
+itr, ene, conv:   125    7.367224213680782E+02    8.0E-14
+itr, ene, conv:   130    7.367224213680660E+02    1.7E-14
+itr, ene, conv:   135    7.367224213680651E+02    1.2E-15
+************************************************************************************
+ total lanczos step:         135
+************************************************************************************
+E_0 =     7.367224213680651E+02
+************************************************************************************
+************************************************************************************
+quality of eigenvector
+                   <GS| H |GS>  =     7.367224213680659E+02
+|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| =     4.484444993830152E-16
+************************************************************************************
+Time:    74.302 [sec]
+****************************************************************************************
