@@ -55,8 +55,10 @@ case "$with_lapack" in
             AC_MSG_NOTICE([lapack... It seems that there is -lmkl_intel_lp64 already in LIBS.])
             ;;
           *)
-            AC_MSG_NOTICE([lapack... Add -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl at the tail of LIBS.])
-            LIBS="$LIBS -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl"
+            AC_MSG_NOTICE([lapack... Add -qmkl=parallel at the tail of LIBS.])
+            LIBS="$LIBS -qmkl=parallel"
+            #AC_MSG_NOTICE([lapack... Add -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl at the tail of LIBS.])
+            #LIBS="$LIBS -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl"
             ;;
         esac
         ;;
