@@ -39,7 +39,7 @@ $ git clone git@github.com:QS-Cube/ED2.git
 
 If you do not have a Git account, navigate to the repository webpage, click on the "Code" button, and select "Download ZIP" to download "ED2-main.zip". The zip file can be unpacked with:
 
-$ unzip ED2-main.zip<br>
+$ unzip main.zip<br>
 $ cd ED2-main
 
 A simple Makefile is provided to build the executable file "QS3ED2.exe". The following commands will build the executable file and execute sample programs:
