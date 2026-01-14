@@ -1,147 +1,169 @@
 # Input format
 
-This page defines the **input file format** used by ED2.
-All calculations are controlled by a plain-text input file, which specifies
-the physical model, Hilbert-space constraints, and solver options.
+This page describes the ED2 input file format and documents the most important
+parameters required to define a calculation.
 
-The input format is designed to be:
-- human-readable,
-- version-stable,
-- suitable for long-term reproducibility.
-
-For published results, always archive the exact input file together with the ED2
-commit hash and software environment.
+> **Note**  
+> The exact set of available keys may evolve. For reproducible research, always
+> record the ED2 version (tag) or commit hash together with the input file used.
 
 ---
 
-## General structure
+## File format and conventions
 
-An ED2 input file consists of **keyword–value pairs**, one per line.
-
-```
-KEYWORD = value
-```
-
-- Keywords are **case-insensitive**.
-- Lines starting with `#` are treated as comments.
+- ED2 reads the input from **standard input** (STDIN), so you typically run:
+  ```bash
+  ./ed2 < input/example.in
+  ```
+- The input consists of `KEY = VALUE` pairs (one per line).
 - Blank lines are ignored.
-- Units are dimensionless unless explicitly stated.
+- Lines starting with `#` are treated as comments.
 
 ---
 
-## Global parameters
+## Minimal required parameters (typical)
 
-| Keyword | Type | Default | Description |
-|---|---|---|---|
-| `LATTICE_SIZE` | int | required | Number of lattice sites |
-| `SPIN_S` | float | required | Spin quantum number (e.g., 0.5, 1.0) |
-| `MODEL` | string | required | Model identifier (e.g., Heisenberg, XYZ) |
-| `BOUNDARY` | string | `open` | Boundary condition (`open`, `periodic`) |
+The minimal set depends on the model, but most calculations specify:
 
----
+- system size / lattice definition (e.g., `LATTICE_SIZE`)
+- model selector (e.g., `MODEL`)
+- Hamiltonian parameters (e.g., couplings and fields)
+- solver parameters (e.g., `SOLVER`, `NUM_EIGENVALUES`)
 
-## Hilbert-space control
-
-ED2 allows calculations in either the full Hilbert space or a restricted subspace.
-
-| Keyword | Type | Default | Description |
-|---|---|---|---|
-| `N_DOWN_MIN` | int | 0 | Minimum number of spin-down excitations |
-| `N_DOWN_MAX` | int | LATTICE_SIZE | Maximum number of spin-down excitations |
-| `USE_TRUNCATION` | bool | false | Enable truncated Hilbert space |
-
-When truncation is enabled, only basis states satisfying  
-`N_DOWN_MIN ≤ N_down ≤ N_DOWN_MAX` are included.
+See **Examples** for complete reference inputs.
 
 ---
 
-## Hamiltonian parameters
+## Symmetry specification (recommended)
 
-### Exchange interactions
+ED2 can explicitly enforce lattice and internal symmetries and work within a chosen
+**symmetry sector**. This reduces the effective Hilbert-space dimension via
+block-diagonalization and can dramatically reduce runtime and memory usage.
 
-| Keyword | Type | Default | Description |
-|---|---|---|---|
-| `JX` | float | 0.0 | Exchange coupling in x direction |
-| `JY` | float | 0.0 | Exchange coupling in y direction |
-| `JZ` | float | 0.0 | Exchange coupling in z direction |
+### Overview
 
-### External fields
+Symmetry handling is configured by enabling one or more symmetry projectors and by
+specifying the target quantum numbers / irreducible representations.
 
-| Keyword | Type | Default | Description |
-|---|---|---|---|
-| `HX` | float | 0.0 | Magnetic field along x |
-| `HY` | float | 0.0 | Magnetic field along y |
-| `HZ` | float | 0.0 | Magnetic field along z |
+The following symmetry classes are supported conceptually in ED2:
 
----
+- **Translation symmetry (crystal momentum)**: select a momentum sector $k$
+- **Point-group symmetry**: select an irrep label of the lattice point group
+- **Spin-inversion symmetry**: select even/odd under global spin inversion
 
-## Solver configuration
-
-| Keyword | Type | Default | Description |
-|---|---|---|---|
-| `SOLVER` | string | `lanczos` | Solver type (`full`, `lanczos`) |
-| `MAX_ITER` | int | 1000 | Maximum number of iterations |
-| `TOLERANCE` | float | 1e-10 | Convergence tolerance |
-| `NUM_EIGENVALUES` | int | 1 | Number of eigenvalues to compute |
+> If a symmetry is enabled but the specified quantum number is incompatible with
+> the lattice/model settings, ED2 should report an error.
 
 ---
 
-## Output control
+### Translation symmetry (momentum sector)
 
-| Keyword | Type | Default | Description |
-|---|---|---|---|
-| `OUTPUT_PREFIX` | string | `ed2` | Prefix for output files |
-| `WRITE_WAVEFUNCTION` | bool | false | Save eigenvectors |
-| `VERBOSE` | bool | false | Verbose output |
+Enable translation symmetry and select a crystal-momentum sector.
+
+**Keys (recommended naming)**
+- `USE_TRANSLATION_SYMMETRY = true|false`
+- `MOMENTUM_K = <integer>`  
+  Momentum sector label. The convention is implementation-dependent, but typically
+  $k = 0, 1, ..., L-1$ corresponds to $2\pi k/L$.
+
+**Example**
+```text
+# Translation symmetry: k-sector
+USE_TRANSLATION_SYMMETRY = true
+MOMENTUM_K = 0
+```
 
 ---
 
-## Example input file
+### Point-group symmetry
+
+If the lattice admits point-group symmetries (reflections/rotations), ED2 can project
+onto a chosen irreducible representation.
+
+**Keys (recommended naming)**
+- `USE_POINTGROUP_SYMMETRY = true|false`
+- `POINTGROUP_IRREP = <string>`  
+  Irrep label (e.g., `A1`, `A2`, `B1`, `B2`, ...), depending on the lattice and the
+  implemented symmetry group.
+
+**Example**
+```text
+# Point-group symmetry: select an irrep label
+USE_POINTGROUP_SYMMETRY = true
+POINTGROUP_IRREP = A1
+```
+
+---
+
+### Spin-inversion symmetry
+
+For models without explicit symmetry-breaking fields, ED2 can exploit global spin inversion
+($S_i^z \to -S_i^z$) to split the Hilbert space into even/odd sectors.
+
+**Keys (recommended naming)**
+- `USE_SPININVERSION_SYMMETRY = true|false`
+- `SPININVERSION_PARITY = +1|-1`  
+  `+1` for even, `-1` for odd parity.
+
+**Example**
+```text
+# Spin-inversion symmetry: even sector
+USE_SPININVERSION_SYMMETRY = true
+SPININVERSION_PARITY = +1
+```
+
+---
+
+## Example: symmetry-enabled input (template)
+
+The following template shows a typical setup where symmetries are enforced in addition to the
+model and solver definition.
 
 ```text
-# Example: Heisenberg chain with L=4, S=1/2
+# Example template (symmetry-enabled)
 
-LATTICE_SIZE = 4
+LATTICE_SIZE = 12
 SPIN_S = 0.5
 MODEL = Heisenberg
-BOUNDARY = open
+BOUNDARY = periodic
 
-USE_TRUNCATION = true
-N_DOWN_MIN = 2
-N_DOWN_MAX = 2
+# Symmetries
+USE_TRANSLATION_SYMMETRY = true
+MOMENTUM_K = 0
 
+USE_POINTGROUP_SYMMETRY = false
+# POINTGROUP_IRREP = A1
+
+USE_SPININVERSION_SYMMETRY = true
+SPININVERSION_PARITY = +1
+
+# Couplings
 JX = 1.0
 JY = 1.0
 JZ = 1.0
-HZ = 0.0
 
+# Solver
 SOLVER = lanczos
-NUM_EIGENVALUES = 1
+NUM_EIGENVALUES = 3
 TOLERANCE = 1e-12
 
-OUTPUT_PREFIX = example
+OUTPUT_PREFIX = heisenberg_L12_k0_pinveven
 VERBOSE = true
 ```
 
 ---
 
-## Validation rules
+## Notes and best practices
 
-- Missing required keywords cause a runtime error.
-- Inconsistent parameters (e.g., `N_DOWN_MAX < N_DOWN_MIN`) are rejected.
-- Unsupported keywords are ignored with a warning.
-
----
-
-## Reproducibility notes
-
-- Always record the exact input file used.
-- Numerical results may depend on solver parameters and truncation choices.
-- Changes in defaults across ED2 versions will be documented in the changelog.
+- For **periodic boundary conditions**, translation symmetry is often the most effective first choice.
+- When combining multiple symmetries, verify that the selected sector is **non-empty** for your system size.
+- For publications, always record:
+  - symmetry settings (enabled/disabled and quantum numbers),
+  - ED2 version/tag or commit hash.
 
 ---
 
 ## Next steps
 
-- See **Outputs** for the definition of generated files.
-- See **Examples** for validated reference calculations.
+- See **Theory / Algorithms** for the conceptual background of symmetry decomposition.
+- See **Examples** for fully validated reference inputs.
