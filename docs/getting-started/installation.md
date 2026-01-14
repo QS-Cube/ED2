@@ -3,215 +3,75 @@
 This page describes how to build and run **ED2 (QS³-ED2)** from source.
 
 ED2 is written in **Fortran** and uses **OpenMP** for shared-memory parallelism.
-Dense and sparse linear algebra operations rely on **BLAS/LAPACK** libraries.
-
-For published or archived results, we strongly recommend recording the ED2 **version tag / Git commit hash**,
-compiler version, BLAS/LAPACK backend, and OpenMP configuration.
+Linear algebra operations rely on **BLAS/LAPACK** libraries.
 
 ---
 
-## System requirements
+## Build overview
 
-### Operating system
+ED2 uses **GNU Autotools** (`configure`, `make`) for portable and reproducible builds.
+The build system automatically detects available BLAS/LAPACK libraries in common environments.
 
-- **Linux (x86_64)**  
-  ED2 is routinely tested on recent Linux distributions (e.g., Ubuntu 22.04).
-  Other UNIX-like systems may work but are not officially supported.
+### Automatic BLAS/LAPACK detection
 
-### Compilers
+- **OpenBLAS / netlib BLAS & LAPACK**  
+  Detected automatically when available in standard library paths.
 
-One of the following Fortran compilers is required:
+- **Intel MKL (recommended on Intel systems)**  
+  If the Intel compiler (**ifort**) is used and no standalone BLAS/LAPACK is found,
+  ED2 automatically falls back to Intel MKL using the compiler option `-qmkl=parallel`.
 
-- **GNU Fortran (`gfortran`)** (GCC 10 or later recommended)
-- **Intel oneAPI Fortran (`ifx`)**
-
-The code uses standard Fortran and OpenMP directives.
-
-### Parallelization
-
-- **OpenMP** is used for shared-memory parallelism (single-node execution model).
-
-### Linear algebra libraries
-
-A BLAS/LAPACK implementation is required. Supported and tested options include:
-
-- **OpenBLAS** (recommended default)
-- **Intel MKL**
-- Vendor-provided BLAS/LAPACK implementations
+This design avoids manual configuration in most HPC environments.
 
 ---
 
-## Install dependencies (Ubuntu example)
+## Typical build commands
 
-On Ubuntu/Debian-like systems, you can install a typical toolchain with:
-
+### GNU compiler + OpenBLAS
 ```bash
-sudo apt-get update
-sudo apt-get install -y build-essential git gfortran libopenblas-dev liblapack-dev
+./configure FC=gfortran
+make
 ```
 
-If you plan to use Intel MKL, install Intel oneAPI and source the environment script
-provided by Intel before building ED2.
-
-> **HPC clusters**  
-> On clusters, the required compilers and BLAS/LAPACK libraries are usually provided via environment modules
-> (e.g., `module load gcc openblas` or `module load intel-oneapi mkl`). Consult your site documentation.
-
----
-
-## Getting the source code
-
-Clone the official ED2 repository:
-
+### Intel compiler + automatic MKL fallback
 ```bash
-git clone https://github.com/QS-Cube/ED2.git
-cd ED2
+./configure FC=ifort
+make
 ```
 
-All examples and input files referenced in this documentation assume execution from the
-repository root directory.
-
----
-
-## Building ED2 (recommended)
-
-ED2 provides a helper script for configuring and building the code.
-This is the recommended and supported build procedure.
-
+### Explicit MKL selection (optional)
 ```bash
-./setup.sh
+./configure FC=ifort --with-lapack=mkl
+make
 ```
 
-The build script typically performs the following tasks:
-
-- selects a Fortran compiler toolchain,
-- configures OpenMP flags,
-- links against an available BLAS/LAPACK library,
-- builds the ED2 executables.
-
-After successful compilation, executables are placed in a predictable location
-within the repository (see the script output for details).
-
-> If your environment offers multiple toolchains (e.g., GNU vs Intel), open `setup.sh` and/or follow the
-> repository’s build notes to select the intended compiler and BLAS/LAPACK backend.
-
 ---
 
-## Manual build (advanced users)
+## Notes for HPC systems
 
-Advanced users may prefer to build ED2 manually by editing the Makefile or build scripts.
-
-### Compiler and OpenMP flags
-
-Typical OpenMP flags are:
-
-- GNU Fortran:
-  ```text
-  -fopenmp
-  ```
-- Intel oneAPI Fortran:
-  ```text
-  -qopenmp
-  ```
-
-### BLAS/LAPACK linkage
-
-Example link flags:
-
-- OpenBLAS:
-  ```text
-  -lopenblas
-  ```
-- Intel MKL: use Intel’s recommended link line
-  (e.g., via `mkl_link_tool` or oneAPI environment scripts).
-
-Consult your system documentation for the correct library paths and link options.
-
----
-
-## Running ED2
-
-Set the number of OpenMP threads using the `OMP_NUM_THREADS` environment variable:
+On many clusters, BLAS/LAPACK libraries are provided via environment modules.
+For example:
 
 ```bash
-export OMP_NUM_THREADS=8
+module load openblas
+./configure FC=gfortran
 ```
 
-Run ED2 by redirecting an input file:
+or
 
 ```bash
-./ed2 < input/example.in
+module load intel-oneapi-mkl
+./configure FC=ifort
 ```
 
-(The exact executable name may depend on the build configuration.)
-
 ---
 
-## OpenMP and BLAS thread settings (important)
+## Reproducibility recommendation
 
-Many BLAS libraries are multi-threaded. When ED2 uses OpenMP at the application level, it is often best to
-**disable BLAS internal threading** to avoid oversubscription.
+For published results, record:
+- ED2 version tag or Git commit hash
+- Compiler and version
+- BLAS/LAPACK backend
+- OpenMP thread settings
 
-Typical settings:
-
-- OpenBLAS:
-  ```bash
-  export OPENBLAS_NUM_THREADS=1
-  ```
-- Intel MKL:
-  ```bash
-  export MKL_NUM_THREADS=1
-  ```
-- Generic:
-  ```bash
-  export OMP_NUM_THREADS=8
-  export OMP_PROC_BIND=spread
-  export OMP_PLACES=cores
-  ```
-
-Users are encouraged to benchmark different settings for their hardware.
-
----
-
-## Tested environments
-
-ED2 has been tested on the following representative platforms:
-
-| OS | Compiler | BLAS/LAPACK | Notes |
-|---|---|---|---|
-| Ubuntu 22.04 | gfortran | OpenBLAS | reference configuration |
-| Linux (HPC) | ifx | Intel MKL | performance-oriented setup |
-
----
-
-## Reproducibility notes
-
-For numerical reproducibility and long-term usability:
-
-- record the ED2 version tag or full Git commit hash,
-- record compiler and BLAS/LAPACK versions,
-- fix OpenMP thread counts and affinity settings,
-- archive input files used for production runs.
-
-These practices are strongly recommended for results reported in publications.
-
----
-
-## Troubleshooting
-
-### Build fails due to missing BLAS/LAPACK
-
-Ensure that development headers and libraries for your chosen BLAS/LAPACK implementation
-are installed and visible to the compiler and linker.
-
-### Poor scaling with OpenMP threads
-
-Check for oversubscription:
-
-- disable multi-threading in BLAS if OpenMP is used at the ED2 level, or
-- reduce the number of OpenMP threads.
-
-### Numerical differences across systems
-
-Small floating-point differences may arise from different compilers or BLAS implementations.
-Always document the software environment used for production calculations.
+This information is essential for long-term reproducibility.
