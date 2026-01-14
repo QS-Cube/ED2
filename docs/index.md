@@ -1,13 +1,12 @@
 # ED2 (QS³-ED2): Exact Diagonalization for Quantum Spin Systems
 
 **ED2 (QS³-ED2)** is a Fortran-based Exact Diagonalization (ED) code for quantum spin lattice models.
-It is designed for **reproducible numerical studies**, **high-performance shared-memory execution**
-(using OpenMP), and **publication-quality workflows**, with **Computer Physics Communications (CPC)**
-as the primary target journal.
+It is designed for **reproducible numerical studies** and **high-performance shared-memory execution**
+using OpenMP.
 
 This documentation serves as the **official user and developer guide** for ED2.
 
-The main goals are that any third party can:
+The primary goal of this documentation is to ensure that any third party can:
 
 1. **Build** the code from source,
 2. **Run** a reference calculation,
@@ -96,13 +95,13 @@ The documentation is organized as follows:
 
 ## Citation
 
-A dedicated CPC manuscript describing ED2 is in preparation.
+A dedicated journal manuscript describing ED2 is in preparation.
 
 Until an official DOI is available, please cite ED2 using a **release tag or commit hash**:
 
 > ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository, commit `<hash>`.
 
-A `CITATION.cff` file will be provided in the repository to facilitate automated citation.
+A `CITATION.cff` file is provided in the repository to facilitate automated citation.
 
 ---
 
