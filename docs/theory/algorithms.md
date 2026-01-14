@@ -1,9 +1,6 @@
 # Theory and Algorithms
 
-This page summarizes the **theoretical background and numerical algorithms**
-implemented in ED2. The presentation is intended to be concise,
-implementation-oriented, and consistent with the accompanying
-**Computer Physics Communications (CPC)** manuscript.
+This page summarizes the theoretical background and numerical algorithms implemented in ED2.
 
 ---
 
@@ -12,20 +9,11 @@ implementation-oriented, and consistent with the accompanying
 Exact Diagonalization (ED) solves the many-body eigenvalue problem
 
 $$
-H \lvert \psi_n \rangle = E_n \lvert \psi_n \rangle
+H |\psi_n\rangle = E_n |\psi_n\rangle
 $$
 
-by representing the Hamiltonian $H$ as a matrix in a chosen basis and computing
-its eigenvalues and eigenvectors exactly (up to numerical precision).
-
-The method provides:
-
-- controlled numerical accuracy,
-- full access to eigenstates,
-- transparent validation for small systems.
-
-Its main limitation is the exponential growth of the Hilbert-space dimension,
-which ED2 mitigates through **Hilbert-space truncation** and **iterative solvers**.
+by representing the Hamiltonian $H$ as a matrix in a chosen basis and computing its eigenvalues
+and eigenvectors exactly (up to numerical precision).
 
 ---
 
@@ -33,7 +21,7 @@ which ED2 mitigates through **Hilbert-space truncation** and **iterative solvers
 
 ### Local basis
 
-Each lattice site is associated with a local spin basis $\lvert m_i \rangle$, where
+Each lattice site is associated with a local spin basis $|m_i\rangle$, where
 
 $$
 m_i = -S, -S+1, \ldots, S .
@@ -47,10 +35,46 @@ $$
 
 ---
 
-### Truncated Hilbert space
+## Symmetry decomposition
 
-ED2 supports calculations in a **restricted Hilbert space** defined by the number of
-spin-down (or equivalent) excitations.
+ED2 explicitly exploits **lattice and internal symmetries** to decompose the Hilbert space
+into independent symmetry sectors. Calculations are performed within selected sectors,
+leading to block-diagonal Hamiltonian matrices and substantial reductions in computational cost.
+
+### Translation symmetry
+
+For translationally invariant lattices with periodic boundary conditions, ED2 can enforce
+translation symmetry and work in fixed **crystal-momentum sectors**.
+Basis states are classified according to their momentum quantum number $k$, and only states
+belonging to the selected momentum sector are retained.
+
+This symmetry reduces the effective Hilbert-space dimension by approximately a factor of the
+number of lattice sites.
+
+### Point-group symmetries
+
+If the lattice geometry admits point-group symmetries (e.g., reflections or rotations),
+ED2 can project the Hilbert space onto irreducible representations of the corresponding
+point group.
+
+This allows further block-diagonalization of the Hamiltonian and facilitates the
+classification of eigenstates by symmetry.
+
+### Spin-inversion symmetry
+
+For spin-$1/2$ systems without explicit symmetry-breaking fields, ED2 can exploit
+**spin-inversion symmetry**, defined by simultaneous inversion of all spins
+($S_i^z \rightarrow -S_i^z$).
+
+The Hilbert space is decomposed into even and odd spin-inversion sectors, which can be
+treated independently.
+
+---
+
+## Truncated Hilbert space
+
+In addition to symmetry decomposition, ED2 supports calculations in a **restricted Hilbert space**
+defined by the number of spin-down (or equivalent) excitations.
 
 For spin-$1/2$ systems, define
 
@@ -64,41 +88,16 @@ $$
 N_{\downarrow}^{\min} \le N_{\downarrow} \le N_{\downarrow}^{\max} .
 $$
 
-Only basis states satisfying this condition are included.
-
-#### Motivation
-
-Hilbert-space truncation is particularly effective for:
-
-- dilute magnon problems,
-- polarized or near-polarized phases,
-- constrained quantum sectors.
-
-This reduces both memory usage and computational cost while preserving relevant
-low-energy physics.
+Only basis states satisfying these conditions are included.
 
 ---
 
 ## Hamiltonian representation
 
-The Hamiltonian is assembled as a sparse matrix in the chosen basis. Typical terms include:
-
-- exchange interactions:
-
-  $$
-  H_J = \sum_{\langle i,j \rangle}
-  \left(
-    J_x S_i^x S_j^x + J_y S_i^y S_j^y + J_z S_i^z S_j^z
-  \right) ,
-  $$
-
-- external fields:
-
-  $$
-  H_h = \sum_i \left( h_x S_i^x + h_y S_i^y + h_z S_i^z \right) .
-  $$
-
+The Hamiltonian is assembled as a sparse matrix in the chosen symmetry-adapted basis.
 Matrix elements are generated on-the-fly during Hamiltonian construction.
+
+Typical Hamiltonian terms include exchange interactions and external fields.
 
 ---
 
@@ -106,111 +105,24 @@ Matrix elements are generated on-the-fly during Hamiltonian construction.
 
 ### Full diagonalization
 
-For very small Hilbert spaces, ED2 can perform full diagonalization using
-dense linear algebra routines (BLAS/LAPACK).
-
-This approach provides the complete spectrum but scales as
-
-$$
-\mathcal{O}(N^3)
-$$
-
-in time and $\mathcal{O}(N^2)$ in memory, where $N$ is the Hilbert-space dimension.
-
----
+For very small Hilbert spaces, ED2 can perform full diagonalization using dense
+BLAS/LAPACK routines.
 
 ### Lanczos algorithm
 
-For larger systems, ED2 employs **Lanczos-type iterative solvers** to compute
-a small number of extremal eigenvalues.
-
-Starting from a normalized random vector $\lvert v_0 \rangle$, the Lanczos
-recursion generates an orthonormal basis $\lvert v_k \rangle$ of the Krylov subspace:
-
-$$
-\mathcal{K}_m(H, \lvert v_0 \rangle)
-= \mathrm{span}\left\{
-\lvert v_0 \rangle, H\lvert v_0 \rangle, \ldots, H^{m-1}\lvert v_0 \rangle
-\right\} .
-$$
-
-In this basis, the Hamiltonian is reduced to a tridiagonal matrix, whose
-eigenvalues approximate those of the full Hamiltonian.
-
-#### Convergence
-
-- Extremal eigenvalues (e.g., ground state) typically converge rapidly.
-- Convergence depends on spectral gaps, truncation bounds, and numerical tolerance.
+For larger systems, ED2 employs Lanczos-type iterative eigensolvers to compute a small number
+of extremal eigenvalues within a given symmetry sector.
 
 ---
 
-## Thick-restart Lanczos (if enabled)
+## Computational considerations
 
-To control memory growth and improve numerical stability, ED2 may use
-**thick-restart Lanczos** techniques.
-
-Key features:
-
-- retention of a subset of converged Ritz vectors,
-- periodic restart of the Krylov basis,
-- reduced memory footprint.
-
-Details of restart strategies and parameters are documented in the CPC manuscript.
-
----
-
-## Parallelization strategy
-
-ED2 uses **OpenMP** for shared-memory parallelism.
-
-Parallel regions typically include:
-
-- Hamiltonian matrix element generation,
-- sparse matrix–vector products,
-- observable evaluations.
-
-The algorithm is designed for single-node execution with predictable scaling behavior
-up to moderate core counts.
-
----
-
-## Numerical accuracy and stability
-
-Key considerations:
-
-- double-precision arithmetic throughout,
-- explicit convergence thresholds for iterative solvers,
-- reproducibility controlled via fixed tolerances and thread counts.
-
-Loss of orthogonality in Lanczos iterations is monitored and mitigated via restart strategies.
-
----
-
-## Computational complexity
-
-Let $N$ be the Hilbert-space dimension after truncation.
-
-- Hamiltonian construction: $\mathcal{O}(N)$ to $\mathcal{O}(Nz)$, where $z$ is the coordination number.
-- Lanczos iteration: $\mathcal{O}(N)$ per iteration.
-- Memory usage: dominated by sparse matrix storage and Krylov vectors.
+By combining symmetry decomposition, Hilbert-space truncation, and iterative solvers,
+ED2 enables calculations that would otherwise be infeasible in the full Hilbert space.
 
 ---
 
 ## Relation to the CPC manuscript
 
-This page provides a high-level summary. The CPC article presents:
-
-- formal definitions,
-- algorithmic details,
-- validation benchmarks,
-- performance analysis.
-
-Readers are encouraged to consult the manuscript for a complete description.
-
----
-
-## Next steps
-
-- See **Validation** for numerical correctness checks.
-- See **Performance** for scaling benchmarks.
-- See **Examples** for practical applications of these algorithms.
+This section corresponds to the algorithmic description presented in the accompanying
+journal manuscript.
