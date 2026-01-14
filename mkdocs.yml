@@ -41,3 +41,5 @@ nav:
       - Performance: vp/performance.md
   - Theory / Algorithms:
       - Overview: theory/algorithms.md
+  - Reference:
+      - Citation & Versioning: reference/citation-versioning.md      
