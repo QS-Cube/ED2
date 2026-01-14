@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "ED2 (QS³-ED2): Exact Diagonalization for Quantum Spin Systems"
+message: "If you use this software, please cite it as described below."
+type: software
+
+authors:
+  - family-names: Ueda
+    given-names: Hiroshi
+  - family-names: Yamamoto
+    given-names: Daisuke
+  - family-names: Shimokawa
+    given-names: Tokuro
+
+repository-code: "https://github.com/QS-Cube/ED2"
+url: "https://ed2.readthedocs.io"
+
+license: MIT
+
+keywords:
+  - exact diagonalization
+  - quantum spin systems
+  - many-body physics
+  - computational physics
+
+version: "0.1.0"
+
+date-released: "2026-01-01"
