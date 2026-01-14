@@ -30,11 +30,12 @@ efficient calculations for dilute excitations or constrained quantum sectors.
 
 ## Key features
 
-- **Explicit symmetry-resolved Hilbert spaces**  
-  Translation symmetry (crystal momentum), point-group symmetries, and spin-inversion symmetry
-  can be enforced explicitly, allowing calculations to be performed within well-defined
-  symmetry sectors. This enables block-diagonalization of the Hamiltonian and significantly
-  reduces computational cost and memory usage.
+- **User-defined symmetry decomposition (explicit symmetry operations)**  
+  ED2 allows users to **explicitly specify symmetry operations** (generators) in the input,
+  and performs calculations within symmetry-resolved sectors. Typical examples include
+  **translation**, **rotations**, and **spatial inversion (parity)**, depending on the lattice/model.
+  This enables block-diagonalization of the Hamiltonian and can significantly reduce
+  computational cost and memory usage.
 
 - **General spin Hamiltonians**  
   Exchange interactions, anisotropies, external fields, and related terms.
@@ -61,7 +62,7 @@ A typical ED2 workflow consists of:
 
 1. Installing required compilers and linear algebra libraries,
 2. Building ED2 from source,
-3. Preparing an input file defining the model, symmetries, and Hilbert-space constraints,
+3. Preparing an input file defining the model, **symmetry operations**, and Hilbert-space constraints,
 4. Running the ED2 executable,
 5. Analyzing energies and physical observables from output files.
 
@@ -102,9 +103,9 @@ The documentation is organized as follows:
 
 A dedicated journal manuscript describing ED2 is in preparation.
 
-Until an official DOI is available, please cite ED2 using a **release tag or commit hash**:
+Until an official DOI is available, please cite ED2 using a **release tag or Git commit hash**:
 
-> ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository, commit `<hash>`.
+> ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository, commit `COMMIT_SHA`.
 
 A `CITATION.cff` file is provided in the repository to facilitate automated citation.
 
