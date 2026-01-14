@@ -17,4 +17,6 @@ nav:
       - Outputs: user-guide/outputs.md
   - Examples:
       - Overview: examples/examples.md
-      
+  - Validation & Performance:
+      - Validation: vp/validation.md
+      - Performance: vp/performance.md      
