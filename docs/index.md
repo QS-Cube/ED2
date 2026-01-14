@@ -38,15 +38,15 @@ efficient calculations for dilute excitations or constrained quantum sectors.
   (or equivalent) excitations, significantly reducing memory and computational cost.
 
 - **Solvers**
-  - Full diagonalization (small systems)
-  - Iterative eigensolvers (Lanczos-type methods), depending on build configuration
+    - Full diagonalization (small systems)
+    - Iterative eigensolvers (Lanczos-type methods), depending on build configuration
 
 - **Parallelization**
-  - Shared-memory parallelism via **OpenMP**
-  - No MPI dependency (single-node execution model)
+    - Shared-memory parallelism via **OpenMP**
+    - No MPI dependency (single-node execution model)
 
 - **Linear algebra backends**
-  - BLAS/LAPACK via **OpenBLAS**, **Intel MKL**, or vendor libraries
+    - BLAS/LAPACK via **OpenBLAS**, **Intel MKL**, or vendor libraries
 
 ---
 
