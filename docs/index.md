@@ -9,7 +9,7 @@ This documentation serves as the **official user and developer guide** for ED2.
 The primary goal of this documentation is to ensure that any third party can:
 
 1. **Build** the code from source,
-2. **Run** a reference calculation,
+2. **Run** reference calculations,
 3. **Understand** all inputs and outputs,
 4. **Reproduce** published results,
 5. **Cite** the software unambiguously.
@@ -30,12 +30,18 @@ efficient calculations for dilute excitations or constrained quantum sectors.
 
 ## Key features
 
+- **Explicit symmetry-resolved Hilbert spaces**  
+  Translation symmetry (crystal momentum), point-group symmetries, and spin-inversion symmetry
+  can be enforced explicitly, allowing calculations to be performed within well-defined
+  symmetry sectors. This enables block-diagonalization of the Hamiltonian and significantly
+  reduces computational cost and memory usage.
+
 - **General spin Hamiltonians**  
   Exchange interactions, anisotropies, external fields, and related terms.
 
 - **Controlled Hilbert-space truncation**  
   Calculations can be restricted to sectors with a specified number of spin-down
-  (or equivalent) excitations, significantly reducing memory and computational cost.
+  (or equivalent) excitations, substantially reducing memory and computational cost.
 
 - **Solvers**
     - Full diagonalization (small systems)
@@ -43,7 +49,6 @@ efficient calculations for dilute excitations or constrained quantum sectors.
 
 - **Parallelization**
     - Shared-memory parallelism via **OpenMP**
-    - No MPI dependency (single-node execution model)
 
 - **Linear algebra backends**
     - BLAS/LAPACK via **OpenBLAS**, **Intel MKL**, or vendor libraries
@@ -56,7 +61,7 @@ A typical ED2 workflow consists of:
 
 1. Installing required compilers and linear algebra libraries,
 2. Building ED2 from source,
-3. Preparing an input file defining the model and Hilbert-space constraints,
+3. Preparing an input file defining the model, symmetries, and Hilbert-space constraints,
 4. Running the ED2 executable,
 5. Analyzing energies and physical observables from output files.
 
@@ -69,27 +74,27 @@ Each step is documented explicitly in this manual.
 The documentation is organized as follows:
 
 - **Getting Started**
-  - Installation: build requirements and compilation procedures
-  - Quickstart: a minimal reproducible example
+    - Installation: build requirements and compilation procedures
+    - Quickstart: a minimal reproducible example
 
 - **User Guide**
-  - Input format: complete description of all input parameters
-  - Outputs: definition of output files, columns, and physical quantities
+    - Input format: complete description of all input parameters
+    - Outputs: definition of output files, columns, and physical quantities
 
 - **Examples**
-  - Reproducible reference calculations
+    - Reproducible reference calculations
 
 - **Theory and Algorithms**
-  - Hilbert-space construction and truncation
-  - Numerical solvers and computational complexity
+    - Hilbert-space construction, symmetry decomposition, and truncation
+    - Numerical solvers and computational complexity
 
 - **Validation and Performance**
-  - Cross-checks against known results
-  - Scaling and performance benchmarks
+    - Cross-checks against known results
+    - Scaling and performance benchmarks
 
 - **Development and Reference**
-  - Contribution guidelines
-  - Citation and versioning policy
+    - Contribution guidelines
+    - Citation and versioning policy
 
 ---
 
