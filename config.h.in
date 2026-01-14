@@ -1,14 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if you have the `blas' library (-lblas). */
-#undef HAVE_LIBBLAS
-
-/* Define to 1 if you have the `f77blas' library (-lf77blas). */
-#undef HAVE_LIBF77BLAS
-
-/* Define to 1 if you have the `lapack' library (-llapack). */
-#undef HAVE_LIBLAPACK
-
 /* Name of package */
 #undef PACKAGE
 
