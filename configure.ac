@@ -14,7 +14,6 @@ FCFLAGS_PRESERVE=$FCFLAGS
 AC_LANG(Fortran)
 AC_PROG_FC(ifort gfortran)
 FCFLAGS=$FCFLAGS_PRESERVE
-# Restore FCFLAGS, because AC_PROG_FC() sets FCFLAGS to '-g -O2', '-O2' or '-g' undesirably.
 
 ## FCFLAGS:
 case "$FC" in
@@ -22,53 +21,85 @@ case "$FC" in
     test -n "$FCFLAGS" || FCFLAGS="-fopenmp -Ofast"
     ;;
   ifort)
-   test -n "$FCFLAGS" || FCFLAGS="-O3 -ipo -no-prec-div -fp-model fast=2 -xHost -parallel -qopenmp"
+    test -n "$FCFLAGS" || FCFLAGS="-O3 -ipo -no-prec-div -fp-model fast=2 -xHost -parallel -qopenmp"
     ;;
 esac
 
-## LAPACK 
+## LAPACK / BLAS
 AC_ARG_WITH(lapack,[AS_HELP_STRING([--with-lapack=ARG],[LAPACK library.
                                      ARG must be one of
                                      lapack (default),
                                      mkl (Intel MKL).])])
+
 case "$with_lapack" in
   lapack | yes | "")
-    AC_CHECK_LIB(blas,  dsymv,,[AC_CHECK_LIB(f77blas,  dsymv,,AC_MSG_ERROR([You need  BLAS  library. See config.log.]))])
-    AC_CHECK_LIB(lapack,dsyevx,,AC_MSG_ERROR([You need LAPACK library. See config.log.]))
+    BLAS_FOUND=no
+
+    AC_CHECK_LIB(openblas, dsymv,
+      [AC_MSG_NOTICE([BLAS... found in -lopenblas])
+       BLAS_LIBS="-lopenblas"
+       BLAS_FOUND=yes],
+      [AC_CHECK_LIB(blas, dsymv,
+        [AC_MSG_NOTICE([BLAS... found in -lblas])
+         BLAS_LIBS="-lblas"
+         BLAS_FOUND=yes],
+        [AC_CHECK_LIB(f77blas, dsymv,
+          [AC_MSG_NOTICE([BLAS... found in -lf77blas])
+           BLAS_LIBS="-lf77blas"
+           BLAS_FOUND=yes],
+          [BLAS_FOUND=no])])])
+
+    # MKL fallback (only when FC=ifort)
+    if test "x$BLAS_FOUND" = "xno" && echo "$FC" | grep -q '^ifort'; then
+      AC_MSG_NOTICE([BLAS... not found; falling back to Intel MKL (-qmkl=parallel)])
+      LIBS="$LIBS -qmkl=parallel"
+      BLAS_FOUND=yes
+      BLAS_LIBS=""
+    fi
+
+    if test "x$BLAS_FOUND" = "xno"; then
+      AC_MSG_ERROR([BLAS library not found.
+Try loading a BLAS module or re-run configure with explicit LIBS/LDFLAGS.])
+    fi
+
+    # LAPACK
+    LAPACK_FOUND=no
+    AC_CHECK_LIB(lapack, dsyevx,
+      [AC_MSG_NOTICE([LAPACK... found in -llapack])
+       LAPACK_LIBS="-llapack"
+       LAPACK_FOUND=yes],
+      [LAPACK_FOUND=no])
+
+    # Assume MKL provides LAPACK if -qmkl=parallel is active
+    if test "x$LAPACK_FOUND" = "xno" && echo "$LIBS" | grep -q -- '-qmkl=parallel'; then
+      AC_MSG_NOTICE([LAPACK... assuming MKL provides LAPACK via -qmkl=parallel])
+      LAPACK_FOUND=yes
+      LAPACK_LIBS=""
+    fi
+
+    if test "x$LAPACK_FOUND" = "xno"; then
+      AC_MSG_ERROR([LAPACK library not found.
+Try loading a LAPACK module or re-run configure with explicit LIBS/LDFLAGS.])
+    fi
+
+    LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS"
     ;;
   mkl)
     case "$FC" in
-      gfortran*)
-        case "$LIBS" in
-     	  *mkl_gf_lp64*)
-       	    AC_MSG_NOTICE([lapack... It seems that there is -lmkl_gf_lp64 already in LIBS.])
-       	    ;;
-      	  *)
-     	    AC_MSG_NOTICE([lapack... Add -Wl,--start-group -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl at the tail of LIBS.])
-            LIBS="$LIBS -Wl,--start-group -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl"
-      	    ;;
-        esac
-        ;;
       ifort)
-        case "$LIBS" in
-          *mkl_intel_lp64*)
-            AC_MSG_NOTICE([lapack... It seems that there is -lmkl_intel_lp64 already in LIBS.])
-            ;;
-          *)
-            AC_MSG_NOTICE([lapack... Add -qmkl=parallel at the tail of LIBS.])
-            LIBS="$LIBS -qmkl=parallel"
-            #AC_MSG_NOTICE([lapack... Add -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl at the tail of LIBS.])
-            #LIBS="$LIBS -Wl,--start-group -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -Wl,--end-group -lgomp -lpthread -lm -ldl"
-            ;;
-        esac
+        AC_MSG_NOTICE([Using Intel MKL via -qmkl=parallel])
+        LIBS="$LIBS -qmkl=parallel"
+        ;;
+      *)
+        AC_MSG_ERROR([--with-lapack=mkl requires Intel ifort compiler])
         ;;
     esac
     ;;
   *)
-    AC_MSG_ERROR([Unknown LAPACK library: $with_lapack])
+    AC_MSG_ERROR([Unknown LAPACK option: $with_lapack])
     ;;
 esac
 
 AC_CONFIG_FILES([Makefile
-          source/Makefile])
+                 source/Makefile])
 AC_OUTPUT
