@@ -1,52 +1,127 @@
-# QS<sup>3</sup> for ED2
+# ED2 (QS³-ED2)
+**Exact Diagonalization for Quantum Spin Systems**
 
-This solver handles systems with XYZ-type exchange terms, Dzyaloshinskii-Moriya terms, Gamma terms, and Zeeman terms between quantum spins of arbitrary spin length (which can be different for each spin). By treating only state spaces where the number of descending operators acting on the fully polarized states is in the range [<i>N</i><sub>↓min</sub>,<i>N</i><sub>↓max</sub>], and by not using bit-string representations of the states, we are able to perform large-scale calculations containing more than 1000 sites in the case of dilute particle systems.
+ED2 (QS³-ED2) is a **Fortran-based Exact Diagonalization (ED) code** designed for
+numerical studies of **quantum spin lattice models**.
+The code targets **reproducible research**, **shared-memory performance via OpenMP**,
+and **long-term usability**, with **Computer Physics Communications (CPC)** as the
+primary publication venue.
 
-# arXiv
+---
 
-Work in progress.
+## Key features
 
-# License
+- **General quantum spin Hamiltonians**
+  - Heisenberg, XYZ-type interactions
+  - External magnetic fields
+- **Controlled Hilbert-space truncation**
+  - Restriction by excitation number (e.g., number of spin-down states)
+  - Efficient access to dilute or constrained sectors
+- **Numerical solvers**
+  - Full diagonalization for very small systems
+  - Lanczos-type iterative solvers for larger Hilbert spaces
+- **Parallelization**
+  - Shared-memory parallelism via **OpenMP**
+  - No MPI dependency (single-node execution model)
+- **Linear algebra backends**
+  - BLAS/LAPACK (OpenBLAS, Intel MKL, or vendor implementations)
 
-MIT License.
+---
 
-# External routines/libraries 
+## Documentation
 
-BLAS, LAPACK
+The **official documentation** is hosted on Read the Docs:
 
-# Nature of problems
+👉 https://ed2.readthedocs.io/en/latest/
 
-Physical properties (such as the total energy, the magnetic moment, the two-point spin correlation function)
+The documentation includes:
+- Installation instructions
+- Quickstart examples
+- Complete input/output specifications
+- Reproducible reference examples
+- Validation and performance benchmarks
+- Algorithmic and theoretical background
 
-# Solution method
+---
 
-Application software based on the full diagonalization method, and the exact diagonalization using the Lanczos and thick-restart Lanczos methods for quantum spin <i>S</i> models including XYZ-type exchange terms, Dzyaloshinskii-Moriya terms, Gamma terms, and Zeeman terms in the truncated space specified by the number of descending operators.
+## Requirements
 
-# Restrictions
+- Linux (x86_64)
+- Fortran compiler:
+  - GNU Fortran (`gfortran`, GCC ≥ 10 recommended), or
+  - Intel oneAPI Fortran (`ifx`)
+- BLAS/LAPACK library (OpenBLAS or Intel MKL)
+- OpenMP-capable compiler
 
-Capable of handling first-order (one-body) interaction terms and bi-linear (two-body) interaction terms (not adapted to higher-order many-body interactions)
+---
 
-# Requirements
+## Quickstart
 
-This package, containing the Fortran source codes and samples, is available. For the building, a Fortran compiler with BLAS/LAPACK library is a prerequisite. 
+```bash
+git clone https://github.com/QS-Cube/ED2.git
+cd ED2
+./setup.sh
+```
 
-# Compile
+After successful compilation, run a minimal example:
 
-For those who have their own Git accounts, you can clone the repository to your local computer. 
+```bash
+export OMP_NUM_THREADS=2
+./ed2 < input/example.in
+```
 
-Using SSH:<br>
-$ git clone git@github.com:QS-Cube/ED2.git
+Refer to the **Quickstart** section in the documentation for a fully reproducible example.
 
-If you do not have a Git account, navigate to the repository webpage, click on the "Code" button, and select "Download ZIP" to download "ED2-main.zip". The zip file can be unpacked with:
+---
 
-$ unzip main.zip<br>
-$ cd ED2-main
+## Reproducibility
 
-A simple Makefile is provided to build the executable file "QS3ED2.exe". The following commands will build the executable file and execute sample programs:
+For published results, users are strongly encouraged to record:
+- ED2 version tag or full Git commit hash
+- Compiler name and version
+- BLAS/LAPACK backend
+- OpenMP environment settings
+- Input files used for production runs
 
-$ ./setup.sh 
+---
 
-Before running setup.sh, open the file and select the compiler (ARG1=gfortran/ifort) and the linear algebra library (ARG2=lapack/mkl). After executing the samples, all results are stored in the examples directories.
+## Citation
 
-# Developers
-Hiroshi Ueda, Daisuke Yamamoto and Tokuro Shimokawa
+If you use ED2 in academic work, please cite it appropriately.
+
+### Before DOI release
+```
+ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository,
+version <tag> or commit <hash>.
+```
+
+### After DOI release
+A DOI will be provided via Zenodo and should be used for citation.
+See the documentation for up-to-date citation instructions.
+
+A `CITATION.cff` file is provided in the repository root to support automated citation.
+
+---
+
+## License
+
+ED2 is released under the **MIT License**.
+See the `LICENSE` file for details.
+
+---
+
+## Authors and maintainers
+
+- Hiroshi Ueda
+- Daisuke Yamamoto
+- Tokuro Shimokawa
+
+---
+
+## Contributing and support
+
+Bug reports and feature requests are welcome via **GitHub Issues**.
+Contributions can be made through Pull Requests.
+
+For scientific use, please ensure that all reported results are accompanied by
+sufficient information to guarantee reproducibility.
