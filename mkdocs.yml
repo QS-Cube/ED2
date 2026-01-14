@@ -20,3 +20,6 @@ nav:
   - Validation & Performance:
       - Validation: vp/validation.md
       - Performance: vp/performance.md      
+  - Theory / Algorithms:
+      - Overview: theory/algorithms.md
+      
