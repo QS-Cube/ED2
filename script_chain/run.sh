@@ -1,6 +1,36 @@
 #!/bin/sh
-##################################################
-#export OMP_NUM_THREADS=4
+set -eu
+
+# --------------------------------------------------
+# Locate repository root
+# --------------------------------------------------
+TOPDIR=$(cd "$(dirname "$0")/.." && pwd)
+
+# --------------------------------------------------
+# Compiler (respect configure environment)
+# --------------------------------------------------
+: "${FC:=gfortran}"
+
+# --------------------------------------------------
+# ED2 executable (built by autotools)
+# --------------------------------------------------
+: "${ED2_EXE:=$TOPDIR/source/QS3ED2}"
+
+if [ ! -x "$ED2_EXE" ]; then
+  echo "ERROR: ED2 executable not found: $ED2_EXE"
+  echo "Hint: run 'make' in the top directory first."
+  exit 1
+fi
+
+# --------------------------------------------------
+# Thread control (safe defaults)
+# --------------------------------------------------
+: "${OMP_NUM_THREADS:=1}"
+: "${MKL_NUM_THREADS:=1}"
+: "${OPENBLAS_NUM_THREADS:=1}"
+
+export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS
+
 ##################################################
     wkdir="examples/chain"
       NOS=100    # Number of Sites
@@ -33,9 +63,11 @@ NO_two_cf=9      # Number of expectation values of <S_i S_j>
 
 cd ../
 hdir=`pwd`
-cd - 1> /dev/null 2>&1
+#cd - 1> /dev/null 2>&1
+cd - >/dev/null 2>&1 || true
 
-mkdir -p $hdir/$wkdir 1> /dev/null 2>&1
+#mkdir -p $hdir/$wkdir 1> /dev/null 2>&1
+mkdir -p $hdir/$wkdir
 
 NO_one=$(( NOS ))
 NO_two=$(( NOS ))
@@ -61,7 +93,8 @@ sed -e "s/NGX/$GX/g" | \
 sed -e "s/NGY/$GY/g" | \
 sed -e "s/NGZ/$GZ/g" > fort.30
 
-gfortran mk_input.f90 1> /dev/null 2>&1
+#"$FC" mk_input.f90 1> /dev/null 2>&1
+"$FC" mk_input.f90
 ./a.out
 mv fort.30 $hdir/$wkdir/input_param.dat
 
@@ -92,15 +125,15 @@ sed -e "s/Nwk_dim/$wk_dim/g" > $hdir/$wkdir/input.dat
 
 cp list_ij_cf.dat $hdir/$wkdir/list_ij_cf.dat
 
-cd ../source
-make 1> /dev/null 2>&1
-#
+# build is assumed to be done beforehand
+
 echo "cd $hdir/$wkdir"
 cd $hdir/$wkdir
-rm eigenvalues.dat 1> /dev/null 2>&1
+#rm eigenvalues.dat 1> /dev/null 2>&1
+rm -f eigenvalues.dat
 
-echo "$hdir/QS3ED2.exe < input.dat > output.dat"
-$hdir/QS3ED2.exe < input.dat > output.dat
+echo "$ED2_EXE < input.dat > output.dat"
+"$ED2_EXE" < input.dat > output.dat
 
 echo "********************"
 echo "cat output.dat"
