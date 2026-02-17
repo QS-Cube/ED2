@@ -1,21 +1,22 @@
 # ED2 (QS³-ED2)
 **Exact Diagonalization for Quantum Spin Systems**
 
-ED2 (QS³-ED2) is a **Fortran-based Exact Diagonalization (ED) code** designed for
-numerical studies of **quantum spin lattice models**.
-The code targets **reproducible research**, **shared-memory performance via OpenMP**,
-and **long-term usability**, with **Computer Physics Communications (CPC)** as the
-primary publication venue.
+ED2 (QS³-ED2) is a **Fortran-based Exact Diagonalization (ED) code** for numerical studies of
+**quantum spin lattice models**. The project targets
+
+- reproducible research,
+- shared-memory performance via OpenMP,
+- minimal external dependencies.
 
 ---
 
 ## Key features
 
 - **General quantum spin Hamiltonians**
-  - Heisenberg, XYZ-type interactions
+  - Heisenberg / XYZ-type interactions
   - External magnetic fields
 - **Controlled Hilbert-space truncation**
-  - Restriction by excitation number (e.g., number of spin-down states)
+  - Restriction by excitation number (e.g. number of spin-down states)
   - Efficient access to dilute or constrained sectors
 - **Numerical solvers**
   - Full diagonalization for very small systems
@@ -30,83 +31,123 @@ primary publication venue.
 
 ## Documentation
 
-The **official documentation** is hosted on Read the Docs:
+Official documentation:
 
-👉 https://ed2.readthedocs.io/en/latest/
+https://ed2.readthedocs.io/en/latest/
 
-The documentation includes:
+Includes:
+
 - Installation instructions
 - Quickstart examples
-- Complete input/output specifications
+- Input / output specifications
 - Reproducible reference examples
-- Validation and performance benchmarks
-- Algorithmic and theoretical background
+- Validation benchmarks
+- Algorithmic background
 
 ---
 
 ## Requirements
 
 - Linux (x86_64)
-- Fortran compiler:
-  - GNU Fortran (`gfortran`, GCC ≥ 10 recommended), or
-  - Intel oneAPI Fortran (`ifx`)
-- BLAS/LAPACK library (OpenBLAS or Intel MKL)
+- Fortran compiler
+  - GNU Fortran (`gfortran`, GCC ≥ 10 recommended)
+  - Intel oneAPI Fortran (`ifort` / `ifx`)
+- BLAS/LAPACK (OpenBLAS or Intel MKL)
 - OpenMP-capable compiler
 
 ---
 
-## Quickstart
+## Build & Installation (Autotools)
+
+ED2 uses GNU Autotools.
 
 ```bash
 git clone https://github.com/QS-Cube/ED2.git
 cd ED2
-./setup.sh
+autoreconf -vfi
+./configure FC=ifort     # or FC=gfortran
+make -j
 ```
 
-After successful compilation, run a minimal example:
+BLAS/LAPACK:
+
+- OpenBLAS is detected automatically when available.
+- Otherwise Intel MKL is used as fallback (via `-qmkl`).
+
+No PATH dependency is assumed for the ED2 executable.
+
+---
+
+## Testing
+
+Two test levels are provided.
+
+### Lightweight regression test
 
 ```bash
-export OMP_NUM_THREADS=2
-./ed2 < input/example.in
+make check
 ```
 
-Refer to the **Quickstart** section in the documentation for a fully reproducible example.
+Runs a minimal smoke test (ex1 only).
+This is intended to be fast and suitable for CI.
+
+### Extended regression suite
+
+```bash
+make check-long
+```
+
+Runs examples ex1–ex9 sequentially.
+This performs full physical workflows and may take longer.
+
+`check-long` is intentionally implemented outside Automake’s test harness to improve robustness on HPC systems.
+
+---
+
+## Directory layout
+
+```
+source/     Fortran source code
+examples/   Reference physical examples
+tests/      Regression tests (ex1–ex9)
+tools/      Auxiliary scripts
+docs/       Documentation sources
+```
 
 ---
 
 ## Reproducibility
 
-For published results, users are strongly encouraged to record:
-- ED2 version tag or full Git commit hash
+For published results, please record:
+
+- QS³-ED2 version or Git commit hash
 - Compiler name and version
 - BLAS/LAPACK backend
-- OpenMP environment settings
-- Input files used for production runs
+- OpenMP environment (OMP_NUM_THREADS etc.)
+- Input files
+
+ED2 is designed so all examples can be reproduced from a clean `git clone`.
 
 ---
 
 ## Citation
 
-If you use ED2 in academic work, please cite it appropriately.
+Before DOI assignment:
 
-### Before DOI release
 ```
 ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository,
 version <tag> or commit <hash>.
 ```
 
-### After DOI release
-A DOI will be provided via Zenodo and should be used for citation.
-See the documentation for up-to-date citation instructions.
+After DOI release, please use the Zenodo DOI.
 
-A `CITATION.cff` file is provided in the repository root to support automated citation.
+A `CITATION.cff` file is provided.
 
 ---
 
 ## License
 
-ED2 is released under the **MIT License**.
-See the `LICENSE` file for details.
+MIT License. See `LICENSE`.
 
 ---
 
@@ -114,14 +155,11 @@ See the `LICENSE` file for details.
 
 - Hiroshi Ueda
 - Daisuke Yamamoto
-- Tokuro Shimokawa
 
 ---
 
-## Contributing and support
+## Contributing
 
-Bug reports and feature requests are welcome via **GitHub Issues**.
-Contributions can be made through Pull Requests.
+Bug reports and pull requests are welcome.
 
-For scientific use, please ensure that all reported results are accompanied by
-sufficient information to guarantee reproducibility.
+For scientific usage, please ensure sufficient information is provided to guarantee reproducibility.
