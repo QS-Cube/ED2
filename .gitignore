@@ -1,4 +1,31 @@
+# autotools
+Makefile
+Makefile.in
+*/Makefile
+*/Makefile.in
+aclocal.m4
 autom4te.cache/
+config.log
+config.status
+config.h
+config.h.in
+configure
+install-sh
+missing
+depcomp
+test-driver
 
-# test logs
-/tests/*.long.log
+# build products
+source/QS3ED2
+*.o
+*.mod
+a.out
+
+# test artifacts
+tests/*.log
+tests/*.trs
+tests/test-suite.log
+examples/
+
+# editor
+*~

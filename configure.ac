@@ -101,5 +101,5 @@ Try loading a LAPACK module or re-run configure with explicit LIBS/LDFLAGS.])
 esac
 
 AC_CONFIG_FILES([Makefile
-                 source/Makefile])
+                 source/Makefile tests/Makefile])
 AC_OUTPUT
