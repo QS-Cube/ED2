@@ -1,4 +1,19 @@
 #!/bin/sh
+
+# --- ED2 executable resolution (do not rely on PATH) -----------------
+# Prefer ED2_EXE provided by caller (tests/users).
+if [ -n "${ED2_EXE:-}" ]; then
+  QS3ED2="${ED2_EXE}"
+else
+  QS3ED2="$(cd "$(dirname "$0")/../source" 2>/dev/null && pwd)/QS3ED2"
+fi
+if [ ! -x "$QS3ED2" ]; then
+  echo "ERROR: ED2 executable not found/executable: $QS3ED2" >&2
+  echo "Hint: build first (make) and/or set ED2_EXE=/path/to/QS3ED2" >&2
+  exit 1
+fi
+# ---------------------------------------------------------------------
+
 ##################################################
 #export OMP_NUM_THREADS=4
 ##################################################
@@ -101,15 +116,15 @@ sed -e "s/Nwk_dim/$wk_dim/g" > $hdir/$wkdir/input.dat
 
 cp list_ij_cf.dat $hdir/$wkdir/list_ij_cf.dat
 
-cd ../source
-make 1> /dev/null 2>&1
+# [patched] (removed) cd ../source
+# [patched] (removed) make ...
 #
 echo "cd $hdir/$wkdir"
 cd $hdir/$wkdir
-rm eigenvalues.dat 1> /dev/null 2>&1
+rm -f eigenvalues.dat
 
-echo "$hdir/QS3ED2.exe < input.dat > output.dat"
-$hdir/QS3ED2.exe < input.dat > output.dat
+echo ""$QS3ED2" < input.dat > output.dat"
+"$QS3ED2" < input.dat > output.dat
 
 echo "********************"
 echo "cat output.dat"
