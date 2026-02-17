@@ -1,3 +1,5 @@
-SUBDIRS = source
-TESTS = tests/test_ex1.sh
-EXTRA_DIST = tests/test_ex1.sh
+SUBDIRS = source tests
+
+.PHONY: check-long
+check-long:
+	$(AM_V_at)$(MAKE) -C tests check-long
