@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([QS3], [2.0.0],[qsss.inquiry{at}gmail.com])
+AC_INIT([QS3-ED2], [1.0.0],[qsss.inquiry{at}gmail.com])
 AC_CONFIG_SRCDIR([source/main.f90])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign])
