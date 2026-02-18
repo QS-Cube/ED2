@@ -1,120 +1,208 @@
 # ED2 (QS³-ED2): Exact Diagonalization for Quantum Spin Systems
 
-**ED2 (QS³-ED2)** is a Fortran-based Exact Diagonalization (ED) code for quantum spin lattice models.
-It is designed for **reproducible numerical studies** and **high-performance shared-memory execution**
-using OpenMP.
+**ED2 (QS³-ED2)** is a research-grade Fortran code for **Exact Diagonalization of quantum spin lattice models**.
 
-This documentation serves as the **official user and developer guide** for ED2.
+QS³ stands for **Quantum Spin System Solver**, reflecting the design philosophy of ED2:
 
-The primary goal of this documentation is to ensure that any third party can:
+> **transparent physics, reproducible numerics, and controllable Hilbert spaces.**
 
-1. **Build** the code from source,
-2. **Run** reference calculations,
-3. **Understand** all inputs and outputs,
-4. **Reproduce** published results,
-5. **Cite** the software unambiguously.
+ED2 is developed for:
+
+- **Reproducible computational physics**
+- **Explicit symmetry-resolved calculations**
+- **Controlled Hilbert-space truncation**
+- **High-performance shared-memory execution via OpenMP**
+
+This documentation constitutes the **official user and developer reference**.
+
+Its primary objective is to guarantee that any third party can:
+
+1. Build ED2 from source,
+2. Run automated regression tests,
+3. Perform reference calculations,
+4. Understand all inputs and outputs,
+5. Reproduce published results,
+6. Cite the software unambiguously.
 
 ---
 
 ## Overview
 
-Exact Diagonalization remains one of the most reliable and transparent numerical approaches
-for strongly correlated quantum many-body systems.
-ED2 focuses on **spin lattice models** and provides a flexible framework to explore ground states,
-low-energy excitations, and physical observables within well-defined Hilbert spaces.
+Exact Diagonalization remains one of the most reliable and transparent approaches for strongly correlated quantum many-body systems.
 
-The code supports both full Hilbert spaces and **restricted (truncated) subspaces**, enabling
-efficient calculations for dilute excitations or constrained quantum sectors.
+ED2 focuses on **quantum spin lattice models** and supports both:
+
+- full Hilbert spaces, and  
+- **restricted (truncated) subspaces**
+
+allowing efficient calculations in dilute or symmetry-constrained sectors.
+
+Typical applications include:
+
+- Ground-state calculations  
+- Low-energy excitation spectra  
+- Local magnetization  
+- Two-body correlation functions  
+
+ED2 emphasizes **explicit construction of Hilbert spaces and symmetries**, prioritizing clarity and reproducibility over black-box automation.
 
 ---
 
 ## Key features
 
-- **User-defined symmetry decomposition (explicit symmetry operations)**  
-  ED2 allows users to **explicitly specify symmetry operations** (generators) in the input,
-  and performs calculations within symmetry-resolved sectors. Typical examples include
-  **translation**, **rotations**, and **spatial inversion (parity)**, depending on the lattice/model.
-  This enables block-diagonalization of the Hamiltonian and can significantly reduce
-  computational cost and memory usage.
+### Explicit symmetry decomposition
 
-- **General spin Hamiltonians**  
-  Exchange interactions, anisotropies, external fields, and related terms.
+Users explicitly specify symmetry generators (translations, rotations, inversion, etc.) in the input file.
+ED2 constructs symmetry-resolved Hilbert spaces, enabling block-diagonalization of the Hamiltonian and substantial reductions in computational cost.
 
-- **Controlled Hilbert-space truncation**  
-  Calculations can be restricted to sectors with a specified number of spin-down
-  (or equivalent) excitations, substantially reducing memory and computational cost.
+---
 
-- **Solvers**
-    - Full diagonalization (small systems)
-    - Iterative eigensolvers (Lanczos-type methods), depending on build configuration
+### General quantum spin Hamiltonians
 
-- **Parallelization**
-    - Shared-memory parallelism via **OpenMP**
+- Heisenberg and XYZ-type interactions  
+- Anisotropies  
+- External magnetic fields  
 
-- **Linear algebra backends**
-    - BLAS/LAPACK via **OpenBLAS**, **Intel MKL**, or vendor libraries
+---
+
+### Controlled Hilbert-space truncation
+
+Calculations may be restricted to sectors with a fixed number of spin-down excitations or equivalent constraints, dramatically reducing memory and runtime.
+
+---
+
+### Numerical solvers
+
+- Full diagonalization (small systems)
+- Lanczos-type iterative solvers (larger systems)
+
+---
+
+### Parallelization
+
+Shared-memory parallelism via **OpenMP**.  
+ED2 follows a single-node execution model (no MPI dependency).
+
+---
+
+### Linear algebra backends
+
+BLAS/LAPACK via:
+
+- OpenBLAS
+- Intel MKL
+- Vendor implementations
 
 ---
 
 ## Typical workflow
 
-A typical ED2 workflow consists of:
+A standard reproducible workflow:
 
-1. Installing required compilers and linear algebra libraries,
-2. Building ED2 from source,
-3. Preparing an input file defining the model, **symmetry operations**, and Hilbert-space constraints,
-4. Running the ED2 executable,
-5. Analyzing energies and physical observables from output files.
+```bash
+git clone https://github.com/QS-Cube/ED2.git
+cd ED2
+autoreconf -vfi
+./configure FC=gfortran   # or FC=ifort / ifx
+make -j
+make check
+make check-long
+```
 
-Each step is documented explicitly in this manual.
+The commands
+
+```bash
+make check
+make check-long
+```
+
+provide automated regression tests and reference examples.
+
+After successful compilation:
+
+```bash
+cd examples/...
+../source/QS3ED2 < input.dat > output.dat
+```
+
+Output files contain energies and physical observables.
+
+---
+
+## Important threading note
+
+ED2 uses OpenMP internally. When combined with threaded BLAS libraries (e.g. MKL), nested parallelism should be avoided:
+
+```bash
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=1
+```
+
+Failure to do so may significantly degrade performance.
 
 ---
 
 ## Documentation structure
 
-The documentation is organized as follows:
-
 - **Getting Started**
-    - Installation: build requirements and compilation procedures
-    - Quickstart: a minimal reproducible example
+  - Installation
+  - Quickstart
 
 - **User Guide**
-    - Input format: complete description of all input parameters
-    - Outputs: definition of output files, columns, and physical quantities
+  - Input specification
+  - Output formats
 
 - **Examples**
-    - Reproducible reference calculations
+  - Fully reproducible reference calculations
 
 - **Theory and Algorithms**
-    - Hilbert-space construction, symmetry decomposition, and truncation
-    - Numerical solvers and computational complexity
+  - Hilbert-space construction
+  - Symmetry decomposition
+  - Truncation strategies
+  - Lanczos methods
 
 - **Validation and Performance**
-    - Cross-checks against known results
-    - Scaling and performance benchmarks
+  - Regression tests
+  - Scaling benchmarks
 
 - **Development and Reference**
-    - Contribution guidelines
-    - Citation and versioning policy
+  - Contribution guidelines
+  - Citation policy
+
+---
+
+## Reproducibility
+
+For scientific publications, users are strongly encouraged to record:
+
+- ED2 version or Git commit hash
+- Compiler and version
+- BLAS/LAPACK backend
+- OpenMP settings
+- Input files
+
+This information is essential for long-term reproducibility.
 
 ---
 
 ## Citation
 
-A dedicated journal manuscript describing ED2 is in preparation.
+A journal manuscript describing ED2 is in preparation.
 
-Until an official DOI is available, please cite ED2 using a **release tag or Git commit hash**:
+Until a DOI becomes available, please cite:
 
-> ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository, commit `COMMIT_SHA`.
+```
+ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository,
+version <tag> or commit <hash>.
+```
 
-A `CITATION.cff` file is provided in the repository to facilitate automated citation.
+A `CITATION.cff` file is provided.
 
 ---
 
 ## License
 
 ED2 is released under the **MIT License**.
-See the `LICENSE` file in the repository for details.
 
 ---
 
@@ -122,16 +210,12 @@ See the `LICENSE` file in the repository for details.
 
 - Hiroshi Ueda  
 - Daisuke Yamamoto  
-- Tokuro Shimokawa  
 
 ---
 
 ## Support and contributions
 
-Bug reports, feature requests, and contributions are welcome.
+Bug reports and feature requests are welcome via GitHub Issues.
+Contributions can be made through Pull Requests.
 
-- Issue tracker: GitHub Issues
-- Contributions: Pull Requests
-
-For scientific use, please ensure that all results are accompanied by sufficient
-information to guarantee reproducibility (software version, compiler, and library details).
+For scientific use, always accompany results with sufficient metadata to guarantee reproducibility.
