@@ -1,78 +1,79 @@
-# Installation Guide for ED2 (QS³-ED2)
+# Installation Guide — QS³‑ED2 (CPC Edition)
 
-This document describes how to build, test, and run **ED2 (QS³-ED2)**,
-a Fortran + OpenMP Exact Diagonalization code for quantum spin systems.
+This page provides a **practical, command‑oriented installation guide** for QS³‑ED2.
+Conceptual overview, design philosophy, and citation information are documented on the main documentation home page.
 
-The build system is based on **GNU Autotools** and is designed to be:
+This guide focuses strictly on:
 
-- Portable across Linux systems
-- HPC-friendly
-- Reproducible
-- Minimal in external dependencies
+- Building the code
+- Verifying the build
+- Running examples
+- Ensuring reproducibility on HPC systems
 
 ---
 
-# 1. Requirements
+## 1. Requirements
 
-## Required
+### Required
 
-- A Fortran compiler (tested with `ifort`, `gfortran`)
-- BLAS and LAPACK libraries  
+- Fortran compiler (tested with `ifort`, `gfortran`)
+- BLAS / LAPACK
   - OpenBLAS (preferred)
-  - Intel MKL (fallback supported)
+  - Intel MKL (automatic fallback supported)
 - GNU Make
+- POSIX shell
 
-## Optional but Recommended
+### Optional (recommended for HPC)
 
-- Intel MKL (for best performance)
-- Environment modules on HPC systems
+- Intel MKL
+- Environment modules
 
 ---
 
-# 2. Obtaining the Source Code
-
-Clone the repository:
+## 2. Obtain the Source
 
 ```bash
 git clone https://github.com/QS-Cube/ED2.git
 cd ED2
 ```
 
----
-
-# 3. Building ED2
-
-The build system uses Autotools.
-
-## Step 1: Generate configuration scripts (if needed)
-
-If building from a fresh clone:
+If building from a fresh Git checkout:
 
 ```bash
 autoreconf -vfi
 ```
 
-## Step 2: Configure
+---
+
+## 3. Configure
+
+### Basic
 
 ```bash
 ./configure
 ```
 
-### BLAS/LAPACK Detection
+or explicitly specify compiler:
 
-The configuration script attempts the following:
+```bash
+./configure FC=gfortran
+# or
+./configure FC=ifort
+```
+
+### BLAS / LAPACK detection
+
+The configure script attempts, in order:
 
 1. OpenBLAS
-2. Generic BLAS (`-lblas`, `-llapack`)
-3. Intel MKL fallback (`-qmkl=parallel`)
+2. Generic BLAS / LAPACK
+3. Intel MKL (`-qmkl=parallel`)
 
-You may manually specify libraries:
+Manual override examples:
 
 ```bash
 ./configure LIBS="-lopenblas"
 ```
-
-or for MKL:
 
 ```bash
 ./configure LIBS="-qmkl=parallel"
@@ -80,70 +81,61 @@ or for MKL:
 
 ---
 
-## Step 3: Compile
+## 4. Build
 
 ```bash
 make -j
 ```
 
-The executable will be created as:
+This produces:
 
 ```
 source/QS3ED2
 ```
 
-Note:
+Important design choices:
 
-- The executable does **not** rely on `PATH`.
-- Example scripts resolve the binary via `ED2_EXE` or a relative path.
+- The executable is **not installed into PATH**
+- Example scripts locate the binary explicitly
+- No recompilation occurs inside example runs
+
+This avoids environment‑dependent execution failures on HPC systems.
 
 ---
 
-# 4. Running Regression Tests
+## 5. Regression Tests
 
-After building, we strongly recommend running the provided test suites.
-
-## 4.1 Lightweight Smoke Test
-
-Runs Example 1 only:
+### Lightweight smoke test
 
 ```bash
 make check
 ```
 
-This test:
+Runs Example 1 only.
+Intended for:
 
-- Verifies basic functionality
-- Runs quickly
-- Is suitable for CI or quick validation
+- CI
+- quick validation
 
----
-
-## 4.2 Extended Regression Tests
-
-Runs Examples 1–9:
+### Extended regression suite
 
 ```bash
 make check-long
 ```
 
-This test:
+Runs Examples 1–9 sequentially.
 
-- Executes a broader set of example calculations
-- May take longer depending on system size
-- Is recommended when validating installation on a new platform
+Recommended for:
 
-The extended test suite is particularly useful for:
-
-- New HPC environments
-- New BLAS/MKL configurations
-- Compiler changes
+- new clusters
+- compiler changes
+- BLAS / MKL changes
 
 ---
 
-# 5. Running ED2 Manually
+## 6. Running Examples Manually
 
-After building:
+Example:
 
 ```bash
 cd script_chain
@@ -152,27 +144,29 @@ cd script_chain
 
 All example scripts:
 
-- Use the already built executable
-- Do not rebuild the code
-- Do not rely on `PATH`
-- Respect the `ED2_EXE` environment variable if set
+- use the already built executable
+- never recompile sources
+- never rely on PATH
+- accept explicit override via `ED2_EXE`
 
-Example of manual override:
+Example:
 
 ```bash
 ED2_EXE=../source/QS3ED2 ./run.sh
 ```
 
+Helper programs (`mk_input`) are built at `make` time and executed directly by scripts.
+
 ---
 
-# 6. Threading and Performance
+## 7. Thread Control (IMPORTANT)
 
-ED2 uses:
+QS³‑ED2 uses:
 
-- OpenMP (in the main code)
-- BLAS/LAPACK threading (depending on library)
+- OpenMP in the main solver
+- threaded BLAS / LAPACK
 
-To avoid nested threading, we recommend:
+To avoid nested parallelism:
 
 ```bash
 export OMP_NUM_THREADS=1
@@ -180,34 +174,31 @@ export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 ```
 
-For benchmarking, users may tune these values.
+Users may tune these for benchmarking.
 
 ---
 
-# 7. Reproducibility Notes
+## 8. Reproducibility Checklist
 
-For numerical reproducibility and long-term usability:
+For numerical reproducibility, record:
 
-- Record compiler name and version
-- Record BLAS/LAPACK library and version
-- Record OpenMP thread count
-- Record environment variables affecting BLAS
-- Record whether `make check` and `make check-long` completed successfully
+- compiler name and version
+- BLAS / LAPACK implementation and version
+- OpenMP thread count
+- BLAS thread count
+- success of `make check` and `make check-long`
 
-Floating-point results may vary slightly across compilers and libraries,
-but physical quantities should remain consistent within numerical precision.
+Floating‑point roundoff may vary across systems, but physical observables should remain consistent within numerical precision.
 
 ---
 
-# 8. Cleaning the Build
-
-To remove build artifacts:
+## 9. Cleaning
 
 ```bash
 make clean
 ```
 
-To remove configuration files:
+Remove configuration:
 
 ```bash
 make distclean
@@ -215,25 +206,27 @@ make distclean
 
 ---
 
-# 9. Installing (Optional)
+## 10. Installation (Optional)
 
-ED2 does not require installation for normal usage.
+Installation is not required for normal usage.
 
-However, if desired:
+If desired:
 
 ```bash
 make install
 ```
 
-(Default installation prefix may be changed via `./configure --prefix=...`.)
+Prefix can be set via:
+
+```bash
+./configure --prefix=/path/to/install
+```
 
 ---
 
-# 10. Troubleshooting
+## 11. Troubleshooting
 
-## BLAS not detected
-
-Specify manually:
+### BLAS not detected
 
 ```bash
 ./configure LIBS="-lopenblas"
@@ -245,25 +238,14 @@ or
 ./configure LIBS="-qmkl=parallel"
 ```
 
----
-
-## OpenMP issues
+### OpenMP
 
 Ensure compiler supports OpenMP:
 
 - ifort: enabled by default
 - gfortran: may require `-fopenmp`
 
----
-
-## Test failures
-
-If `make check-long` fails:
-
-1. Ensure build completed successfully.
-2. Confirm threading variables are set to 1.
-3. Verify BLAS/LAPACK linkage.
-4. Rebuild from clean state:
+### Test failures
 
 ```bash
 make distclean
@@ -275,32 +257,4 @@ make check-long
 
 ---
 
-# 11. Citation
-
-If you use ED2 in published work, please cite the accompanying CPC manuscript.
-
-(Full citation information will be provided in the repository README.)
-
----
-
-# 12. License
-
-See `LICENSE` file in the repository.
-
----
-
-# Summary
-
-Typical usage workflow:
-
-```bash
-git clone ...
-cd ED2
-autoreconf -vfi
-./configure
-make -j
-make check
-make check-long
-```
-
-ED2 is designed to be portable, reproducible, and suitable for HPC environments while maintaining minimal external dependencies.
+This installation procedure is designed for portability, reproducibility, and HPC robustness.
