@@ -100,6 +100,19 @@ Try loading a LAPACK module or re-run configure with explicit LIBS/LDFLAGS.])
     ;;
 esac
 
-AC_CONFIG_FILES([Makefile
-                 source/Makefile tests/Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  source/Makefile
+  tests/Makefile
+  script_chain/Makefile
+  script_cubic/Makefile
+  script_cubic_sp_HB/Makefile
+  script_honeycomb/Makefile
+  script_j1j2_chain/Makefile
+  script_kagome/Makefile
+  script_mixed_spin_chain/Makefile
+  script_square/Makefile
+  script_triangular/Makefile
+])
+
 AC_OUTPUT

@@ -93,9 +93,12 @@ sed -e "s/NGX/$GX/g" | \
 sed -e "s/NGY/$GY/g" | \
 sed -e "s/NGZ/$GZ/g" > fort.30
 
-#"$FC" mk_input.f90 1> /dev/null 2>&1
-"$FC" mk_input.f90
-./a.out
+MK_INPUT_EXE="./mk_input"
+if [ ! -x "$MK_INPUT_EXE" ]; then
+  echo "ERROR: mk_input not built. Run 'make' at repository top."
+  exit 1
+fi
+"$MK_INPUT_EXE"
 mv fort.30 $hdir/$wkdir/input_param.dat
 
 sed -e "s/NNOS/$NOS/g" ../input/input.dat | \
