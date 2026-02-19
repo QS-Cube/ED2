@@ -142,35 +142,6 @@ Failure to do so may significantly degrade performance.
 
 ---
 
-## Documentation structure
-
-- **Getting Started**
-  - Installation
-  - Quickstart
-
-- **User Guide**
-  - Input specification
-  - Output formats
-
-- **Examples**
-  - Fully reproducible reference calculations
-
-- **Theory and Algorithms**
-  - Hilbert-space construction
-  - Symmetry decomposition
-  - Truncation strategies
-  - Lanczos methods
-
-- **Validation and Performance**
-  - Regression tests
-  - Scaling benchmarks
-
-- **Development and Reference**
-  - Contribution guidelines
-  - Citation policy
-
----
-
 ## Reproducibility
 
 For scientific publications, users are strongly encouraged to record:
