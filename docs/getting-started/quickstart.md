@@ -1,123 +1,120 @@
 # Quickstart
 
-This page provides a **minimal reproducible example** to verify that ED2 is correctly
-installed and functioning as expected.
-The goal is to run a small calculation, confirm that the code executes successfully,
-and identify the key output files.
+This page demonstrates the **fastest fully reproducible workflow** to verify that QS³-ED2
+builds and runs correctly on your system.
+
+The objective is deliberately minimal:
+
+- build the code,
+- execute a reference calculation,
+- confirm successful output.
+
+Conceptual background, design philosophy, and citation information are documented on the main documentation home page.
 
 ---
 
-## Prerequisites
-
-Before proceeding, ensure that:
-
-- ED2 has been built successfully (see **Installation**),
-- the ED2 executable is available in the repository,
-- OpenMP environment variables can be set in your shell.
-
----
-
-## Step 1: Choose a reference input
-
-ED2 ships with example input files located in the `examples/` and/or `input/`
-directories of the repository.
-
-For this quickstart, select a **small system** input file, for example:
-
-```text
-input/example.in
-```
-
-(The exact filename may differ depending on the repository version.
-Any minimal test input defining a small spin system is sufficient.)
-
----
-
-## Step 2: Set OpenMP environment variables
-
-For a first test, use a small number of threads:
+## 1. Clone and build
 
 ```bash
-export OMP_NUM_THREADS=2
+git clone https://github.com/QS-Cube/ED2.git
+cd ED2
+autoreconf -vfi
+./configure
+make -j
 ```
 
-This ensures predictable behavior on most machines.
+This produces the executable:
+
+```
+source/QS3ED2
+```
+
+The binary is intentionally **not installed into PATH**.
+All example scripts resolve it explicitly to avoid environment-dependent failures on HPC systems.
 
 ---
 
-## Step 3: Run ED2
-
-Execute ED2 by redirecting the input file:
+## 2. Run the smoke test
 
 ```bash
-./ed2 < input/example.in
+make check
 ```
 
-If the executable name differs in your build environment, replace `ed2`
-with the actual executable name produced during compilation.
+This executes a minimal reference calculation and verifies basic functionality.
+
+Expected result:
+
+```
+PASS: test_ex1.sh
+```
+
+If this passes, the core solver, BLAS/LAPACK linkage, and OpenMP configuration are working.
 
 ---
 
-## Step 4: Check standard output
+## 3. Run a full example manually
 
-A successful run typically prints:
+Move to the chain example:
 
-- basic information about the Hilbert space,
+```bash
+cd script_chain
+./run.sh
+```
+
+This performs a small Exact Diagonalization calculation and prints:
+
 - solver configuration,
-- convergence messages (for iterative solvers),
-- final energy values.
+- convergence information,
+- eigenvalues,
+- local magnetization,
+- selected correlation functions.
 
-The absence of runtime errors or crashes indicates that ED2 is functioning correctly.
+Output files such as:
 
----
+```
+eigenvalues.dat
+local_mag.dat
+two_body_cf_xyz.dat
+```
 
-## Step 5: Inspect output files
+are generated in the working directory.
 
-After completion, ED2 generates one or more output files in the working directory
-(or a subdirectory specified in the input file).
+Important properties of the example scripts:
 
-Typical outputs include:
+- no recompilation occurs,
+- the executable is resolved explicitly,
+- PATH is never used,
+- helper programs are built at `make` time only.
 
-- **Energy eigenvalues** (ground state and possibly excited states),
-- **Expectation values** of selected observables,
-- **Diagnostic information** related to convergence.
-
-Refer to the **Outputs** section of the documentation for a precise definition
-of file formats and column meanings.
-
----
-
-## Expected results
-
-For a fixed input file, results should be **numerically reproducible**
-on the same machine and software environment.
-
-Small floating-point differences may appear when changing:
-- compiler,
-- BLAS/LAPACK backend,
-- number of OpenMP threads.
-
-These differences are expected and should be documented for published results.
+These choices ensure reproducible execution on shared HPC environments.
 
 ---
 
-## Troubleshooting
+## 4. Optional: extended regression suite
 
-- **The executable is not found**  
-  Ensure that the build step completed successfully and that you are running
-  the command from the correct directory.
+```bash
+make check-long
+```
 
-- **The run is very slow**  
-  Reduce system size in the input file or lower `OMP_NUM_THREADS`.
+Runs all reference examples sequentially.
 
-- **Numerical values differ from expectations**  
-  Confirm that the input file matches the intended model and that all parameters
-  are correctly specified.
+Recommended after:
+
+- moving to a new machine or cluster,
+- changing compiler,
+- changing BLAS / MKL backend.
 
 ---
 
-## Next steps
+## 5. Thread control (recommended)
 
-- Proceed to **Input format** to understand all available input parameters.
-- Consult **Examples** for additional reference calculations.
-- For scientific use, always record the ED2 commit hash and software environment.
+QS³-ED2 uses OpenMP in the main solver and threaded BLAS/LAPACK libraries.
+To avoid nested parallelism during validation runs:
+
+```bash
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+```
+
+Users may later tune these values for performance benchmarking.

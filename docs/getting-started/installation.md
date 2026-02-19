@@ -1,4 +1,4 @@
-# Installation Guide — QS³‑ED2 (CPC Edition)
+# Installation Guide
 
 This page provides a **practical, command‑oriented installation guide** for QS³‑ED2.
 Conceptual overview, design philosophy, and citation information are documented on the main documentation home page.
