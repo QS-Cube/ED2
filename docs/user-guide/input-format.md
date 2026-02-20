@@ -152,10 +152,10 @@ This block defines: (i) the target Hilbert subspace, (ii) optional symmetry sect
 #### Basis convention (how the subspace is specified)
 
 QS³-ED2 treats the fully polarized state \(|v\rangle\) as a vacuum and spans the subspace by applying \(N_{\downarrow}\) lowering operators:
-\[
+$$
 |a\rangle = \prod_{o=1}^{N_{\downarrow}} \hat{S}^{-}_{r_o}\,|v\rangle,\qquad
 N_{\downarrow}\in[\mathrm{NODmin},\mathrm{NODmax}].
-\]
+$$
 
 - If you want the **full Hilbert space**, choose a wide range (model-dependent).  
 - If your model has a **U(1) conservation law** (e.g., XXZ-like total \(S^z\) conservation), using `NODmin=NODmax` selects a fixed sector (fixed total \(S^z\)).
