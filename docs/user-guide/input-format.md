@@ -1,4 +1,4 @@
-# Input format (QS³-ED2)
+# Input format
 
 QS³-ED2 reads its input from **standard input (STDIN)** and expects a **Fortran NAMELIST** file (typically named `input.dat`).  
 This page documents the **actual input format used by this repository** (QS-Cube/ED2).
