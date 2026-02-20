@@ -1,12 +1,21 @@
 #!/bin/sh
+set -eu
+
+# Resolve paths without relying on current working directory
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+TOPDIR=${TOPDIR:-$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)}
 
 # --- ED2 executable resolution (do not rely on PATH) -----------------
 # Prefer ED2_EXE provided by caller (tests/users).
 if [ -n "${ED2_EXE:-}" ]; then
-  QS3ED2="${ED2_EXE}"
+  case "$ED2_EXE" in
+    /*) QS3ED2="$ED2_EXE" ;;
+    *)  QS3ED2="$(cd "$(dirname "$ED2_EXE")" && pwd)/$(basename "$ED2_EXE")" ;;
+  esac
 else
-  QS3ED2="$(cd "$(dirname "$0")/../source" 2>/dev/null && pwd)/QS3ED2"
+  QS3ED2="$TOPDIR/source/QS3ED2"
 fi
+
 if [ ! -x "$QS3ED2" ]; then
   echo "ERROR: ED2 executable not found/executable: $QS3ED2" >&2
   echo "Hint: build first (make) and/or set ED2_EXE=/path/to/QS3ED2" >&2
@@ -17,7 +26,8 @@ fi
 ##################################################
 #export OMP_NUM_THREADS=4
 ##################################################
-    wkdir="examples/square"
+    wkdir_rel="examples/square"
+    wkdir="$TOPDIR/$wkdir_rel"
        LX=10     # Number of Sites along x direction
        LY=10     # Number of Sites along y direction
    NODmax=3      # Upper limit value for the number of down spins
@@ -48,11 +58,8 @@ NO_two_cf=9      # Number of expectation values of <S_i S_j>
                  # if MNTE < 0 then MNTE = 2*NO_one + 8*NO_two
 ##################################################
 
-cd ../
-hdir=`pwd`
-cd - 1> /dev/null 2>&1
 
-mkdir -p $hdir/$wkdir 1> /dev/null 2>&1
+mkdir -p "$wkdir"
 
 NOS=$(( LX * LY ))
 
@@ -62,7 +69,7 @@ NO_two=$(( 2*NOS ))
 NOK=$(( NOE * 2 ))
 NOM=$(( NOK + 20 ))
 
-sed -e "s|NWKDIR|$hdir/$wkdir|g" input_param.dat | \
+sed -e "s|NWKDIR|$wkdir|g" "$SCRIPT_DIR/input_param.dat" | \
 sed -e "s/NNOS/$NOS/g" | \
 sed -e "s/NLX/$LX/g" | \
 sed -e "s/NLY/$LY/g" | \
@@ -80,17 +87,17 @@ sed -e "s/NDY/$DY/g" | \
 sed -e "s/NDZ/$DZ/g" | \
 sed -e "s/NGX/$GX/g" | \
 sed -e "s/NGY/$GY/g" | \
-sed -e "s/NGZ/$GZ/g" > fort.30
+sed -e "s/NGZ/$GZ/g" > "$SCRIPT_DIR/fort.30"
 
-MK_INPUT_EXE="./mk_input"
+MK_INPUT_EXE="$SCRIPT_DIR/mk_input"
 if [ ! -x "$MK_INPUT_EXE" ]; then
   echo "ERROR: mk_input not built. Run 'make' at repository top."
   exit 1
 fi
 "$MK_INPUT_EXE"
-mv fort.30 $hdir/$wkdir/input_param.dat
+mv "$SCRIPT_DIR/fort.30" $wkdir/input_param.dat
 
-sed -e "s/NNOS/$NOS/g" ../input/input.dat | \
+sed -e "s/NNOS/$NOS/g" "$TOPDIR/input/input.dat" | \
 sed -e "s/NNODmin/$NODmin/g" | \
 sed -e "s/NNODmax/$NODmax/g" | \
 sed -e "s/NL1/$LX/g" | \
@@ -113,18 +120,18 @@ sed -e "s/NNOE/$NOE/g" | \
 sed -e "s/NNOK/$NOK/g" | \
 sed -e "s/NNOM/$NOM/g" | \
 sed -e "s/NMNTE/$MNTE/g" | \
-sed -e "s/Nwk_dim/$wk_dim/g" > $hdir/$wkdir/input.dat
+sed -e "s/Nwk_dim/$wk_dim/g" > $wkdir/input.dat
 
-cp list_ij_cf.dat $hdir/$wkdir/list_ij_cf.dat
+cp "$SCRIPT_DIR/list_ij_cf.dat" $wkdir/list_ij_cf.dat
 
 # [patched] (removed) cd ../source
 # [patched] (removed) make ...
 #
-echo "cd $hdir/$wkdir"
-cd $hdir/$wkdir
+echo "cd "$wkdir""
+cd "$wkdir"
 rm -f eigenvalues.dat
 
-echo ""$QS3ED2" < input.dat > output.dat"
+echo "$QS3ED2 < input.dat > output.dat"
 "$QS3ED2" < input.dat > output.dat
 
 echo "********************"

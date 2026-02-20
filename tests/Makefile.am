@@ -25,7 +25,9 @@ check-long:
 	for t in $(LONG_TESTS); do \
 	  echo "---- $$t ----"; \
 	  rm -f "$$t.long.log"; \
-	  $(SHELL) "$(srcdir)/$$t" > "$$t.long.log" 2>&1 || { \
+	  TOPDIR="$(top_srcdir)" \
+	  ED2_EXE="$(top_builddir)/source/QS3ED2" \
+	  LONGTEST=1 $(SHELL) "$(srcdir)/$$t" > "$$t.long.log" 2>&1 || { \
 	    echo "FAIL: $$t"; \
 	    echo "===== last 200 lines of $$t.long.log ====="; \
 	    tail -n 200 "$$t.long.log" || true; \

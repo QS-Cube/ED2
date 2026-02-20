@@ -31,3 +31,5 @@ examples/
 *~
 .vscode/
 .vscode/
+
+script_*/run.sh.bak
