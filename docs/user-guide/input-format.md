@@ -1,169 +1,312 @@
-# Input format
+# Input format (QS³-ED2)
 
-This page describes the ED2 input file format and documents the most important
-parameters required to define a calculation.
+QS³-ED2 reads its input from **standard input (STDIN)** and expects a **Fortran NAMELIST** file (typically named `input.dat`).  
+This page documents the **actual input format used by this repository** (QS-Cube/ED2).
 
-> **Note**  
-> The exact set of available keys may evolve. For reproducible research, always
-> record the ED2 version (tag) or commit hash together with the input file used.
-
----
-
-## File format and conventions
-
-- ED2 reads the input from **standard input** (STDIN), so you typically run:
-  ```bash
-  ./ed2 < input/example.in
-  ```
-- The input consists of `KEY = VALUE` pairs (one per line).
-- Blank lines are ignored.
-- Lines starting with `#` are treated as comments.
+> **Reproducibility note**  
+> Always record (i) the ED2 git tag/commit hash, (ii) `input.dat`, and (iii) all referenced `list_*.dat` files.
 
 ---
 
-## Minimal required parameters (typical)
+## Quick start
 
-The minimal set depends on the model, but most calculations specify:
+From an example directory:
 
-- system size / lattice definition (e.g., `LATTICE_SIZE`)
-- model selector (e.g., `MODEL`)
-- Hamiltonian parameters (e.g., couplings and fields)
-- solver parameters (e.g., `SOLVER`, `NUM_EIGENVALUES`)
+```bash
+cd examples/chain
+../../source/QS3ED2 < input.dat > output.dat
+```
 
-See **Examples** for complete reference inputs.
-
----
-
-## Symmetry specification (recommended)
-
-ED2 can explicitly enforce lattice and internal symmetries and work within a chosen
-**symmetry sector**. This reduces the effective Hilbert-space dimension via
-block-diagonalization and can dramatically reduce runtime and memory usage.
-
-### Overview
-
-Symmetry handling is configured by enabling one or more symmetry projectors and by
-specifying the target quantum numbers / irreducible representations.
-
-The following symmetry classes are supported conceptually in ED2:
-
-- **Translation symmetry (crystal momentum)**: select a momentum sector $k$
-- **Point-group symmetry**: select an irrep label of the lattice point group
-- **Spin-inversion symmetry**: select even/odd under global spin inversion
-
-> If a symmetry is enabled but the specified quantum number is incompatible with
-> the lattice/model settings, ED2 should report an error.
+Many examples also provide `run.sh` that sets a working directory and runs ED2 in a consistent way.
 
 ---
 
-### Translation symmetry (momentum sector)
+## Examples directory structure
 
-Enable translation symmetry and select a crystal-momentum sector.
+The repository provides reference examples under `examples/`:
 
-**Keys (recommended naming)**
-- `USE_TRANSLATION_SYMMETRY = true|false`
-- `MOMENTUM_K = <integer>`  
-  Momentum sector label. The convention is implementation-dependent, but typically
-  $k = 0, 1, ..., L-1$ corresponds to $2\pi k/L$.
+- `chain/`
+- `cubic/`
+- `cubic_sp_HB/`
+- `honeycomb/`
+- `j1j2_chain/`
+- `kagome/`
+- `mixed_spin_chain/`
+- `square/`
+- `triangular/`
 
-**Example**
+Each example directory contains:
+
+- `input.dat` (main NAMELIST input)
+- model-definition lists such as `list_xyz_dm_gamma.dat`, `list_hvec.dat`, `list_spin.dat`, ...
+- optional symmetry definition lists such as `list_p1.dat` ... `list_p6.dat`
+
+We recommend starting from `examples/chain/` to understand the basic workflow.
+
+---
+
+## File format: Fortran NAMELIST
+
+`input.dat` is a Fortran NAMELIST file consisting of multiple blocks:
+
+- `&input_parameters ... &end` : system size, basis restriction, symmetry sector, I/O, etc.
+- `&input_lancz ... &end`      : Lanczos parameters (used when `ALG=1`)
+- `&input_TRLan ... &end`      : Thick-Restart Lanczos parameters (used when `ALG=2`)
+
+### NAMELIST conventions (practical)
+
+- Each block begins with `&<block_name>` and ends with `&end`.
+- Entries are `KEY = VALUE` separated by commas (`,`). Newlines are allowed, but commas are recommended.
+- Strings must be quoted, e.g., `"list_hvec.dat"` or `'list_hvec.dat'`.
+- Double precision constants are written as `1.0d-14` (Fortran `d` exponent).
+- Unknown keys are typically ignored or cause a read error depending on compiler/runtime settings—use the provided examples as the safe reference.
+
+---
+
+## Example: `input.dat` (from `examples/chain`)
+
 ```text
-# Translation symmetry: k-sector
-USE_TRANSLATION_SYMMETRY = true
-MOMENTUM_K = 0
+&input_parameters
+  NOS = 100,
+  NODmax = 3,
+  NODmin = 0,
+
+  L1 = 100,  L2 = 1,  L3 = 1,  L4 = 1,  L5 = 1,  L6 = 1,
+  M1 = 0,    M2 = 0,  M3 = 0,  M4 = 0,  M5 = 0,  M6 = 0,
+
+  NO_one = 100,
+  NO_two = 100,
+
+  wk_dim = -1,
+  MNTE = -1,
+
+  ALG = 1,
+  wr_wf = 0,
+  re_wf = 0,
+
+  FILE_xyz_dm_gamma = "list_xyz_dm_gamma.dat",
+  FILE_hvec         = "list_hvec.dat",
+
+  FILE_wf = "./",
+  OUTDIR  = "./",
+
+  FILE_S1 = "list_p1.dat",
+  FILE_S2 = "list_p2.dat",
+  FILE_S3 = "list_p3.dat",
+  FILE_S4 = "list_p4.dat",
+  FILE_S5 = "list_p5.dat",
+  FILE_S6 = "list_p6.dat",
+
+  FILE_NODmax = "list_NODmax.dat",
+  FILE_spin   = "list_spin.dat",
+
+  cal_lm = 1,
+  cal_cf = 1,
+
+  NO_two_cf   = 9,
+  FILE_two_cf = "./list_ij_cf.dat",
+&end
+
+&input_lancz
+  lnc_ene_conv = 1.0d-14,
+  minitr       = 5,
+  maxitr       = 10000,
+  itrint       = 5,
+&end
+
+&input_TRLan
+  NOE          = 10,
+  NOK          = 20,
+  NOM          = 40,
+  maxitr       = 10000,
+  lnc_ene_conv = 1.0d-14,
+  i_vec_min    = 1,
+  i_vec_max    = 1,
+&end
 ```
 
 ---
 
-### Point-group symmetry
+## `&input_parameters` reference
 
-If the lattice admits point-group symmetries (reflections/rotations), ED2 can project
-onto a chosen irreducible representation.
+This block defines: (i) the target Hilbert subspace, (ii) optional symmetry sectors, (iii) Hamiltonian term lists, (iv) memory/performance knobs, and (v) output paths.
 
-**Keys (recommended naming)**
-- `USE_POINTGROUP_SYMMETRY = true|false`
-- `POINTGROUP_IRREP = <string>`  
-  Irrep label (e.g., `A1`, `A2`, `B1`, `B2`, ...), depending on the lattice and the
-  implemented symmetry group.
+### System size and basis restriction
 
-**Example**
-```text
-# Point-group symmetry: select an irrep label
-USE_POINTGROUP_SYMMETRY = true
-POINTGROUP_IRREP = A1
-```
+| Key | Type | Meaning |
+|---|---:|---|
+| `NOS` | INTEGER | Number of sites (spins), typically denoted by **N**. |
+| `NODmin`, `NODmax` | INTEGER | Range of the number of spin-lowering operators, controlling the targeted subspace. See below. |
 
----
+#### Basis convention (how the subspace is specified)
 
-### Spin-inversion symmetry
+QS³-ED2 treats the fully polarized state \(|v\rangle\) as a vacuum and spans the subspace by applying \(N_{\downarrow}\) lowering operators:
+\[
+|a\rangle = \prod_{o=1}^{N_{\downarrow}} \hat{S}^{-}_{r_o}\,|v\rangle,\qquad
+N_{\downarrow}\in[\mathrm{NODmin},\mathrm{NODmax}].
+\]
 
-For models without explicit symmetry-breaking fields, ED2 can exploit global spin inversion
-($S_i^z \to -S_i^z$) to split the Hilbert space into even/odd sectors.
+- If you want the **full Hilbert space**, choose a wide range (model-dependent).  
+- If your model has a **U(1) conservation law** (e.g., XXZ-like total \(S^z\) conservation), using `NODmin=NODmax` selects a fixed sector (fixed total \(S^z\)).
 
-**Keys (recommended naming)**
-- `USE_SPININVERSION_SYMMETRY = true|false`
-- `SPININVERSION_PARITY = +1|-1`  
-  `+1` for even, `-1` for odd parity.
-
-**Example**
-```text
-# Spin-inversion symmetry: even sector
-USE_SPININVERSION_SYMMETRY = true
-SPININVERSION_PARITY = +1
-```
+Local constraints and local spin values are further specified by `FILE_NODmax` and `FILE_spin`.
 
 ---
 
-## Example: symmetry-enabled input (template)
+### Symmetry sector specification (up to 6 commuting operations)
 
-The following template shows a typical setup where symmetries are enforced in addition to the
-model and solver definition.
+QS³-ED2 can incorporate up to **six commuting symmetry operations** (typically translations and point-group operations).  
+You specify:
 
-```text
-# Example template (symmetry-enabled)
+1) their **orders** `L1..L6` such that \(\hat{T}_m^{L_m}=\hat{1}\)  
+2) their **sector labels** `M1..M6` such that
+\[
+\hat{T}_m|\Psi\rangle = e^{-i 2\pi M_m/L_m}\,|\Psi\rangle,\qquad M_m\in\{0,\dots,L_m-1\}.
+\]
+3) their **site permutations** via `FILE_S1..FILE_S6`
 
-LATTICE_SIZE = 12
-SPIN_S = 0.5
-MODEL = Heisenberg
-BOUNDARY = periodic
+| Key | Type | Meaning |
+|---|---:|---|
+| `L1..L6` | INTEGER | Orders \(L_m\). If `Lm=1`, the operator is treated as trivial and the corresponding `FILE_Sm` can be omitted. |
+| `M1..M6` | INTEGER | Sector labels \(M_m\) for each symmetry. |
+| `FILE_S1..FILE_S6` | CHARACTER | Files encoding the site permutation induced by \(\hat{T}_m\) (1-based indexing). |
 
-# Symmetries
-USE_TRANSLATION_SYMMETRY = true
-MOMENTUM_K = 0
+**Example (1D translation by one site)**  
+The permutation vector is \((2,3,\dots,N,1)\), stored as an `NOS`-line integer file.
 
-USE_POINTGROUP_SYMMETRY = false
-# POINTGROUP_IRREP = A1
-
-USE_SPININVERSION_SYMMETRY = true
-SPININVERSION_PARITY = +1
-
-# Couplings
-JX = 1.0
-JY = 1.0
-JZ = 1.0
-
-# Solver
-SOLVER = lanczos
-NUM_EIGENVALUES = 3
-TOLERANCE = 1e-12
-
-OUTPUT_PREFIX = heisenberg_L12_k0_pinveven
-VERBOSE = true
-```
+> Tip  
+> If you set a symmetry but the chosen sector is incompatible (empty), ED2 should report an error or produce no states in that sector.
 
 ---
 
-## Notes and best practices
+### Hamiltonian term lists
 
-- For **periodic boundary conditions**, translation symmetry is often the most effective first choice.
-- When combining multiple symmetries, verify that the selected sector is **non-empty** for your system size.
-- For publications, always record:
-  - symmetry settings (enabled/disabled and quantum numbers),
-  - ED2 version/tag or commit hash.
+| Key | Type | Meaning |
+|---|---:|---|
+| `NO_one` | INTEGER | Number of one-body terms (fields) read from `FILE_hvec`. |
+| `NO_two` | INTEGER | Number of two-body terms (XYZ + DM + Γ, etc.) read from `FILE_xyz_dm_gamma`. |
+| `FILE_hvec` | CHARACTER | Path to one-body term list. ED2 reads the first `NO_one` lines. |
+| `FILE_xyz_dm_gamma` | CHARACTER | Path to two-body term list. ED2 reads the first `NO_two` lines. |
+
+> Column formats depend on the model/example.  
+> The safest reference is the corresponding `examples/<name>/list_*.dat` shipped in this repo.
 
 ---
 
-## Next steps
+### Memory/performance knobs for sparse Hamiltonian construction
 
-- See **Theory / Algorithms** for the conceptual background of symmetry decomposition.
-- See **Examples** for fully validated reference inputs.
+| Key | Type | Meaning |
+|---|---:|---|
+| `wk_dim` | INTEGER | Controls how many sparse matrix elements are cached. `-1` enables automatic setting (recommended to start). |
+| `MNTE` | INTEGER | Controls the internal limit on transitions per representative state. Too small values can trigger an error. `-1` enables automatic setting. |
+
+**Practical recommendation:** start with `wk_dim = -1` and `MNTE = -1`.  
+During runtime, ED2 prints an **Optimal MNTE**, which can be used to tune memory usage for large runs.
+
+---
+
+### Diagonalization algorithm and wavefunction I/O
+
+| Key | Type | Meaning |
+|---|---:|---|
+| `ALG` | INTEGER | Algorithm selector: `1` Lanczos (ground state), `2` Thick-Restart Lanczos, `3` full diagonalization (LAPACK). |
+| `wr_wf` | INTEGER | If `1`, write eigenvectors to `FILE_wf`. |
+| `re_wf` | INTEGER | If `0`, diagonalize. If `1`, read eigenvectors from `FILE_wf` and compute observables only. |
+| `FILE_wf` | CHARACTER | Directory for eigenvector I/O. |
+| `OUTDIR` | CHARACTER | Output directory for observables and diagnostics. |
+
+---
+
+### Observable outputs (local magnetization, correlations)
+
+| Key | Type | Meaning |
+|---|---:|---|
+| `cal_lm` | INTEGER | If `1`, compute local magnetization and write `OUTDIR/local_mag.dat`. |
+| `cal_cf` | INTEGER | If `1`, compute two-point correlators and write `OUTDIR/two_body_cf_xyz.dat` and `OUTDIR/two_body_cf_z+-.dat`. |
+| `NO_two_cf` | INTEGER | Number of site pairs \((r,r')\) for correlation functions. |
+| `FILE_two_cf` | CHARACTER | File containing `NO_two_cf` pairs \((r,r')\). |
+
+Typical output formats:
+
+- `OUTDIR/local_mag.dat` stores \((r, \langle S^x_r\rangle, \langle S^y_r\rangle, \langle S^z_r\rangle)\).
+- `OUTDIR/two_body_cf_xyz.dat` stores \((r, r', \langle S^\alpha_r S^\beta_{r'}\rangle)\) for \(\alpha,\beta \in \{x,y,z\}\).
+- `OUTDIR/two_body_cf_z+-.dat` stores correlators in the \((z,+,-)\) basis (see examples for exact column ordering).
+
+---
+
+## `FILE_NODmax` and `FILE_spin`
+
+These two files define local constraints and local spin values.
+
+### `FILE_NODmax` (local maximum number of lowering operators)
+
+- Contains **`NOS` lines** of integers.
+- Line `r` specifies the maximum number of lowering operators allowed on site `r`.
+- Must satisfy:
+  - not exceeding the global `NODmax`
+  - not exceeding \(2S_r\) on each site
+
+Examples:
+- Spin-1/2 chain: all lines are `1`
+- Mixed-spin chain (e.g., alternating spins): pattern like `2,1,2,1,...`
+
+### `FILE_spin` (local spin values)
+
+- Contains **`NOS` lines** of real numbers.
+- Line `r` gives the local spin \(S_r\) (e.g., `0.5`, `1.0`, ...)
+
+This design lets you target near-saturation sectors efficiently even for large-spin systems.
+
+---
+
+## `&input_lancz` (Lanczos)
+
+This block is used when `ALG = 1`.
+
+Common keys (as used in examples):
+
+| Key | Type | Meaning |
+|---|---:|---|
+| `lnc_ene_conv` | REAL*8 | Energy convergence tolerance. |
+| `minitr` | INTEGER | Minimum number of iterations. |
+| `maxitr` | INTEGER | Maximum number of iterations. |
+| `itrint` | INTEGER | Printing interval for iteration logs. |
+
+---
+
+## `&input_TRLan` (Thick-Restart Lanczos)
+
+This block is used when `ALG = 2`.
+
+Common keys (as used in examples):
+
+| Key | Type | Meaning |
+|---|---:|---|
+| `NOE` | INTEGER | Number of eigenpairs to compute (requested). |
+| `NOK`, `NOM` | INTEGER | TRLan workspace/restart parameters. |
+| `maxitr` | INTEGER | Maximum number of iterations. |
+| `lnc_ene_conv` | REAL*8 | Energy convergence tolerance. |
+| `i_vec_min`, `i_vec_max` | INTEGER | Index range of vectors to output/use (example-dependent). |
+
+---
+
+## Best practices
+
+1. Start from `examples/<model>/input.dat` and modify incrementally.
+2. Keep referenced file paths (`FILE_*`) either:
+   - relative to the directory where ED2 is run, or
+   - absolute paths (for batch/HPC runs).
+3. Record environment details (compiler, BLAS/LAPACK, thread settings) for reproducible comparisons.
+
+---
+
+## Troubleshooting checklist
+
+- **ED2 cannot find input/list files**  
+  Confirm `FILE_*` paths are relative to the runtime working directory (or make them absolute).
+
+- **Symmetry sector seems empty / ED2 stops early**  
+  Verify `L*`, `M*` and the permutations in `FILE_S*` are consistent with your lattice.
+
+- **Memory-related stop / slow runs**  
+  Start with `wk_dim=-1`, `MNTE=-1`. Use runtime-reported `Optimal MNTE` to tune for large cases.
