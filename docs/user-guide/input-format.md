@@ -10,6 +10,17 @@ This page documents the **actual input format used by this repository** (QS-Cube
 
 ## Quick start
 
+> **Important**
+> The directories under `examples/` (e.g. `chain`, `cubic`, `kagome`, ...) are generated automatically
+> after running `make check-long` on a fresh clone.  
+> If they are missing, please run:
+>
+> ```bash
+> make check-long
+> ```
+>
+> before trying the commands below.
+
 From an example directory:
 
 ```bash
