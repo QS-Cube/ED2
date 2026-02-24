@@ -74,12 +74,9 @@ J^{\alpha}_{rr'} \hat S^{\alpha}_r \hat S^{\alpha}_{r'}
 - \sum_r \mathbf h_r \cdot \hat{\mathbf S}_r .
 ```
 
-with mutually distinct indices $\alpha\neq\beta\neq\gamma$. Here
-$J^{\alpha}_{rr'}$, $D^{\alpha}_{rr'}$, and $\Gamma^{\alpha}_{rr'}$
-denote exchange, Dzyaloshinskii--Moriya, and symmetric anisotropic
-interactions between spins on sites $r,r'$, while $\mathbf h_r$
-represents local Zeeman fields. Local spin magnitudes
-$S_r = 1/2, 1, 3/2, \ldots$ may be specified independently at each site.
+with mutually distinct indices $\alpha\neq\beta\neq\gamma$.
+Here $J^{\alpha}_{rr'}$, $D^{\alpha}_{rr'}$, and $\Gamma^{\alpha}_{rr'}$ denote exchange, Dzyaloshinskii--Moriya, and symmetric anisotropic interactions between spins on sites $r,r'$, while $\mathbf h_r$ represents local Zeeman fields.
+Local spin magnitudes $S_r = 1/2, 1, 3/2, \ldots$ may be specified independently at each site.
 
 Typical scientific applications include:
 
