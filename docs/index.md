@@ -74,9 +74,7 @@ J^{\alpha}_{rr'} \hat S^{\alpha}_r \hat S^{\alpha}_{r'}
 - \sum_r \mathbf h_r \cdot \hat{\mathbf S}_r .
 ```
 
-with mutually distinct indices $\alpha\neq\beta\neq\gamma$.
-
-Here $J^{\alpha}_{r r^{\prime}}$, $D^{\alpha}_{r r^{\prime}}$,
+with mutually distinct indices $\alpha\neq\beta\neq\gamma$. Here $J^{\alpha}_{r r^{\prime}}$, 
 
 $D^{\alpha}_{r r^{\prime}}$,
 
