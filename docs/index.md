@@ -1,9 +1,3 @@
-$J^{\alpha}_{r r^{\prime}}$
-
-$D^{\alpha}_{r r^{\prime}}$
-
-$\Gamma^{\alpha}_{r r^{\prime}}$
-
 # ED2 (QS³-ED2): Exact Diagonalization for Quantum Spin Systems
 
 **ED2 (QS³-ED2)** is a research-grade Fortran code for **Exact
@@ -81,7 +75,7 @@ J^{\alpha}_{rr'} \hat S^{\alpha}_r \hat S^{\alpha}_{r'}
 ```
 
 with mutually distinct indices $\alpha\neq\beta\neq\gamma$.
-Here $J^{\alpha}_{r r^{\prime}}$, $D^{\alpha}_{r r^{\prime}}$, $\Gamma^{\alpha}_{r r^{\prime}}$ denote exchange, Dzyaloshinskii--Moriya, and symmetric anisotropic interactions between spins on sites $r, r^{\prime}$, while $\mathbf{h}_r$ represents local Zeeman fields. Local spin magnitudes $S_r = 1/2, 1, 3/2, \ldots$ may be specified independently at each site.
+Here $J^{\alpha}_{r r^{\prime}}$ , $D^{\alpha}_{r r^{\prime}}$ , $\Gamma^{\alpha}_{r r^{\prime}}$ denote exchange, Dzyaloshinskii--Moriya, and symmetric anisotropic interactions between spins on sites $r, r^{\prime}$, while $\mathbf{h}_r$ represents local Zeeman fields. Local spin magnitudes $S_r = 1/2, 1, 3/2, \ldots$ may be specified independently at each site.
 
 Typical scientific applications include:
 
