@@ -1,3 +1,9 @@
+$J^{\alpha}_{r r^{\prime}}$
+
+$D^{\alpha}_{r r^{\prime}}$
+
+$\Gamma^{\alpha}_{r r^{\prime}}$
+
 # ED2 (QS³-ED2): Exact Diagonalization for Quantum Spin Systems
 
 **ED2 (QS³-ED2)** is a research-grade Fortran code for **Exact
