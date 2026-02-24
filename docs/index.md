@@ -77,9 +77,7 @@ J^{\alpha}_{rr'} \hat S^{\alpha}_r \hat S^{\alpha}_{r'}
 with mutually distinct indices $\alpha\neq\beta\neq\gamma$.
 Here
 
-$J^{\alpha}_{r r^{\prime}}$,
-
-$D^{\alpha}_{r r^{\prime}}$,
+$J^{\alpha}_{r r^{\prime}}$, $D^{\alpha}_{r r^{\prime}}$,
 
 $\Gamma^{\alpha}_{r r^{\prime}}$
 
