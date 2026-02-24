@@ -37,7 +37,7 @@ approaches for strongly correlated quantum many-body systems.
 
 ED2 focuses on **quantum spin lattice models** and supports both:
 
--   full Hilbert spaces, and\
+-   full Hilbert spaces, and
 -   **restricted (truncated) subspaces**,
 
 allowing efficient calculations in dilute or symmetry-constrained
@@ -45,9 +45,9 @@ sectors.
 
 Typical applications include:
 
--   Ground-state calculations\
--   Low-energy excitation spectra\
--   Local magnetization\
+-   Ground-state calculations
+-   Low-energy excitation spectra
+-   Local magnetization
 -   Two-body correlation functions
 
 ED2 emphasizes **explicit construction of Hilbert spaces and
@@ -83,10 +83,10 @@ $S_r = 1/2, 1, 3/2, \ldots$ may be specified independently at each site.
 
 Typical scientific applications include:
 
--   finite-size scaling analyses of quantum phase transitions\
--   level spectroscopy of low-energy excitations\
+-   finite-size scaling analyses of quantum phase transitions
+-   level spectroscopy of low-energy excitations
 -   identification of Berezinskii--Kosterlitz--Thouless transitions via
-    twisted boundary conditions\
+    twisted boundary conditions
 -   Anderson tower analyses of symmetry breaking
 
 These techniques are widely used in numerical studies of low-dimensional
@@ -107,8 +107,8 @@ substantial reductions in computational cost.
 
 ### General quantum spin Hamiltonians
 
--   Heisenberg and XYZ-type interactions\
--   Dzyaloshinskii--Moriya and symmetric anisotropies\
+-   Heisenberg and XYZ-type interactions
+-   Dzyaloshinskii--Moriya and symmetric anisotropies
 -   External magnetic fields
 
 ------------------------------------------------------------------------
@@ -130,7 +130,7 @@ memory and runtime.
 
 ### Parallelization
 
-Shared-memory parallelism via **OpenMP**.\
+Shared-memory parallelism via **OpenMP**.
 ED2 follows a single-node execution model (no MPI dependency).
 
 ------------------------------------------------------------------------
@@ -226,7 +226,7 @@ ED2 is released under the **MIT License**.
 
 ## Authors and maintainers
 
--   Hiroshi Ueda\
+-   Hiroshi Ueda
 -   Daisuke Yamamoto
 
 ------------------------------------------------------------------------
@@ -238,3 +238,4 @@ Contributions can be made through Pull Requests.
 
 For scientific use, always accompany results with sufficient metadata to
 guarantee reproducibility.
+
