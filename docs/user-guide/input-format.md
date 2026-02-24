@@ -151,7 +151,7 @@ This block defines: (i) the target Hilbert subspace, (ii) optional symmetry sect
 
 #### Basis convention (how the subspace is specified)
 
-QS³-ED2 treats the fully polarized state \(|v\rangle\) as a vacuum and spans the subspace by applying \(N_{\downarrow}\) lowering operators:
+QS³-ED2 treats the fully polarized state $|v\rangle$ as a vacuum and spans the subspace by applying $N_{\downarrow}$ lowering operators:
 
 $$
 |a\rangle = \prod_{o=1}^{N_{\downarrow}} \hat{S}^{-}_{r_o}\,|v\rangle,\qquad
@@ -159,7 +159,7 @@ N_{\downarrow}\in[\mathrm{NODmin},\mathrm{NODmax}].
 $$
 
 - If you want the **full Hilbert space**, choose a wide range (model-dependent).  
-- If your model has a **U(1) conservation law** (e.g., XXZ-like total \(S^z\) conservation), using `NODmin=NODmax` selects a fixed sector (fixed total \(S^z\)).
+- If your model has a **U(1) conservation law** (e.g., XXZ-like total $S^z$ conservation), using `NODmin=NODmax` selects a fixed sector (fixed total $S^z$).
 
 Local constraints and local spin values are further specified by `FILE_NODmax` and `FILE_spin`.
 
@@ -170,23 +170,23 @@ Local constraints and local spin values are further specified by `FILE_NODmax` a
 QS³-ED2 can incorporate up to **six commuting symmetry operations** (typically translations and point-group operations).  
 You specify:
 
-1) their **orders** `L1..L6` such that \(\hat{T}_m^{L_m}=\hat{1}\)  
+1) their **orders** `L1..L6` such that $\hat{T}_m^{L_m}=\hat{1}$  
 2) their **sector labels** `M1..M6` such that
 
-\[
+$$
 \hat{T}_m|\Psi\rangle = e^{-i 2\pi M_m/L_m}\,|\Psi\rangle,\qquad M_m\in\{0,\dots,L_m-1\}.
-\]
+$$
 
 3) their **site permutations** via `FILE_S1..FILE_S6`
 
 | Key | Type | Meaning |
 |---|---:|---|
-| `L1..L6` | INTEGER | Orders \(L_m\). If `Lm=1`, the operator is treated as trivial and the corresponding `FILE_Sm` can be omitted. |
-| `M1..M6` | INTEGER | Sector labels \(M_m\) for each symmetry. |
-| `FILE_S1..FILE_S6` | CHARACTER | Files encoding the site permutation induced by \(\hat{T}_m\) (1-based indexing). |
+| `L1..L6` | INTEGER | Orders $L_m$. If `Lm=1`, the operator is treated as trivial and the corresponding `FILE_Sm` can be omitted. |
+| `M1..M6` | INTEGER | Sector labels $M_m$ for each symmetry. |
+| `FILE_S1..FILE_S6` | CHARACTER | Files encoding the site permutation induced by $\hat{T}_m$ (1-based indexing). |
 
 **Example (1D translation by one site)**  
-The permutation vector is \((2,3,\dots,N,1)\), stored as an `NOS`-line integer file.
+The permutation vector is $(2,3,\dots,N,1)$, stored as an `NOS`-line integer file.
 
 > Tip  
 > If you set a symmetry but the chosen sector is incompatible (empty), ED2 should report an error or produce no states in that sector.
@@ -237,14 +237,14 @@ During runtime, ED2 prints an **Optimal MNTE**, which can be used to tune memory
 |---|---:|---|
 | `cal_lm` | INTEGER | If `1`, compute local magnetization and write `OUTDIR/local_mag.dat`. |
 | `cal_cf` | INTEGER | If `1`, compute two-point correlators and write `OUTDIR/two_body_cf_xyz.dat` and `OUTDIR/two_body_cf_z+-.dat`. |
-| `NO_two_cf` | INTEGER | Number of site pairs \((r,r')\) for correlation functions. |
-| `FILE_two_cf` | CHARACTER | File containing `NO_two_cf` pairs \((r,r')\). |
+| `NO_two_cf` | INTEGER | Number of site pairs $(r,r')$ for correlation functions. |
+| `FILE_two_cf` | CHARACTER | File containing `NO_two_cf` pairs $(r,r')$. |
 
 Typical output formats:
 
-- `OUTDIR/local_mag.dat` stores \((r, \langle S^x_r\rangle, \langle S^y_r\rangle, \langle S^z_r\rangle)\).
-- `OUTDIR/two_body_cf_xyz.dat` stores \((r, r', \langle S^\alpha_r S^\beta_{r'}\rangle)\) for \(\alpha,\beta \in \{x,y,z\}\).
-- `OUTDIR/two_body_cf_z+-.dat` stores correlators in the \((z,+,-)\) basis (see examples for exact column ordering).
+- `OUTDIR/local_mag.dat` stores $(r, \langle S^x_r\rangle, \langle S^y_r\rangle, \langle S^z_r\rangle)$.
+- `OUTDIR/two_body_cf_xyz.dat` stores $(r, r', \langle S^\alpha_r S^\beta_{r'}\rangle)$ for $\alpha,\beta \in \{x,y,z\}$.
+- `OUTDIR/two_body_cf_z+-.dat` stores correlators in the $(z,+,-)$ basis (see examples for exact column ordering).
 
 ---
 
@@ -258,7 +258,7 @@ These two files define local constraints and local spin values.
 - Line `r` specifies the maximum number of lowering operators allowed on site `r`.
 - Must satisfy:
   - not exceeding the global `NODmax`
-  - not exceeding \(2S_r\) on each site
+  - not exceeding $2S_r$ on each site
 
 Examples:
 - Spin-1/2 chain: all lines are `1`
@@ -267,7 +267,7 @@ Examples:
 ### `FILE_spin` (local spin values)
 
 - Contains **`NOS` lines** of real numbers.
-- Line `r` gives the local spin \(S_r\) (e.g., `0.5`, `1.0`, ...)
+- Line `r` gives the local spin $S_r$ (e.g., `0.5`, `1.0`, ...)
 
 This design lets you target near-saturation sectors efficiently even for large-spin systems.
 
