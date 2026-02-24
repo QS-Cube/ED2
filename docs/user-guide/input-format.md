@@ -152,6 +152,7 @@ This block defines: (i) the target Hilbert subspace, (ii) optional symmetry sect
 #### Basis convention (how the subspace is specified)
 
 QS³-ED2 treats the fully polarized state \(|v\rangle\) as a vacuum and spans the subspace by applying \(N_{\downarrow}\) lowering operators:
+
 $$
 |a\rangle = \prod_{o=1}^{N_{\downarrow}} \hat{S}^{-}_{r_o}\,|v\rangle,\qquad
 N_{\downarrow}\in[\mathrm{NODmin},\mathrm{NODmax}].
@@ -171,9 +172,11 @@ You specify:
 
 1) their **orders** `L1..L6` such that \(\hat{T}_m^{L_m}=\hat{1}\)  
 2) their **sector labels** `M1..M6` such that
+
 \[
 \hat{T}_m|\Psi\rangle = e^{-i 2\pi M_m/L_m}\,|\Psi\rangle,\qquad M_m\in\{0,\dots,L_m-1\}.
 \]
+
 3) their **site permutations** via `FILE_S1..FILE_S6`
 
 | Key | Type | Meaning |
