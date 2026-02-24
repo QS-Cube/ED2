@@ -63,7 +63,7 @@ originally developed for studies of spin-1/2 XXZ systems near saturation
 magnetization, and generalizes it to fully anisotropic quantum spin
 Hamiltonians of the form
 
-$$
+```math
 \hat H =
 \sum_{r>r'} \sum_{\alpha\in\{x,y,z\}}
 \Big[
@@ -72,7 +72,7 @@ J^{\alpha}_{rr'} \hat S^{\alpha}_r \hat S^{\alpha}_{r'}
 + \Gamma^{\alpha}_{rr'} ( \hat S^{\beta}_r \hat S^{\gamma}_{r'} + \hat S^{\gamma}_r \hat S^{\beta}_{r'} )
 \Big]
 - \sum_r \mathbf h_r \cdot \hat{\mathbf S}_r .
-$$
+```
 
 with mutually distinct indices $\alpha\neq\beta\neq\gamma$. Here
 $J^{\alpha}_{rr'}$, $D^{\alpha}_{rr'}$, and $\Gamma^{\alpha}_{rr'}$
