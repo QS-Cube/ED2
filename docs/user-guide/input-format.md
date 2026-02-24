@@ -229,6 +229,11 @@ During runtime, ED2 prints an **Optimal MNTE**, which can be used to tune memory
 | `FILE_wf` | CHARACTER | Directory for eigenvector I/O. |
 | `OUTDIR` | CHARACTER | Output directory for observables and diagnostics. |
 
+The Lanczos and Thick-Restart Lanczos algorithms used in QS³-ED2 follow standard formulations:
+
+- C. Lanczos, *An iteration method for the solution of the eigenvalue problem of linear differential and integral operators*, J. Res. Natl. Bur. Stand. **45**, 255 (1950).
+- K. Wu and H. Simon, *Thick-restart Lanczos method for large symmetric eigenvalue problems*, SIAM J. Matrix Anal. Appl. **22**, 602–616 (2000).
+
 ---
 
 ### Observable outputs (local magnetization, correlations)
