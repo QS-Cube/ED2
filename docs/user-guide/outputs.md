@@ -46,11 +46,11 @@ are evaluated in the lowest-energy eigenstate.
 
 Generated files depend on input flags such as
 
-$$
-\texttt{cal\_lm},\quad
-\texttt{cal\_cf},\quad
-\texttt{wr\_wf}.
-$$
+```
+cal_lm
+cal_cf
+eigvec
+```
 
 The detailed specification of all input keys and auxiliary files
 (`FILE_*`, `list_*.dat`) is given in `input-format.md`.
@@ -72,12 +72,7 @@ This file contains the computed energy eigenvalues.
 
 Properties:
 
-- Energies are sorted in ascending order:
-  
-  $$
-  E_1 \le E_2 \le \cdots
-  $$
-
+- Energies are sorted in ascending order: $E_1 \le E_2 \le \cdots$
 - The first row corresponds to the ground state $E_1$.
 - Units are identical to the Hamiltonian parameters.
 
@@ -88,13 +83,7 @@ Properties:
 ### File: `local_mag.dat`
 
 This file contains expectation values of local spin operators
-evaluated in the lowest eigenstate:
-
-$$
-\langle S_i^x \rangle,\quad
-\langle S_i^y \rangle,\quad
-\langle S_i^z \rangle.
-$$
+evaluated in the lowest eigenstate: $\langle S_i^x \rangle,\quad \langle S_i^y \rangle,\quad \langle S_i^z \rangle.$
 
 ### Format
 
@@ -121,12 +110,7 @@ in the pair list file (see `FILE_two_cf` in `input-format.md`).
 
 ### File: `two_body_cf_xyz.dat`
 
-This file contains the full Cartesian correlation tensor
-
-$$
-\langle S_i^\alpha S_j^\beta \rangle,
-\qquad \alpha,\beta \in \{x,y,z\}.
-$$
+This file contains the full Cartesian correlation tensor $\langle S_i^\alpha S_j^\beta \rangle, \qquad \alpha,\beta \in \{x,y,z\}.$
 
 ### Format
 
@@ -151,25 +135,9 @@ for a fixed pair $(i,j)$.
 
 ### File: `two_body_cf_z+-.dat`
 
-This file expresses correlations in the basis
+This file expresses correlations in the basis $S^z,\quad S^+,\quad S^-$, where $S^\pm = S^x \pm i S^y$.
 
-$$
-S^z,\quad S^+,\quad S^-,
-$$
-
-where
-
-$$
-S^\pm = S^x \pm i S^y.
-$$
-
-It contains matrix elements such as
-
-$$
-\langle S_i^z S_j^z \rangle,\quad
-\langle S_i^z S_j^+ \rangle,\quad
-\langle S_i^+ S_j^- \rangle,\quad \text{etc.}
-$$
+It contains matrix elements such as $ \langle S_i^z S_j^z \rangle,\quad \langle S_i^z S_j^+ \rangle,\quad \langle S_i^+ S_j^- \rangle,\quad \text{etc.}$
 
 This representation is particularly useful for:
 
@@ -184,13 +152,7 @@ followed by all $z,+,-$ operator combinations.
 
 ## Eigenvectors (optional)
 
-If
-
-$$
-\texttt{wr\_wf} = 1,
-$$
-
-ED2 writes files of the form
+If wr_wf = 1, ED2 writes files of the form
 
 ```
 eigenvec_XXXX.dat
@@ -261,11 +223,4 @@ These records ensure that numerical results can be independently reproduced.
 1. Prepare `input.dat` and required `list_*.dat` files.
 2. Run ED2.
 3. Inspect `eigenvalues.dat` for ground-state energy $E_1$.
-4. Analyze
-   $$
-   \langle S_i^\alpha \rangle
-   \quad\text{and}\quad
-   \langle S_i^\alpha S_j^\beta \rangle
-   $$
-   using the corresponding output files.
 5. Verify convergence using `output.dat`.
