@@ -83,7 +83,7 @@ Properties:
 ### File: `local_mag.dat`
 
 This file contains expectation values of local spin operators
-evaluated in the lowest eigenstate: $\langle S_i^x \rangle,\quad \langle S_i^y \rangle,\quad \langle S_i^z \rangle.$
+evaluated in the lowest eigenstate: $\langle S_i^x \rangle, \langle S_i^y \rangle, \langle S_i^z \rangle.$
 
 ### Format
 
@@ -135,9 +135,9 @@ for a fixed pair $(i,j)$.
 
 ### File: `two_body_cf_z+-.dat`
 
-This file expresses correlations in the basis $S^z,\quad S^+,\quad S^-$, where $S^\pm = S^x \pm i S^y$.
+This file expresses correlations in the basis $S^z, S^+, S^-$, where $S^\pm = S^x \pm i S^y$.
 
-It contains matrix elements such as $ \langle S_i^z S_j^z \rangle,\quad \langle S_i^z S_j^+ \rangle,\quad \langle S_i^+ S_j^- \rangle,\quad \text{etc.}$
+It contains matrix elements such as $ \langle S_i^z S_j^z \rangle, \langle S_i^z S_j^+ \rangle, \langle S_i^+ S_j^- \rangle, \text{etc.}$
 
 This representation is particularly useful for:
 
