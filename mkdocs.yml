@@ -38,7 +38,16 @@ nav:
       - Input format: user-guide/input-format.md
       - Outputs: user-guide/outputs.md
   - Examples:
-      - Overview: examples/examples.md
+      - Overview: examples/overview.md
+      - Chain: examples/chain.md
+      - J1–J2 chain: examples/j1j2_chain.md
+      - Mixed-spin chain: examples/mixed_spin_chain.md
+      - Square lattice: examples/square.md
+      - Triangular lattice: examples/triangular.md
+      - Honeycomb lattice: examples/honeycomb.md
+      - Kagome lattice: examples/kagome.md
+      - Cubic lattice: examples/cubic.md
+      - Cubic (sp_HB): examples/cubic_sp_HB.md      
   - Validation & Performance:
       - Validation: vp/validation.md
       - Performance: vp/performance.md
