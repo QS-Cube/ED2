@@ -38,7 +38,6 @@ nav:
       - Input format: user-guide/input-format.md
       - Outputs: user-guide/outputs.md
   - Examples:
-      - Overview: examples/overview.md
       - Chain: examples/chain.md
       - J1–J2 chain: examples/j1j2_chain.md
       - Mixed-spin chain: examples/mixed_spin_chain.md
