@@ -12,14 +12,20 @@ This example uses **translational symmetry** (1D momentum sectors) to reduce the
 
 ---
 
-## Quick start
+# Running the Example
 
-```bash
-cd examples/j1j2_chain
-./run.sh
+Inside the example directory run
+
+```
+../../source/QS3ED2 < input.dat
 ```
 
-(As in `chain.md`, `run.sh` resolves the ED2 executable and runs `QS3ED2 < input.dat`.)
+The program prints a detailed execution log to the terminal.
+When running the provided scripts, this output is redirected to
+
+```
+output.dat
+```
 
 ---
 
@@ -63,30 +69,30 @@ Here $n=1$ (NN, $J_1$) or $n=2$ (NNN, $J_2$). The couplings are specified in `li
 
 From `input_param.dat`:
 
-- Spin: `SPIN = 0.5d0` (spin-$1/2$)
+- Spin: `SPIN = 0.5` (spin-$1/2$)
 - System size: `NOS = 100`
 - Magnetization sectors: `NODmin = 0`, `NODmax = 3`
 
 Uniform magnetic field:
 
 $$
-\mathbf{h}=(h_x,h_y,h_z)=(-0.1d0,-0.1d0,-0.3d0).
+\mathbf{h}=(h_x,h_y,h_z)=(-0.1,-0.1,-0.3).
 $$
 
 Nearest-neighbor ($J_1$) couplings:
 
 $$
-(J_x^{(1)},J_y^{(1)},J_z^{(1)})=(1.0d0,0.8d0,0.7d0),\quad
-\mathbf{D}^{(1)}=(0.2d0,0.1d0,5.0d0),\quad
-(\Gamma_x^{(1)},\Gamma_y^{(1)},\Gamma_z^{(1)})=(0.1d0,0.3d0,-0.2d0).
+(J_x^{(1)},J_y^{(1)},J_z^{(1)})=(1.0,0.8,0.7),\quad
+\mathbf{D}^{(1)}=(0.2,0.1,5.0),\quad
+(\Gamma_x^{(1)},\Gamma_y^{(1)},\Gamma_z^{(1)})=(0.1,0.3,-0.2).
 $$
 
 Next-nearest-neighbor ($J_2$) couplings:
 
 $$
-(J_x^{(2)},J_y^{(2)},J_z^{(2)})=(0.5d0,0.4d0,0.35d0),\quad
-\mathbf{D}^{(2)}=(0.1d0,0.05d0,2.5d0),\quad
-(\Gamma_x^{(2)},\Gamma_y^{(2)},\Gamma_z^{(2)})=(0.05d0,0.15d0,-0.1d0).
+(J_x^{(2)},J_y^{(2)},J_z^{(2)})=(0.5,0.4,0.35),\quad
+\mathbf{D}^{(2)}=(0.1,0.05,2.5),\quad
+(\Gamma_x^{(2)},\Gamma_y^{(2)},\Gamma_z^{(2)})=(0.05,0.15,-0.1).
 $$
 
 ---
