@@ -318,16 +318,9 @@ The final quantity should be close to machine precision for a well‑converged g
 
 ---
 
-# Output files
+# Observables and output files
 
-When `CAL_LM=1` and `CAL_CF=1`, the following files are produced (under `output/`):
-
-- `local_mag.dat`: site‑resolved magnetizations
-- `two_body_cf_z+-.dat`: \(\langle S_i^z S_j^z\rangle\), \(\langle S_i^+ S_j^-\rangle\), etc. for pairs in `list_ij_cf.dat`
-- `two_body_cf_xyz.dat`: \(\langle S_i^\alpha S_j^\beta\rangle\) data for \(\alpha,\beta\in\{x,y,z}\)
-
-For mixed spins, remember that the local operator norms differ between the two species;
-when comparing sites, it is often useful to normalize by \(S_i\) or \(S_i(S_i+1)\) depending on the quantity of interest.
+This example computes the same categories of observables as in `chain.md` (when enabled). See `chain.md` for details.
 
 ---
 
