@@ -299,8 +299,8 @@ The final quantity should be close to machine precision for a well‑converged g
 
 After the Lanczos run, `output.dat` indicates which post‑processing steps were executed, e.g.
 
-- local magnetizations → `output/local_mag.dat`
-- two‑point correlators → `output/two_body_cf_z+-.dat`, `output/two_body_cf_xyz.dat`
+- local magnetizations → `local_mag.dat`
+- two‑point correlators → `two_body_cf_z+-.dat`, `two_body_cf_xyz.dat`
 
 (When enabled, the file names and meanings follow the same conventions as in `chain.md`.)
 
