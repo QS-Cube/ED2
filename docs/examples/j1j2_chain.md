@@ -1,34 +1,31 @@
-
 # J1–J2 Chain Example
 
-This example demonstrates how to run **QS³ ED2** for a one‑dimensional spin system.
 The example located in
 
 ```
 examples/j1j2_chain/
 ```
-contains all input and output files required to reproduce the calculation.
 
-The system consists of **100 spin‑1/2 sites** arranged on a **periodic one‑dimensional chain**
-with **nearest‑neighbor ($J_1$) and next‑nearest‑neighbor ($J_2$) couplings**.
-Each bond can include anisotropic exchange (XYZ), Dzyaloshinskii–Moriya interactions, Γ interactions,
-and the system is subject to a uniform magnetic field.
+demonstrates how to run QS³-ED2 for a **frustrated 1D spin chain** with both **nearest-neighbor ($J_1$)** and **next-nearest-neighbor ($J_2$)** couplings, including anisotropic exchange (XYZ), Dzyaloshinskii–Moriya (DM) interaction, symmetric off-diagonal $\Gamma$ interaction, and a uniform magnetic field.
 
-The ground state is computed using the **Lanczos method**, and the program evaluates
+This example uses **translational symmetry** (1D momentum sectors) to reduce the Hilbert space size.
 
-- ground‑state energy
-- local magnetization
-- two‑point spin correlation functions
+---
+
+## Quick start
+
+```bash
+cd examples/j1j2_chain
+./run.sh
+```
+
+(As in `chain.md`, `run.sh` resolves the ED2 executable and runs `QS3ED2 < input.dat`.)
 
 ---
 
 # Model
 
-This example implements a **$J_1$–$J_2$ spin chain** with (i) anisotropic exchange (XYZ),
-(ii) Dzyaloshinskii–Moriya (DM) interaction, (iii) symmetric off‑diagonal $\Gamma$ interaction,
-and (iv) a uniform magnetic field.
-
-We consider a periodic chain of $N$ spin‑$1/2$ sites ($N=\texttt{NOS}=100$). The Hamiltonian is
+We consider a periodic chain of $N$ spin-$1/2$ sites ($N=\texttt{NOS}=100). The Hamiltonian is
 
 $$
 H =
@@ -36,19 +33,19 @@ H =
 +
 \sum_{\langle i,j\rangle_2} H_{ij}^{(2)}
 +
-\sum_{i=1}^{N} \mathbf{h}_i \cdot \mathbf{S}_i ,
+\sum_{i=1}^{N} \mathbf{h}\cdot\mathbf{S}_i ,
 $$
 
-where $\langle i,j\rangle_1$ denotes **nearest‑neighbor (NN)** bonds and $\langle i,j\rangle_2$ denotes
-**next‑nearest‑neighbor (NNN)** bonds. For each bond $(i,j)$ we define
+where $\langle i,j\rangle_1$ denotes **nearest-neighbor (NN)** bonds and $\langle i,j\rangle_2$ denotes **next-nearest-neighbor (NNN)** bonds (periodic boundary condition).
+For each bond $(i,j)$ we define
 
 $$
 \begin{aligned}
 H_{ij}^{(n)}
 &=
-\sum_{\alpha=x,y,z} J^{(n)}_{\alpha}\, S_i^{\alpha} S_j^{\alpha}
+\sum_{\alpha=x,y,z} J_{\alpha}^{(n)}\, S_i^\alpha S_j^\alpha
 +
-\mathbf{D}^{(n)} \cdot \left(\mathbf{S}_i \times \mathbf{S}_j\right)
+\mathbf{D}^{(n)}\cdot\left(\mathbf{S}_i\times\mathbf{S}_j\right)
 \\
 &\quad
 +
@@ -56,445 +53,118 @@ H_{ij}^{(n)}
 +
 \Gamma_y^{(n)}\left(S_i^{z}S_j^{x}+S_i^{x}S_j^{z}\right)
 +
-\Gamma_z^{(n)}\left(S_i^{x}S_j^{y}+S_i^{y}S_j^{x}\right),
+\Gamma_z^{(n)}\left(S_i^{x}S_j^{y}+S_i^{y}S_j^{x}\right).
 \end{aligned}
 $$
 
-with $n=1$ (NN, $J_1$) or $n=2$ (NNN, $J_2$). Here $J_{\alpha}^{(n)}$ is the anisotropic exchange,
-$\mathbf{D}^{(n)}=(D_x^{(n)},D_y^{(n)},D_z^{(n)})$ is the DM vector, and
-$(\Gamma_x^{(n)},\Gamma_y^{(n)},\Gamma_z^{(n)})$ are the symmetric off‑diagonal couplings.
+Here $n=1$ (NN, $J_1$) or $n=2$ (NNN, $J_2$). The couplings are specified in `list_xyz_dm_gamma.dat` (bond list), while the magnetic field is specified in `list_hvec.dat` (site list).
 
-In this example the field is uniform:
-$\mathbf{h}_i=\mathbf{h}=(h_x,h_y,h_z)$ for all $i$.
+## Parameters used in this example
 
-Magnetic field:
+From `input_param.dat`:
 
-$$
-\mathbf{h}=(-0.1,-0.1,-0.3)
-$$
+- Spin: `SPIN = 0.5d0` (spin-$1/2$)
+- System size: `NOS = 100`
+- Magnetization sectors: `NODmin = 0`, `NODmax = 3`
 
-Nearest‑neighbor ($J_1$) parameters:
+Uniform magnetic field:
 
 $$
-(J_x^{(1)},J_y^{(1)},J_z^{(1)})=(1.0,0.8,0.7)
+\mathbf{h}=(h_x,h_y,h_z)=(-0.1d0,-0.1d0,-0.3d0).
 $$
 
-$$
-\mathbf{D}^{(1)}=(0.2,0.1,5.0)
-$$
+Nearest-neighbor ($J_1$) couplings:
 
 $$
-(\Gamma_x^{(1)},\Gamma_y^{(1)},\Gamma_z^{(1)})=(0.1,0.3,-0.2)
+(J_x^{(1)},J_y^{(1)},J_z^{(1)})=(1.0d0,0.8d0,0.7d0),\quad
+\mathbf{D}^{(1)}=(0.2d0,0.1d0,5.0d0),\quad
+(\Gamma_x^{(1)},\Gamma_y^{(1)},\Gamma_z^{(1)})=(0.1d0,0.3d0,-0.2d0).
 $$
 
-Next‑nearest‑neighbor ($J_2$) parameters:
+Next-nearest-neighbor ($J_2$) couplings:
 
 $$
-(J_x^{(2)},J_y^{(2)},J_z^{(2)})=(0.5,0.4,0.35)
-$$
-
-$$
-\mathbf{D}^{(2)}=(0.1,0.05,2.5)
-$$
-
-$$
-(\Gamma_x^{(2)},\Gamma_y^{(2)},\Gamma_z^{(2)})=(0.05,0.15,-0.1)
+(J_x^{(2)},J_y^{(2)},J_z^{(2)})=(0.5d0,0.4d0,0.35d0),\quad
+\mathbf{D}^{(2)}=(0.1d0,0.05d0,2.5d0),\quad
+(\Gamma_x^{(2)},\Gamma_y^{(2)},\Gamma_z^{(2)})=(0.05d0,0.15d0,-0.1d0).
 $$
 
 ---
 
-# Input Files
+# Input files
 
-The calculation is controlled by several input files located in
-`examples/chain/`.
+This example uses the same high-level workflow as `chain.md`. The key difference is that this example includes both NN ($J_1$) and NNN ($J_2$) bonds.
 
-## input_param.dat
+## `input.dat`
 
-This file defines the global simulation parameters.
+Top-level control file that points to the other inputs (parameter file, lists, symmetry files, etc.).
+(See `chain.md` for the detailed explanation of `input.dat` structure.)
 
-| parameter | meaning |
-|-----------|---------|
-| `NOS` | number of sites |
-| `NODMIN`, `NODMAX` | range of down‑spin sectors |
-| `SPIN` | local spin magnitude |
-| `HX,HY,HZ` | magnetic field components |
-| `JX,JY,JZ` | exchange couplings |
-| `DX,DY,DZ` | DM interaction |
-| `GX,GY,GZ` | Γ interaction |
+## `input_param.dat`
 
-For this example
+Parameter file (Fortran namelist `&input_parameters`) specifying system size, sector restriction, and default coupling values.
 
+## `list_hvec.dat`
+
+Site list for the magnetic field.
+In this example, the field is uniform (same $(h_x,h_y,h_z)$ for all sites).
+
+## `list_xyz_dm_gamma.dat` (bond list)
+
+Bond list for $(J_x,J_y,J_z)$, $(D_x,D_y,D_z)$, and $(\Gamma_x,\Gamma_y,\Gamma_z)$.
+
+**Two-block structure (confirmed):**
+
+- Lines **1–100**: NN bonds ($J_1$): `(1,2),(2,3),...,(99,100),(100,1)`
+- Lines **101–200**: NNN bonds ($J_2$): `(1,3),(2,4),...,(99,1),(100,2)`
+
+The file contains `NO_TWO = 200` bonds in total.
+
+Example lines:
+
+```text
+(1)          1       2  1.000000000000000E+00  8.000000000000000E-01  7.000000000000000E-01  2.000000000000000E-01  1.000000000000000E-01  5.000000000000000E+00  1.000000000000000E-01  3.000000000000000E-01 -2.000000000000000E-01
+(100)      100       1  1.000000000000000E+00  8.000000000000000E-01  7.000000000000000E-01  2.000000000000000E-01  1.000000000000000E-01  5.000000000000000E+00  1.000000000000000E-01  3.000000000000000E-01 -2.000000000000000E-01
+(101)        1       3  5.000000000000000E-01  4.000000000000000E-01  3.500000000000000E-01  1.000000000000000E-01  5.000000000000000E-02  2.500000000000000E+00  5.000000000000000E-02  1.500000000000000E-01 -1.000000000000000E-01
+(200)      100       2  5.000000000000000E-01  4.000000000000000E-01  3.500000000000000E-01  1.000000000000000E-01  5.000000000000000E-02  2.500000000000000E+00  5.000000000000000E-02  1.500000000000000E-01 -1.000000000000000E-01
 ```
-NOS = 100
-NODMIN = 0
-NODMAX = 3
-SPIN = 0.5
-```
-
-The solver therefore evaluates sectors with
-
-$$
-N_{\downarrow}\in\{0,1,2,3\}.
-$$
-
-For spin‑1/2 systems the corresponding total magnetization is
-
-$$
-S^z_{\mathrm{tot}}=\frac{N}{2}-N_{\downarrow}.
-$$
 
 ---
 
-## list_xyz_dm_gamma.dat
+# Running the example
 
-This file defines **bond interactions**.
+Same as in `chain.md`:
 
-Each row contains
-
-```
-i  j  Jx  Jy  Jz  Dx  Dy  Dz  Gx  Gy  Gz
-```
-
-For the chain example the bonds are
-
-```
-(1,2)
-(2,3)
-...
-(99,100)
-(100,1)
-```
-
-The last bond indicates that the chain uses **periodic boundary conditions**.
-
----
-
-## list_hvec.dat
-
-This file specifies the magnetic field on each site.
-
-Format
-
-```
-site   hx   hy   hz
-```
-
-In this example the field is uniform
-
-$$
-(h_x,h_y,h_z)=(-0.1,-0.1,-0.3).
-$$
-
----
-
-# Running the Example
-
-Inside the example directory run
-
-```
+```bash
 ../../source/QS3ED2 < input.dat
 ```
 
-The program prints a detailed execution log to the terminal.
-When running the provided scripts, this output is redirected to
+---
 
-```
-output.dat
-```
+# Understanding `output.dat`
+
+Key numbers for this example run:
+
+- `THS = 166751`
+- `THS(k) = 1669`
+- `E0 = `
+- `total lanczos step = `
+- eigenvector quality: `9.336910151034534E-17`
 
 ---
 
-# Reading `output.dat`
+# Translational symmetry (`FILE_S1`–`FILE_S6`)
 
-The file `output.dat` contains the main diagnostic information for the run.
-
-## System size and translational symmetry
-
-```
-NOS = 100
-```
-
-The lattice dimensions are
-
-```
-L1 = 100
-L2 = L3 = L4 = L5 = L6 = 1
-```
-
-This indicates a **one‑dimensional lattice**.
-
-In QS³ ED2 translational symmetry operations are defined by
-
-```
-FILE_S1 ... FILE_S6
-```
-
-which correspond to translations associated with the lattice dimensions
-`L1`–`L6`.
-
-Because
-
-```
-L2 = L3 = L4 = L5 = L6 = 1
-```
-
-there are no translations in those directions, so
-
-- `FILE_S2`–`FILE_S6` are ignored
-- only `FILE_S1` is active
-
-### Translation operator (`FILE_S1`)
-
-The translation symmetry is defined in
-
-```
-list_p1.dat
-```
-
-which contains
-
-```
-2
-3
-4
-...
-100
-1
-```
-
-This represents the mapping
-
-$$
-T(i)=i+1 \quad (i=1,\dots,99), \qquad T(100)=1.
-$$
-
-Thus the spin configuration transforms as
-
-$$
-(S_1,S_2,\dots,S_{100})
-\rightarrow
-(S_2,S_3,\dots,S_{100},S_1).
-$$
-
-This generates the cyclic translation group of the periodic chain.
-
-QS³ ED2 uses this symmetry to construct **representative states** and reduce
-the Hilbert space before diagonalization.
+This example uses 1D translation symmetry as in `chain.md`. See `chain.md` for details.
 
 ---
 
-## Hilbert‑space size
+# Observables and output files
 
-```
-THS = 166751
-THS(k) = 1669
-```
-
-- `THS` : estimated dimension before symmetry reduction
-- `THS(k)` : number of representative states after applying symmetry
-
-The computational cost is governed mainly by `THS(k)`.
-
----
-
-## Workspace parameter MNTE
-
-```
-MNTE = -1
-```
-
-activates automatic workspace estimation.
-
-The program prints
-
-```
-Current MNTE = 1000
-Optimal MNTE = 401
-```
-
-The recommended value for this example is
-
-$$
-MNTE \ge 401.
-$$
-
----
-
-## Lanczos solver
-
-```
-Eigen solver: Lanczos
-```
-
-Parameters
-
-- convergence threshold
-
-$$
-LNC\_ENE\_CONV = 10^{-14}
-$$
-
-- iterations
-
-```
-total lanczos step = 145
-```
-
----
-
-## Ground-state energy
-
-The computed ground-state energy is approximately
-
-$$
-E_0 \approx -1.2996...\times10^{1}.
-$$
-
-The exact value may differ slightly depending on the compiler,
-BLAS library, or parallel execution environment.
-
----
-
-## Eigenvector quality
-
-ED2 verifies the accuracy of the Lanczos eigenvector using
-
-$$
-\left|
-1-\frac{\langle GS|H|GS\rangle^2}{\langle GS|H^2|GS\rangle}
-\right|.
-$$
-
-For this example the value is typically of order
-
-$$
-10^{-15}\sim10^{-16},
-$$
-
-indicating that the Lanczos ground state is converged to
-near machine precision.
-
----
-
-# Output Files
-
-| file | description |
-|-----|-------------|
-| `eigenvalues.dat` | eigenvalues from Lanczos |
-| `local_mag.dat` | local magnetization $\langle S_i^\alpha\rangle$ |
-| `two_body_cf_xyz.dat` | full correlation tensor |
-| `two_body_cf_z+-.dat` | $S^z$ and ladder correlations |
-| `output.dat` | execution log |
-
----
-
-# Observables
-
-This example enables
-
-```
-CAL_LM = 1
-CAL_CF = 1
-```
-
-so both local magnetization and two‑point correlations are computed in the
-ground state $|{\rm GS}\rangle$.
-
-
-## Correlation pairs (`list_ij_cf.dat`)
-
-```
-1 2
-1 3
-...
-1 10
-```
-
-Thus correlations are evaluated for the pairs
-
-$$
-(1,2),(1,3),\dots,(1,10).
-$$
-
-This allows quick inspection of correlation decay along the chain.
-
----
-
-## Local magnetization (`local_mag.dat`)
-
-Columns
-
-| column | meaning |
-|---|---|
-|1|site index $i$|
-|2|$\langle S_i^x\rangle$|
-|3|$\langle S_i^y\rangle$|
-|4|$\langle S_i^z\rangle$|
-
-Example output
-
-```
-i  -1.5e-08  -6.5e-09  4.7e-01
-```
-
-This indicates near‑zero transverse magnetization and a finite
-$z$‑polarization.
-
-Because the Hamiltonian and lattice are translation‑invariant,
-
-$$
-\langle S_i^\alpha\rangle \approx \langle S_{i+1}^\alpha\rangle.
-$$
-
----
-
-## Correlation tensor (`two_body_cf_xyz.dat`)
-
-For each pair $(i,j)$ ED2 outputs
-
-$$
-C_{ij}^{\alpha\beta}
-=\langle GS|S_i^\alpha S_j^\beta|GS\rangle.
-$$
-
-Columns
-
-|col|meaning|
-|---|---|
-|1|$i$|
-|2|$j$|
-|3–11|correlation tensor components|
-
-Matrix form
-
-$$
-\begin{pmatrix}
-\langle S_i^x S_j^x\rangle & \langle S_i^x S_j^y\rangle & \langle S_i^x S_j^z\rangle \\
-\langle S_i^y S_j^x\rangle & \langle S_i^y S_j^y\rangle & \langle S_i^y S_j^z\rangle \\
-\langle S_i^z S_j^x\rangle & \langle S_i^z S_j^y\rangle & \langle S_i^z S_j^z\rangle
-\end{pmatrix}
-$$
-
-A useful quantity is the bond chirality
-
-$$
-\langle (\mathbf S_i\times \mathbf S_j)_z\rangle
-=
-\langle S_i^xS_j^y\rangle
--
-\langle S_i^yS_j^x\rangle .
-$$
+This example computes the same categories of observables as in `chain.md` (when enabled). See `chain.md` for details.
 
 ---
 
 # Summary
 
-This example illustrates a complete QS³ ED2 workflow
-
-1. define a spin model via input files
-2. construct a symmetry‑reduced Hilbert space
-3. compute the ground state using the Lanczos method
-4. evaluate physical observables
-
-It also demonstrates how to interpret the diagnostic information printed in
-`output.dat`.
+This example demonstrates how to set up and run a **frustrated $J_1$–$J_2$ chain** with DM and $\Gamma$ couplings under a magnetic field, while exploiting **translational symmetry** to reduce the Hilbert space and accelerate Lanczos diagonalization.
