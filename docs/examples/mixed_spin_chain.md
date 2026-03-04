@@ -202,80 +202,119 @@ output.dat
 
 ---
 
-# Understanding `output.dat`
 
-`output.dat` is the main log file. It contains (i) a full echo of the parsed inputs,
-(ii) symmetry/basis setup information, (iii) Lanczos solver settings, and (iv) solver progress.
+# Reading `output.dat`
 
-For this mixed‑spin example, the most important points are:
+The file `output.dat` contains the main diagnostic information for the run.
 
-## 1. Input echo and which files were actually used
+## System size and translational symmetry
 
-Near the top you will find the `&INPUT_PARAMETERS` block. Check that the intended files are listed, in particular
-
-- `FILE_XYZ_DM_GAMMA = list_xyz_dm_gamma.dat`
-- `FILE_HVEC         = list_hvec.dat`
-- `FILE_NODMAX       = list_NODmax.dat`
-- `FILE_SPIN         = list_spin.dat`
-- `FILE_TWO_CF       = list_ij_cf.dat` (when `CAL_CF=1`)
-
-This confirms that the run is using **site‑dependent spins** (`list_spin.dat`) and **site‑wise NOD caps**
-(`list_NODmax.dat`) instead of a uniform‑spin setting.
-
-## 2. Translational symmetry setup
-
-You should see lines such as
-
-- `### Set translational operations.`
-- `FILE_S1 = list_p1.dat` (and `FILE_S2`–`FILE_S6` if present)
-
-For an alternating mixed‑spin chain, `list_p1.dat` should represent a translation compatible with the
-spin pattern (typically a **two‑site** translation for an ABAB… chain).
-
-## 3. Basis size (important sanity check)
-
-The code reports
-
-- `THS   = ...` : number of basis states in the selected NOD window **before** symmetry reduction
-- `THS(k)= ...` : number of **representative** states in the chosen translational symmetry sector
-
-These values depend on the sector (`NODMIN`–`NODMAX`), system size, and the symmetry choice, so you should treat
-them as *run‑dependent diagnostics* (not fixed reference numbers).
-
-## 4. Lanczos configuration and convergence
-
-The Lanczos block starts with `&INPUT_LANCZ`, e.g.
-
-- `LNC_ENE_CONV` : energy convergence threshold
-- `MAXITR`, `MINITR`, `ITRINT` : iteration controls and printing interval
-
-During the run, the log prints lines like
+From the input echo:
 
 ```
-itr, ene, conv:   <itr>   <energy>   <conv>
+NOS = 100
+L1  = 50
+L2 = L3 = L4 = L5 = L6 = 1
 ```
 
-where `conv` is the current convergence indicator used by the Lanczos routine.
-A typical run shows the energy stabilizing and `conv` dropping below `LNC_ENE_CONV`.
+This corresponds to a **one‑dimensional system**.
 
-At the end you will find
+- `NOS = 100` : total number of sites
+- `L1 = 50` : number of translational unit cells
 
-- `total lanczos step: ...`
-- `E_0 = ...`
-
-which are the final iteration count and the ground‑state energy.
-
-## 5. Eigenvector quality (numerical consistency)
-
-Finally, QS³‑ED2 prints a diagnostic
+In this mixed‑spin example, one unit cell contains **two sites**, so
 
 ```
-quality of eigenvector
-<GS| H |GS>  = ...
-|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = ...
+50 cells × 2 sites = 100 sites
 ```
 
-The last quantity should be close to machine precision for a well‑converged Lanczos ground state.
+### Translation operator (`FILE_S1`)
+
+The translational symmetry is defined by
+
+```
+FILE_S1 = list_p1.dat
+```
+
+For this example the mapping is
+
+```
+3
+4
+5
+...
+100
+1
+2
+```
+
+which corresponds to
+
+T(i)=i+2  (i=1,...,98),   T(99)=1,  T(100)=2.
+
+Thus the spin configuration transforms as
+
+(S1,S2,S3,...,S100) → (S3,S4,S5,...,S100,S1,S2).
+
+This two‑site translation preserves the alternating mixed‑spin pattern.
+
+---
+
+## Hilbert‑space size
+
+`output.dat` reports
+
+```
+THS   = 171801
+THS(k)= 3438
+```
+
+- `THS` is the number of states **before symmetry reduction**
+- `THS(k)` is the number of **representative states** after translational symmetry reduction
+
+---
+
+## Lanczos solver
+
+The solver parameters appear as
+
+```
+&INPUT_LANCZ
+LNC_ENE_CONV = 1.0E-14
+MAXITR = 10000
+MINITR = 5
+ITRINT = 5
+/
+```
+
+During the calculation the program prints iteration logs such as
+
+```
+itr, ene, conv:   5   -2.134389873145227E+00   1.0E+00
+itr, ene, conv:  10   -4.899004672179782E+00   5.6E-01
+...
+itr, ene, conv: 165   -5.652675156567413E+00   3.2E-15
+```
+
+The solver finishes with
+
+```
+total lanczos step: 165
+E_0 = -5.652675156567413E+00
+```
+
+---
+
+## Eigenvector quality
+
+The accuracy of the Lanczos eigenvector is checked using
+
+```
+<GS| H |GS>  = -5.652675...
+|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = $10^{-15} \sim 10^{-16}$
+```
+
+The final quantity should be close to machine precision for a well‑converged ground state.
 
 ---
 
