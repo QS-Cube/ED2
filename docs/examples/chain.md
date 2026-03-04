@@ -164,7 +164,7 @@ $$
 Inside the example directory run
 
 ```
-../../QS3ED2.exe < input.dat
+../../source/QS3ED2 < input.dat
 ```
 
 The program prints a detailed execution log to the terminal.
