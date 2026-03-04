@@ -314,31 +314,37 @@ total lanczos step = 145
 
 ---
 
-## Ground‑state energy
+## Ground-state energy
+
+The computed ground-state energy is approximately
 
 $$
-E_0 = -1.299620173300453\times10^{1}.
+E_0 \approx -1.2996...\times10^{1}.
 $$
+
+The exact value may differ slightly depending on the compiler,
+BLAS library, or parallel execution environment.
 
 ---
 
 ## Eigenvector quality
 
-ED2 verifies the ground‑state accuracy using
+ED2 verifies the accuracy of the Lanczos eigenvector using
 
 $$
 \left|
 1-\frac{\langle GS|H|GS\rangle^2}{\langle GS|H^2|GS\rangle}
-\right|
+\right|.
 $$
 
-For this example
+For this example the value is typically of order
 
 $$
-1.94\times10^{-16}
+10^{-15}\sim10^{-16},
 $$
 
-which is essentially machine precision.
+indicating that the Lanczos ground state is converged to
+near machine precision.
 
 ---
 
