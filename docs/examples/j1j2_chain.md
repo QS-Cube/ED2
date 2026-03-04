@@ -12,23 +12,6 @@ This example uses **translational symmetry** (1D momentum sectors) to reduce the
 
 ---
 
-# Running the Example
-
-Inside the example directory run
-
-```
-../../source/QS3ED2 < input.dat
-```
-
-The program prints a detailed execution log to the terminal.
-When running the provided scripts, this output is redirected to
-
-```
-output.dat
-```
-
----
-
 # Model
 
 We consider a periodic chain of $N$ spin-$1/2$ sites ($N=\texttt{NOS}=100). The Hamiltonian is
@@ -153,9 +136,8 @@ Key numbers for this example run:
 
 - `THS = 166751`
 - `THS(k) = 1669`
-- `E0 = `
-- `total lanczos step = `
-- eigenvector quality: `9.336910151034534E-17`
+- `E0 = -3.656548...`
+- eigenvector quality: $10^{-15} \sim 10^{-16}$
 
 ---
 

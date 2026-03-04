@@ -204,20 +204,78 @@ output.dat
 
 # Understanding `output.dat`
 
-`output.dat` summarizes (i) parsed input, (ii) symmetry setup, (iii) basis size, and (iv) the Lanczos run.
+`output.dat` is the main log file. It contains (i) a full echo of the parsed inputs,
+(ii) symmetry/basis setup information, (iii) Lanczos solver settings, and (iv) solver progress.
 
-Key lines to check for this mixed‑spin example:
+For this mixed‑spin example, the most important points are:
 
-- The code confirms the presence of the mixed‑spin inputs:
-  - `FILE_NODMAX = list_NODmax.dat`
-  - `FILE_SPIN   = list_spin.dat`
-- Basis sizes:
-  - `THS = 166751` (total states in the selected NOD sector before symmetry reduction)
-  - `THS(k) = 1669` (representatives in the chosen translational symmetry sector)
-- Lanczos convergence and final energy:
-  - `E_0 = -3.656548006870285E+00`
-- Eigenvector quality diagnostic:
-  - `|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = 9.3369e-17` (machine precision)
+## 1. Input echo and which files were actually used
+
+Near the top you will find the `&INPUT_PARAMETERS` block. Check that the intended files are listed, in particular
+
+- `FILE_XYZ_DM_GAMMA = list_xyz_dm_gamma.dat`
+- `FILE_HVEC         = list_hvec.dat`
+- `FILE_NODMAX       = list_NODmax.dat`
+- `FILE_SPIN         = list_spin.dat`
+- `FILE_TWO_CF       = list_ij_cf.dat` (when `CAL_CF=1`)
+
+This confirms that the run is using **site‑dependent spins** (`list_spin.dat`) and **site‑wise NOD caps**
+(`list_NODmax.dat`) instead of a uniform‑spin setting.
+
+## 2. Translational symmetry setup
+
+You should see lines such as
+
+- `### Set translational operations.`
+- `FILE_S1 = list_p1.dat` (and `FILE_S2`–`FILE_S6` if present)
+
+For an alternating mixed‑spin chain, `list_p1.dat` should represent a translation compatible with the
+spin pattern (typically a **two‑site** translation for an ABAB… chain).
+
+## 3. Basis size (important sanity check)
+
+The code reports
+
+- `THS   = ...` : number of basis states in the selected NOD window **before** symmetry reduction
+- `THS(k)= ...` : number of **representative** states in the chosen translational symmetry sector
+
+These values depend on the sector (`NODMIN`–`NODMAX`), system size, and the symmetry choice, so you should treat
+them as *run‑dependent diagnostics* (not fixed reference numbers).
+
+## 4. Lanczos configuration and convergence
+
+The Lanczos block starts with `&INPUT_LANCZ`, e.g.
+
+- `LNC_ENE_CONV` : energy convergence threshold
+- `MAXITR`, `MINITR`, `ITRINT` : iteration controls and printing interval
+
+During the run, the log prints lines like
+
+```
+itr, ene, conv:   <itr>   <energy>   <conv>
+```
+
+where `conv` is the current convergence indicator used by the Lanczos routine.
+A typical run shows the energy stabilizing and `conv` dropping below `LNC_ENE_CONV`.
+
+At the end you will find
+
+- `total lanczos step: ...`
+- `E_0 = ...`
+
+which are the final iteration count and the ground‑state energy.
+
+## 5. Eigenvector quality (numerical consistency)
+
+Finally, QS³‑ED2 prints a diagnostic
+
+```
+quality of eigenvector
+<GS| H |GS>  = ...
+|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = ...
+```
+
+The last quantity should be close to machine precision for a well‑converged Lanczos ground state.
 
 ---
 
