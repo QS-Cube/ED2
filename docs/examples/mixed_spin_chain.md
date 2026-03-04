@@ -311,7 +311,7 @@ The accuracy of the Lanczos eigenvector is checked using
 
 ```
 <GS| H |GS>  = -5.652675...
-|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = $10^{-15} \sim 10^{-16}$
+|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = 10E-15 ~ 10E-16
 ```
 
 The final quantity should be close to machine precision for a well‑converged ground state.
