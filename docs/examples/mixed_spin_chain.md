@@ -76,10 +76,7 @@ $$
 ### Bond interactions
 
 `list_xyz_dm_gamma.dat` specifies the bond list and the couplings for each bond.
-This file contains **two blocks**:
-
-1. **Nearest‑neighbor (J1) bonds**: \((i,i+1)\) including \((N,1)\)
-2. **Next‑nearest‑neighbor (J2) bonds**: \((i,i+2)\) including \((N,2)\) and \((N-1,1)\)
+In the current `mixed_spin_chain` dataset, the file contains **nearest‑neighbor bonds only** (one block).
 
 Each bond line stores
 
@@ -87,19 +84,12 @@ $$
 (i,\,j,\,J_x,\,J_y,\,J_z,\,D_x,\,D_y,\,D_z,\,\Gamma_x,\,\Gamma_y,\,\Gamma_z).
 $$
 
-For reference, the first line of each block corresponds to
+For reference, the first line (bond 1–2) corresponds to
 
-- **J1 block** (bond 1–2):
-  \(J_x=1,\,J_y=0.8,\,J_z=0.7\),
-  \(\mathbf{D}=(0.2,0.1,5)\),
-  \(\boldsymbol\Gamma=(0.1,0.3,-0.2)\).
-- **J2 block** (bond 1–3):
-  \(J_x=0.5,\,J_y=0.4,\,J_z=0.35\),
-  \(\mathbf{D}=(0.1,0.05,2.5)\),
-  \(\boldsymbol\Gamma=(0.05,0.15,-0.1)\).
+- \(J_x=1,\,J_y=0.8,\,J_z=0.7\),
+- \(\mathbf{D}=(0.2,0.1,5)\),
+- \(\boldsymbol\Gamma=(0.1,0.3,-0.2)\).
 
-> If you want a pure nearest‑neighbor model, simply remove the second block (or comment it out by deleting those lines)
-> and adjust `NO_TWO` / bond counting accordingly in your workflow.
 
 ---
 
@@ -195,28 +185,19 @@ i.e. a translation by **+2 sites (mod N)**.
 
 ---
 
-# Running the example
+# Running the Example
 
-The run procedure (build, set executable path, run script) is the same as `examples/chain/`.
-If you already have `examples/chain/run.sh` working, you can reuse it for this directory.
+Inside the example directory run
 
-A typical workflow is:
-
-```bash
-cd examples/mixed_spin_chain
-./run.sh
+```
+../../source/QS3ED2 < input.dat
 ```
 
-The main log is written to
+The program prints a detailed execution log to the terminal.
+When running the provided scripts, this output is redirected to
 
 ```
 output.dat
-```
-
-and observable outputs are written under
-
-```
-output/
 ```
 
 ---
