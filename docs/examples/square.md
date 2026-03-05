@@ -1,318 +1,382 @@
-# Square‑Lattice Example
 
-This example demonstrates how to run **QS³ ED2** for a **two‑dimensional square lattice** (periodic boundary conditions).
-The example is located in
+# Square Lattice Example
+
+Directory
 
 ```
 examples/square/
 ```
 
-and contains all input and output files required to reproduce the calculation.
+This example demonstrates how to run **QS³-ED2** for a two‑dimensional
+square‑lattice quantum spin system with periodic boundary conditions.
+
+The system contains
+
+$$
+N = 100
+$$
+
+spin‑1/2 sites arranged on a
+
+$$
+10 \times 10
+$$
+
+square lattice.
 
 The ground state is computed using the **Lanczos method**, and the program evaluates
 
 - ground‑state energy
 - local magnetization
-- two‑point spin correlation functions
+- two‑point spin correlations.
 
 ---
 
-# Model
+# 1. Introduction
 
-## Hamiltonian
+This example illustrates a **two‑dimensional lattice calculation** with QS³‑ED2.
 
-The Hamiltonian implemented in this example is
+The example demonstrates
+
+- construction of a Hamiltonian on a 2D lattice
+- translational symmetry in two directions
+- momentum‑sector selection
+- Lanczos diagonalization
+- evaluation of physical observables.
+
+---
+
+# 2. Model Hamiltonian
+
+The Hamiltonian is
 
 $$
 H =
 \sum_{\langle i,j\rangle}
-\left(
-J_x S_i^x S_j^x +
-J_y S_i^y S_j^y +
-J_z S_i^z S_j^z
-+ \mathbf{D}\cdot(\mathbf{S}_i \times \mathbf{S}_j)
-+ H_\Gamma(i,j)
-\right)
+H_{ij}
 +
-\sum_i \mathbf{h}\cdot\mathbf{S}_i,
+\sum_i \mathbf{h}\cdot\mathbf{S}_i
 $$
 
-where the symmetric anisotropic interaction is
+with bond interaction
+
+$$
+H_{ij} =
+\sum_{\alpha=x,y,z}
+J_\alpha S_i^\alpha S_j^\alpha
++
+\mathbf{D}\cdot(\mathbf{S}_i \times \mathbf{S}_j)
++
+H_\Gamma(i,j).
+$$
+
+The symmetric anisotropic interaction is
 
 $$
 H_\Gamma(i,j)=
-\Gamma_x\left(S_i^y S_j^z + S_i^z S_j^y\right)
-+\Gamma_y\left(S_i^z S_j^x + S_i^x S_j^z\right)
-+\Gamma_z\left(S_i^x S_j^y + S_i^y S_j^x\right).
+\Gamma_x(S_i^y S_j^z + S_i^z S_j^y)
++
+\Gamma_y(S_i^z S_j^x + S_i^x S_j^z)
++
+\Gamma_z(S_i^x S_j^y + S_i^y S_j^x).
 $$
-
-This dataset uses a **uniform spin‑1/2** model.
 
 ---
 
-## Couplings used in this dataset
+# 3. Coupling Parameters
 
-### Magnetic field
-
-`list_hvec.dat` provides the on‑site field \(\mathbf{h}_i\).
-Each line stores
+Magnetic field
 
 $$
-(i,\,h_x,\,h_y,\,h_z).
+\mathbf{h}=(-0.1,-0.1,-0.3)
 $$
 
-In this dataset it is uniform across all sites:
+Exchange parameters
 
 $$
-\mathbf{h} = (-0.1,\,-0.1,\,-0.3).
+(J_x,J_y,J_z)=(1.0,0.8,0.7)
 $$
 
-### Bond interactions
-
-`list_xyz_dm_gamma.dat` specifies the bond list and the couplings for each bond.
-
-Each bond line stores
+Dzyaloshinskii–Moriya interaction
 
 $$
-(i,\,j,\,J_x,\,J_y,\,J_z,\,D_x,\,D_y,\,D_z,\,\Gamma_x,\,\Gamma_y,\,\Gamma_z).
+\mathbf{D}=(0.2,0.1,5.0)
 $$
 
-For reference, the first line corresponds to
+$\Gamma$ interaction
 
-- \(J_x=1,\,J_y=0.8,\,J_z=0.7\),
-- \(\mathbf{D}=(0.2,0.1,5)\),
-- \(\boldsymbol\Gamma=(0.1,0.3,-0.2)\).
-
-In the `square` dataset, the file contains **two sets of nearest‑neighbor bonds**:
-
-- bonds along the **x direction** (within each row, with periodic wrap‑around),
-- bonds along the **y direction** (between rows, with periodic wrap‑around).
+$$
+(\Gamma_x,\Gamma_y,\Gamma_z)=(0.1,0.3,-0.2)
+$$
 
 ---
 
-# Input files
+# 4. Lattice Structure
 
-## `input_param.dat`
-
-Main runtime parameters (system size, basis truncation, algorithm switches).
-
-For this example:
-
-- `NOS = 100`: number of sites
-- `LX = 10`, `LY = 10`: lattice size (10×10)
-- `SPIN = 0.5`: uniform spin‑1/2
-- `NODmin = 0`, `NODmax = 3`: restrict the calculation to a near‑fully‑polarized sector (see notes in `chain.md`)
-- uniform coupling constants (`HX/HY/HZ`, `JX/JY/JZ`, `DX/DY/DZ`, `GX/GY/GZ`)
-
-The program prints an expanded parameter block in `output.dat` (see below).
-
-## Translation mappings (`list_p1.dat`, `list_p2.dat`)
-
-This example uses translational symmetry reduction in both lattice directions.
-
-- `list_p1.dat`: translation by **+1 in x** (within each row)
-- `list_p2.dat`: translation by **+1 in y** (to the next row)
-
-These mappings define the permutation \(T(i)\) applied to site indices \(i=1,\dots,NOS\).
-
-## `list_hvec.dat`
-
-On‑site magnetic fields \(\mathbf{h}_i\) (uniform in this dataset).
-
-## `list_ij_cf.dat`
-
-Pairs \((i,j)\) for which two‑point correlators are evaluated (when enabled via `CAL_CF = 1`).
-This dataset contains 9 pairs:
-
-```
-(1,2), (1,3), ..., (1,10).
-```
-
-## Other list files
-
-Depending on your build/options, `output.dat` may also echo file names such as `FILE_SPIN` and `FILE_NODMAX`.
-For a uniform spin‑1/2 model these lists are redundant, but they may be included for compatibility with a common I/O path
-used across different examples (e.g., mixed‑spin cases).
-
----
-
-# Running the Example
-
-Inside the example directory run
-
-```
-../../source/QS3ED2 < input.dat
-```
-
-The program prints a detailed execution log to the terminal.
-When running the provided scripts, this output is redirected to
-
-```
-output.dat
-```
-
----
-
-# Reading `output.dat`
-
-The file `output.dat` contains the main diagnostic information for the run.
-
-## Lattice size
-
-From the input echo:
+System parameters from `output.dat`
 
 ```
 NOS = 100
-L1  = 10
-L2  = 10
-L3 = L4 = L5 = L6 = 1
+L1 = 10
+L2 = 10
 ```
 
-This corresponds to a **two‑dimensional 10×10 square lattice** (100 sites total).
+Thus the system forms a
 
-## Translation operators (`FILE_S1`, `FILE_S2`)
+$$
+10 \times 10
+$$
 
-The translational symmetry is defined by
+periodic square lattice.
+
+Each site has four nearest neighbors.
+
+Total number of bonds
+
+```
+NO_TWO = 200
+```
+
+---
+
+# 5. Symmetry Operations
+
+Translational symmetry is defined by
 
 ```
 FILE_S1 = list_p1.dat
 FILE_S2 = list_p2.dat
 ```
 
-### x‑direction translation (`list_p1.dat`)
+These correspond to lattice translations
 
-`list_p1.dat` starts as
+$$
+T_x : (x,y) \rightarrow (x+1,y)
+$$
 
-```
-2
-3
-4
-...
-10
-1
-12
-13
-...
-20
-11
-...
-```
+$$
+T_y : (x,y) \rightarrow (x,y+1)
+$$
 
-This means that within each block of 10 sites (a row), the mapping is
-
-- \(T_x(i)=i+1\) for \(i=1,\dots,9\), and \(T_x(10)=1\),
-- \(T_x(i)=i+1\) for \(i=11,\dots,19\), and \(T_x(20)=11\),
-
-and so on for all 10 rows.
-
-### y‑direction translation (`list_p2.dat`)
-
-`list_p2.dat` starts as
-
-```
-11
-12
-...
-100
-1
-2
-...
-10
-```
-
-which corresponds to a shift by one row:
-
-- \(T_y(i)=i+10\) for \(i=1,\dots,90\),
-- \(T_y(i)=i-90\) for \(i=91,\dots,100\).
-
-Together, these two translations generate the 2D lattice translations on a 10×10 torus.
+with periodic boundary conditions.
 
 ---
 
-## Hilbert‑space size
+# 6. Momentum (Wavevector) Sector
 
-`output.dat` reports
+Wavevector parameters
+
+```
+L1 = 10
+L2 = 10
+M1 = 0
+M2 = 0
+```
+
+Allowed wavevectors are
+
+$$
+k_x = \frac{2\pi m_1}{L_1},
+\qquad
+k_y = \frac{2\pi m_2}{L_2}.
+$$
+
+with
+
+$$
+m_1=0,\dots,9
+$$
+
+$$
+m_2=0,\dots,9.
+$$
+
+The input selects
+
+```
+M1 = 0
+M2 = 0
+```
+
+which corresponds to
+
+$$
+(k_x,k_y)=(0,0).
+$$
+
+Thus the calculation is performed in the **zero‑momentum sector**
+
+$$
+T_x|\psi\rangle = |\psi\rangle, \qquad
+T_y|\psi\rangle = |\psi\rangle.
+$$
+
+---
+
+# 7. Local Hilbert Space
+
+Each lattice site hosts
+
+$$
+S=\frac12
+$$
+
+so the local Hilbert‑space dimension is
+
+$$
+2S+1=2.
+$$
+
+---
+
+# 8. NOD Sector Restriction
+
+QS³‑ED2 labels basis states using
+
+$$
+n_i = S_i - m_i
+$$
+
+For spin‑1/2
+
+$$
+n_i =
+\begin{cases}
+0 & (m_i=+1/2) \\
+1 & (m_i=-1/2)
+\end{cases}
+$$
+
+The global quantity
+
+$$
+\mathrm{NOD}=\sum_i n_i
+$$
+
+counts the number of down spins.
+
+Input parameters
+
+```
+NODmin = 0
+NODmax = 3
+```
+
+restrict
+
+$$
+N_\downarrow \in \{0,1,2,3\}.
+$$
+
+---
+
+# 9. Hilbert‑space Dimension
+
+From `output.dat`
 
 ```
 THS   = 166751
 THS(k)= 1670
 ```
 
-- `THS` is the number of states **before symmetry reduction**
-- `THS(k)` is the number of **representative states** after translational symmetry reduction
+- `THS` : total Hilbert‑space dimension before symmetry reduction
+- `THS(k)` : representative states after symmetry and momentum reduction
 
 ---
 
-## Lanczos solver
+# 10. Lanczos Solver
 
-The solver parameters appear as
+Solver parameters
 
 ```
-&INPUT_LANCZ
 LNC_ENE_CONV = 1.0E-14
 MAXITR = 10000
 MINITR = 5
 ITRINT = 5
-/
 ```
 
-During the calculation the program prints iteration logs such as
-
-```
-itr, ene, conv:     5   -6.109622213259696E+00    1.0E+00
-itr, ene, conv:    10   -9.515210222694508E+00    3.6E-01
-itr, ene, conv:    15   -9.991802727569164E+00    4.8E-02
-itr, ene, conv:    20   -1.033373611967474E+01    3.3E-02
-itr, ene, conv:    25   -1.042782461125804E+01    9.0E-03
-itr, ene, conv:    30   -1.043043347954608E+01    2.5E-04
-itr, ene, conv:    35   -1.043049405686575E+01    5.8E-06
-itr, ene, conv:    40   -1.043049542086834E+01    1.3E-07
-itr, ene, conv:    45   -1.043049543845607E+01    1.7E-09
-itr, ene, conv:    50   -1.043049543852458E+01    6.6E-12
-itr, ene, conv:    55   -1.043049543852545E+01    8.3E-14
-itr, ene, conv:    60   -1.043049543852545E+01    6.2E-16
-```
-
-The solver finishes with
+Total Lanczos iterations
 
 ```
 total lanczos step: 60
-E_0 = -1.043049543852545E+01
 ```
 
 ---
 
-## Eigenvector quality
+# 11. Ground‑state Energy
 
-The accuracy of the Lanczos eigenvector is checked using
+The converged ground‑state energy is
 
-```
-<GS| H |GS>  = -1.043049543852545E+01
-|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = 6.619684386711490E-17
-```
-
-The final quantity should be close to machine precision for a well‑converged ground state.
+$$
+E_0 = -1.043049543852545 \times 10^{1}.
+$$
 
 ---
 
-# Observables and output files
+# 12. Eigenvector Accuracy
 
-After the Lanczos run, `output.dat` indicates which post‑processing steps were executed, e.g.
+Verification
 
-- local magnetizations → `local_mag.dat`
-- two‑point correlators → `two_body_cf_z+-.dat`, `two_body_cf_xyz.dat`
+$$
+\langle GS|H|GS\rangle =
+-1.043049543852545 \times 10^{1}
+$$
 
-(When enabled, the file names and meanings follow the same conventions as in `chain.md`.)
+Residual
+
+$$
+|1-(\langle GS|H|GS\rangle)^2/\langle GS|H^2|GS\rangle|
+=2.220446049250313\times10^{-16}.
+$$
+
+This indicates convergence close to machine precision.
 
 ---
 
-# Summary
+# 13. Observables
 
-This example shows how to run QS³‑ED2 on a **10×10 square lattice (spin‑1/2)** with:
+Enabled in the input
 
-- two translation mappings (`list_p1.dat`, `list_p2.dat`) for 2D translational symmetry reduction,
-- uniform on‑site field (`list_hvec.dat`),
-- nearest‑neighbor couplings in both x and y directions (`list_xyz_dm_gamma.dat`),
-- two‑point correlators evaluated for selected pairs (`list_ij_cf.dat`).
+```
+CAL_LM = 1
+CAL_CF = 1
+```
 
-All other parts of the workflow (run method, Lanczos solver, and observable outputs) match the standard `chain` example.
+Generated files
+
+| file | description |
+|-----|-------------|
+| `local_mag.dat` | local magnetization |
+| `two_body_cf_xyz.dat` | spin correlations |
+| `two_body_cf_z+-.dat` | ladder correlations |
+
+Correlation pairs are specified in
+
+```
+list_ij_cf.dat
+```
+
+---
+
+# 14. Runtime
+
+Measured runtime
+
+```
+Time: 0.318 sec
+```
+
+---
+
+# 15. Summary
+
+This example demonstrates a **two‑dimensional square‑lattice spin model**
+calculation with QS³‑ED2.
+
+Key features illustrated include
+
+- construction of Hamiltonians on 2D lattices
+- translational symmetry in two spatial directions
+- momentum‑sector diagonalization
+- Lanczos ground‑state computation
+- evaluation of magnetization and correlation functions.
