@@ -34,6 +34,7 @@ The workflow demonstrates
 
 - construction of the Hamiltonian
 - symmetry reduction using lattice translations
+- momentum‑sector selection
 - Lanczos diagonalization
 - evaluation of physical observables.
 
@@ -41,7 +42,7 @@ The model includes
 
 - anisotropic exchange (XYZ)
 - Dzyaloshinskii–Moriya interaction
-- symmetric anisotropic Γ interaction
+- symmetric anisotropic $\Gamma$ interaction
 - uniform magnetic field.
 
 ---
@@ -52,7 +53,7 @@ The Hamiltonian is
 
 $$
 H =
-\sum_{\langle i,j \rangle}
+\sum_{\langle i,j\rangle}
 H_{ij}
 +
 \sum_i \mathbf{h}\cdot\mathbf{S}_i
@@ -105,7 +106,7 @@ $$
 \mathbf{D}=(0.2,0.1,5.0)
 $$
 
-Γ interaction
+$\Gamma$ interaction
 
 $$
 (\Gamma_x,\Gamma_y,\Gamma_z)=(0.1,0.3,-0.2)
@@ -155,9 +156,67 @@ $$
 (S_2,S_3,\dots,S_{100},S_1).
 $$
 
+This translation generates the cyclic symmetry group of the periodic chain.
+
 ---
 
-# 6. Local Hilbert Space
+# 6. Momentum (Wavevector) Sector
+
+QS³‑ED2 allows diagonalization within a fixed **crystal momentum sector** defined
+with respect to the translation symmetry.
+
+The input parameters
+
+```
+M1 = 0
+```
+
+select the momentum sector corresponding to the eigenvalue
+
+$$
+T |\psi\rangle =
+e^{i k} |\psi\rangle .
+$$
+
+For a chain of length
+
+$$
+L_1 = 100
+$$
+
+the allowed wavevectors are
+
+$$
+k =
+\frac{2\pi m}{L_1},
+\qquad
+m = 0,1,\dots,L_1-1.
+$$
+
+The parameter
+
+```
+M1 = 0
+```
+
+therefore selects
+
+$$
+k = 0.
+$$
+
+Thus the calculation is performed in the **zero‑momentum sector**, i.e.
+
+$$
+T|\psi\rangle = |\psi\rangle .
+$$
+
+This sector contains the translationally invariant states and typically hosts
+the ground state for many spin models.
+
+---
+
+# 7. Local Hilbert Space
 
 Each site hosts a spin
 
@@ -173,7 +232,7 @@ $$
 
 ---
 
-# 7. NOD Sector Restriction
+# 8. NOD Sector Restriction
 
 QS³‑ED2 uses the integer
 
@@ -194,7 +253,8 @@ $$
 The global counter
 
 $$
-\mathrm{NOD}=\sum_i n_i
+\mathrm{NOD}=
+\sum_i n_i
 $$
 
 equals the number of down spins.
@@ -214,7 +274,7 @@ $$
 
 ---
 
-# 8. Hilbert‑space Dimension
+# 9. Hilbert‑space Dimension
 
 From the program output
 
@@ -224,11 +284,11 @@ THS(k)= 1669
 ```
 
 - `THS` : dimension before symmetry reduction
-- `THS(k)` : representative states after translation symmetry
+- `THS(k)` : representative states after symmetry and momentum reduction
 
 ---
 
-# 9. Lanczos Solver
+# 10. Lanczos Solver
 
 Solver parameters
 
@@ -247,7 +307,7 @@ total lanczos step: 150
 
 ---
 
-# 10. Ground‑state Energy
+# 11. Ground‑state Energy
 
 The converged ground‑state energy is
 
@@ -257,7 +317,7 @@ $$
 
 ---
 
-# 11. Eigenvector Accuracy
+# 12. Eigenvector Accuracy
 
 Verification printed by the program
 
@@ -277,7 +337,7 @@ This indicates convergence close to machine precision.
 
 ---
 
-# 12. Observables
+# 13. Observables
 
 Enabled in the input
 
@@ -308,7 +368,7 @@ $$
 
 ---
 
-# 13. Runtime
+# 14. Runtime
 
 Measured runtime
 
@@ -324,13 +384,15 @@ The runtime depends mainly on
 
 ---
 
-# 14. Summary
+# 15. Summary
 
-This example demonstrates a basic QS³‑ED2 calculation for a periodic spin chain.
+This example demonstrates a QS³‑ED2 calculation for a periodic spin chain.
 
-Key elements include
+Key features illustrated here include
 
-- definition of anisotropic spin Hamiltonians
+- construction of anisotropic spin Hamiltonians
 - translational symmetry reduction
-- Lanczos ground‑state calculation
-- evaluation of physical observables.
+- momentum‑sector selection
+- Lanczos ground‑state computation
+- evaluation of magnetization and correlation functions.
+
