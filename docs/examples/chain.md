@@ -23,6 +23,17 @@ The ground state is computed using the **Lanczos method**, and the program evalu
 - local magnetization
 - two‑point spin correlations
 
+!!! note
+
+    The numerical values shown in this document are taken from the
+    reference output stored in
+
+    `examples/ref_dat/chain/output.dat`.
+
+    These files are provided as reference data for documentation
+    and regression testing. The exact numerical values may vary
+    slightly depending on the compilation environment and hardware.
+
 ---
 
 # 1. Introduction

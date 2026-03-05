@@ -25,6 +25,17 @@ The calculation demonstrates how **QS³-ED2** handles
 - momentum-sector selection
 - Lanczos diagonalization.
 
+!!! note
+
+    The numerical values shown in this document are taken from the
+    reference output stored in
+
+    `examples/ref_dat/mixed_spin_chain/output.dat`.
+
+    These files are provided as reference data for documentation
+    and regression testing. The exact numerical values may vary
+    slightly depending on the compilation environment and hardware.
+
 ---
 
 # 1. Introduction
