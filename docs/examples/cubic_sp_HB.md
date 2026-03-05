@@ -1,7 +1,7 @@
 
 # Cubic (spin‑1/2 Heisenberg) Example
 
-This example demonstrates how to run **QS³‑ED2** for a **three‑dimensional simple‑cubic lattice** (periodic boundary conditions) in a **spin‑1/2 Heisenberg** model.
+This example demonstrates how to run **QS³‑ED2** for a **three‑dimensional simple‑cubic lattice** (periodic boundary conditions) in a **spin‑1/2 Heisenberg model**.
 
 Directory:
 
@@ -52,29 +52,31 @@ $$
 
 From `input_param.dat`:
 
-- magnetic field  
+Magnetic field
 
-$$\mathbf{h}=(0,0,0)$$
+$$
+\mathbf{h}=(0,0,0)
+$$
 
-- exchange couplings  
+Exchange couplings
 
 $$
 J_x = J_y = J_z = 1
 $$
 
-- DM interaction  
+DM interaction
 
 $$
 \mathbf{D}=(0,0,0)
 $$
 
-- symmetric anisotropy  
+Symmetric anisotropy
 
 $$
 \Gamma_x = \Gamma_y = \Gamma_z = 0
 $$
 
-Thus this example corresponds to an **isotropic Heisenberg model**.
+Thus this example corresponds to the **isotropic Heisenberg model**.
 
 ---
 
@@ -127,13 +129,13 @@ File:
 list_xyz_dm_gamma.dat
 ```
 
-Format of each line:
+Format:
 
 ```
 i  j  Jx  Jy  Jz  Dx  Dy  Dz  Gx  Gy  Gz
 ```
 
-Example:
+Example entry
 
 ```
 1 2   1 1 1   0 0 0   0 0 0
@@ -150,15 +152,23 @@ wc -l list_xyz_dm_gamma.dat
 
 # Symmetry operations
 
-The following permutation mappings are used.
+Permutation mappings used in this example:
 
 ## Translations
 
 ```
-list_p1.dat   (x translation)
-list_p2.dat   (y translation)
-list_p3.dat   (z translation)
+list_p1.dat
+list_p2.dat
+list_p3.dat
 ```
+
+These correspond to translations in the
+
+- x direction
+- y direction
+- z direction
+
+respectively.
 
 Examples:
 
@@ -166,27 +176,25 @@ Examples:
 1 → 2 → 3 → ... → 10 → 1
 ```
 
-for x‑direction periodic translation.
+x‑direction translation.
 
 ```
 1 → 11
 ```
 
-for y translation.
+y‑direction translation.
 
 ```
 1 → 101
 ```
 
-for z translation.
-
-These generate the full translation group of the 3D torus.
+z‑direction translation.
 
 ---
 
 ## Reflections / inversions
 
-Additional symmetry operations:
+Additional discrete symmetries:
 
 ```
 list_p4.dat
@@ -201,21 +209,21 @@ Examples:
 2 ↔ 9
 ```
 
-x‑axis reflection.
+x reflection.
 
 ```
 1 → 91
 ```
 
-y‑axis inversion.
+y inversion.
 
 ```
 1 → 901
 ```
 
-z‑axis inversion.
+z inversion.
 
-These discrete symmetries further reduce the Hilbert space.
+These additional symmetries further reduce the Hilbert space.
 
 ---
 
@@ -246,16 +254,45 @@ list_spin.dat
 ...
 ```
 
-Therefore
-
-- each site has **two local states**
-- spin quantum number
+Thus each site corresponds to
 
 $$
 S = \frac{1}{2}
 $$
 
-for all sites.
+with two local states.
+
+---
+
+# Use of the NOD sector (important)
+
+Unlike the anisotropic examples in this documentation, the **Heisenberg Hamiltonian has full spin‑rotation symmetry**.
+
+Because of this symmetry, the Hamiltonian **conserves the total magnetization**
+(or equivalently the number of spin‑up states in the computational basis).
+
+In QS³‑ED2 this conserved quantity is controlled by the parameters
+
+```
+NODmin
+NODmax
+```
+
+In this example they are set to
+
+```
+NODmin = 3
+NODmax = 3
+```
+
+which means that the calculation is restricted to a **single symmetry sector** of the Hilbert space.
+
+Using a fixed NOD sector is important for two reasons:
+
+1. It **reduces the Hilbert‑space dimension dramatically**.
+2. It ensures that the Lanczos solver operates within a **symmetry‑consistent subspace**, which improves numerical efficiency.
+
+This restriction is possible here because the **Heisenberg model preserves the corresponding quantum number**, while in the more general anisotropic models used in other examples this symmetry is broken.
 
 ---
 
@@ -340,6 +377,7 @@ This example demonstrates a QS³‑ED2 calculation for
 - bonds: **3000**
 - symmetry: **translations + reflections**
 - solver: **Lanczos**
+- symmetry sector: **NODmin = NODmax = 3**
 - ground‑state energy
 
 $$
