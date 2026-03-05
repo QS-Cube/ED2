@@ -1,182 +1,167 @@
+
 # Cubic Lattice Example
 
-This example demonstrates how to run **QS³ ED2** for a **three‑dimensional simple cubic lattice** (periodic boundary conditions).
-The example is located in
+Directory
 
 ```
 examples/cubic/
 ```
 
-and contains all input and output files required to reproduce the calculation.
+This example demonstrates how to run **QS³-ED2** for a three-dimensional
+**cubic-lattice quantum spin system** with periodic boundary conditions.
+
+The system contains
+
+$$
+N = 216
+$$
+
+spin-1/2 sites arranged on a
+
+$$
+6 \times 6 \times 6
+$$
+
+simple cubic lattice.
 
 The ground state is computed using the **Lanczos method**, and the program evaluates
 
-- ground‑state energy
+- ground-state energy
 - local magnetization
-- two‑point spin correlation functions
+- two-point spin correlations.
 
 ---
 
-# Model
+# 1. Introduction
 
-## Hamiltonian
+This example illustrates calculations on a **three-dimensional lattice**
+using QS³-ED2.
 
-The Hamiltonian implemented in this example is
+The cubic lattice has coordination number
+
+$$
+z = 6.
+$$
+
+The example demonstrates
+
+- Hamiltonian construction on a 3D lattice
+- translational symmetry in three directions
+- momentum-sector selection
+- Lanczos diagonalization
+- evaluation of physical observables.
+
+---
+
+# 2. Model Hamiltonian
+
+The Hamiltonian is
 
 $$
 H =
 \sum_{\langle i,j\rangle}
-\left(
-J_x S_i^x S_j^x +
-J_y S_i^y S_j^y +
-J_z S_i^z S_j^z
-+ \mathbf{D}\cdot(\mathbf{S}_i \times \mathbf{S}_j)
-+ H_\Gamma(i,j)
-\right)
+H_{ij}
 +
-\sum_i \mathbf{h}\cdot\mathbf{S}_i,
+\sum_i \mathbf{h}\cdot\mathbf{S}_i
 $$
 
-where the symmetric anisotropic interaction is
+with bond interaction
+
+$$
+H_{ij} =
+\sum_{\alpha=x,y,z}
+J_\alpha S_i^\alpha S_j^\alpha
++
+\mathbf{D}\cdot(\mathbf{S}_i \times \mathbf{S}_j)
++
+H_\Gamma(i,j).
+$$
+
+The symmetric anisotropic interaction is
 
 $$
 H_\Gamma(i,j)=
-\Gamma_x\left(S_i^y S_j^z + S_i^z S_j^y\right)
-+\Gamma_y\left(S_i^z S_j^x + S_i^x S_j^z\right)
-+\Gamma_z\left(S_i^x S_j^y + S_i^y S_j^x\right).
+\Gamma_x(S_i^y S_j^z + S_i^z S_j^y)
++
+\Gamma_y(S_i^z S_j^x + S_i^x S_j^z)
++
+\Gamma_z(S_i^x S_j^y + S_i^y S_j^x).
 $$
-
-This dataset uses a **uniform spin‑1/2** model.
 
 ---
 
-## Couplings used in this dataset
+# 3. Coupling Parameters
 
-### Magnetic field
-
-`list_hvec.dat` provides the on‑site field \(\mathbf{h}_i\).
-Each line stores
+Magnetic field
 
 $$
-(i,\,h_x,\,h_y,\,h_z).
+\mathbf{h}=(-0.1,-0.1,-0.3)
 $$
 
-In this dataset it is uniform across all sites:
+Exchange parameters
 
 $$
-\mathbf{h} = (-0.1,\,-0.1,\,-0.3).
+(J_x,J_y,J_z)=(1.0,0.8,0.7)
 $$
 
-### Bond interactions
-
-`list_xyz_dm_gamma.dat` specifies the bond list and the couplings for each bond.
-
-Each bond line stores
+Dzyaloshinskii–Moriya interaction
 
 $$
-(i,\,j,\,J_x,\,J_y,\,J_z,\,D_x,\,D_y,\,D_z,\,\Gamma_x,\,\Gamma_y,\,\Gamma_z).
+\mathbf{D}=(0.2,0.1,5.0)
 $$
 
-For reference, the first line corresponds to
-
-- \(J_x=1,\,J_y=0.8,\,J_z=0.7\),
-- \(\mathbf{D}=(0.2,0.1,5)\),
-- \(\boldsymbol\Gamma=(0.1,0.3,-0.2)\).
-
-In the `cubic` dataset, the file contains **nearest‑neighbor bonds of a 6×6×6 periodic simple‑cubic lattice**.
-
-- Each site has **6** nearest neighbors (coordination number \(z=6\)).
-- Counting each undirected bond once, the total number of bonds is
+$\Gamma$ interaction
 
 $$
-N_{\mathrm{bonds}} = \frac{zN}{2} = \frac{6\times 216}{2} = 648,
+(\Gamma_x,\Gamma_y,\Gamma_z)=(0.1,0.3,-0.2)
 $$
-
-which matches the input echo `NO_TWO = 648`.
 
 ---
 
-# Input files
+# 4. Lattice Structure
 
-## `input_param.dat`
-
-Main runtime parameters (system size, basis truncation, algorithm switches).
-
-For this example:
-
-- `NOS = 216`: number of sites
-- `LX = 6`, `LY = 6`, `LZ = 6`: lattice size (6×6×6)
-- `SPIN = 0.5`: uniform spin‑1/2
-- `NODmin = 0`, `NODmax = 3`: restrict the calculation to a near‑fully‑polarized sector (see notes in `chain.md`)
-- uniform coupling constants (`HX/HY/HZ`, `JX/JY/JZ`, `DX/DY/DZ`, `GX/GY/GZ`)
-
-The program prints an expanded parameter block in `output.dat` (see below).
-
-## Translation mappings (`list_p1.dat`, `list_p2.dat`, `list_p3.dat`)
-
-This example uses translational symmetry reduction in **three** lattice directions.
-
-- `list_p1.dat`: translation by **+1 in x**
-- `list_p2.dat`: translation by **+1 in y**
-- `list_p3.dat`: translation by **+1 in z**
-
-These mappings define the permutation \(T(i)\) applied to site indices \(i=1,\dots,NOS\).
-
-## `list_hvec.dat`
-
-On‑site magnetic fields \(\mathbf{h}_i\) (uniform in this dataset).
-
-## `list_ij_cf.dat`
-
-Pairs \((i,j)\) for which two‑point correlators are evaluated (when enabled via `CAL_CF = 1`).
-This dataset contains 9 pairs (echoed as `NO_TWO_CF = 9`).
-
-## Other list files
-
-Depending on your build/options, `output.dat` may also echo file names such as `FILE_SPIN` and `FILE_NODMAX`.
-For a uniform spin‑1/2 model these lists are redundant, but they may be included for compatibility with a common I/O path
-used across different examples (e.g., mixed‑spin cases).
-
----
-
-# Running the Example
-
-Inside the example directory run
-
-```
-../../source/QS3ED2 < input.dat
-```
-
-The program prints a detailed execution log to the terminal.
-When running the provided scripts, this output is redirected to
-
-```
-output.dat
-```
-
----
-
-# Reading `output.dat`
-
-The file `output.dat` contains the main diagnostic information for the run.
-
-## Lattice size
-
-From the input echo:
+System parameters from `output.dat`
 
 ```
 NOS = 216
-L1  = 6
-L2  = 6
-L3  = 6
-L4 = L5 = L6 = 1
+L1 = 6
+L2 = 6
+L3 = 6
 ```
 
-This corresponds to a **three‑dimensional 6×6×6 simple‑cubic lattice** (216 sites total).
+For a cubic lattice
 
-## Translation operators (`FILE_S1`, `FILE_S2`, `FILE_S3`)
+$$
+N = L_1 L_2 L_3.
+$$
 
-The translational symmetry is defined by
+For this example
+
+$$
+N = 6 \times 6 \times 6 = 216.
+$$
+
+Each site has six nearest neighbors.
+
+Total number of bonds
+
+```
+NO_TWO = 648
+```
+
+This matches
+
+$$
+\frac{Nz}{2} =
+\frac{216 \times 6}{2}
+= 648.
+$$
+
+---
+
+# 5. Symmetry Operations
+
+Translational symmetry is defined by
 
 ```
 FILE_S1 = list_p1.dat
@@ -184,155 +169,241 @@ FILE_S2 = list_p2.dat
 FILE_S3 = list_p3.dat
 ```
 
-Assuming the standard site ordering where **x changes fastest**, then y, then z:
+These correspond to lattice translations
 
-### x‑direction translation (`list_p1.dat`)
+$$
+T_x : (x,y,z) \rightarrow (x+1,y,z)
+$$
 
-`list_p1.dat` begins as
+$$
+T_y : (x,y,z) \rightarrow (x,y+1,z)
+$$
 
-```
-2
-3
-4
-5
-6
-1
-8
-9
-...
-12
-7
-...
-```
+$$
+T_z : (x,y,z) \rightarrow (x,y,z+1)
+$$
 
-This indicates a shift by one along x within each contiguous block of 6 sites, with periodic wrap‑around
-(e.g., \(1\to2\to3\to4\to5\to6\to1\)).
-
-### y‑direction translation (`list_p2.dat`)
-
-`list_p2.dat` begins as
-
-```
-7
-8
-...
-12
-13
-...
-18
-...
-31
-32
-...
-36
-1
-2
-...
-6
-43
-44
-...
-```
-
-This corresponds to a shift by one along y (i.e., by \(+6\) in the site index inside each z‑slice),
-with periodic wrap‑around after each 6×6 layer.
-
-### z‑direction translation (`list_p3.dat`)
-
-`list_p3.dat` begins as
-
-```
-37
-38
-...
-72
-73
-74
-...
-```
-
-This corresponds to a shift by one along z (i.e., by \(+36 = L1\times L2\) in the site index),
-with periodic wrap‑around after the last layer.
-
-Together, these three translations generate the 3D lattice translations on a 6×6×6 torus.
+Periodic boundary conditions are applied in all three directions.
 
 ---
 
-## Hilbert‑space size
+# 6. Momentum (Wavevector) Sector
 
-`output.dat` reports
+Wavevector parameters
+
+```
+L1 = 6
+L2 = 6
+L3 = 6
+M1 = 0
+M2 = 0
+M3 = 0
+```
+
+Allowed wavevectors
+
+$$
+k_x = \frac{2\pi m_1}{L_1},\quad
+k_y = \frac{2\pi m_2}{L_2},\quad
+k_z = \frac{2\pi m_3}{L_3}
+$$
+
+with
+
+$$
+m_1,m_2,m_3 = 0,\dots,5.
+$$
+
+The calculation selects
+
+```
+M1 = 0
+M2 = 0
+M3 = 0
+```
+
+which corresponds to
+
+$$
+(k_x,k_y,k_z) = (0,0,0).
+$$
+
+Thus the Lanczos diagonalization is performed in the **zero-momentum sector**
+
+$$
+T_x|\psi\rangle = |\psi\rangle,
+\quad
+T_y|\psi\rangle = |\psi\rangle,
+\quad
+T_z|\psi\rangle = |\psi\rangle.
+$$
+
+---
+
+# 7. Local Hilbert Space
+
+Each lattice site hosts
+
+$$
+S = \frac12
+$$
+
+so the local Hilbert-space dimension is
+
+$$
+2S + 1 = 2.
+$$
+
+---
+
+# 8. NOD Sector Restriction
+
+QS³-ED2 labels basis states using
+
+$$
+n_i = S_i - m_i
+$$
+
+For spin-1/2
+
+$$
+n_i =
+\begin{cases}
+0 & (m_i = +1/2) \\
+1 & (m_i = -1/2)
+\end{cases}
+$$
+
+The global quantity
+
+$$
+\mathrm{NOD} = \sum_i n_i
+$$
+
+counts the number of down spins.
+
+Input parameters
+
+```
+NODmin = 0
+NODmax = 3
+```
+
+restrict
+
+$$
+N_\downarrow \in \{0,1,2,3\}.
+$$
+
+---
+
+# 9. Hilbert-space Dimension
+
+From `output.dat`
 
 ```
 THS   = 1679797
 THS(k)= 7790
 ```
 
-- `THS` is the number of states **before symmetry reduction**
-- `THS(k)` is the number of **representative states** after translational symmetry reduction
+- `THS` : Hilbert-space dimension before symmetry reduction
+- `THS(k)` : representative states after symmetry and momentum reduction
 
 ---
 
-## Lanczos solver
+# 10. Lanczos Solver
 
-The solver parameters appear as
+Solver parameters
 
 ```
-&INPUT_LANCZ
 LNC_ENE_CONV = 1.0E-14
 MAXITR = 10000
 MINITR = 5
 ITRINT = 5
-/
 ```
 
-During the calculation the program prints iteration logs such as
-
-```
-itr, ene, conv:     5    4.462267627161076E+01    1.0E+00
-...
-itr, ene, conv:    40    3.291959953219395E+01    3.8E-16
-```
-
-and finally
+Total Lanczos iterations
 
 ```
 total lanczos step: 40
-E_0 = 3.291959953219395E+01
 ```
 
 ---
 
-## Eigenvector quality
+# 11. Ground-state Energy
 
-The accuracy of the Lanczos eigenvector is checked using
+The converged ground-state energy is
 
-```
-<GS| H |GS>  = 3.291959953219396E+01
-|1 - (<GS|H|GS>)^2/<GS|H^2|GS>| = 2.263595547998526E-16
-```
-
-The final quantity should be close to machine precision for a well‑converged ground state.
+$$
+E_0 = 3.291959953219396 \times 10^{1}.
+$$
 
 ---
 
-# Observables and output files
+# 12. Eigenvector Accuracy
 
-After the Lanczos run, `output.dat` indicates which post‑processing steps were executed, e.g.
+Verification
 
-- local magnetizations → `local_mag.dat`
-- two‑point correlators → `two_body_cf_z+-.dat`, `two_body_cf_xyz.dat`
+$$
+\langle GS|H|GS\rangle =
+3.291959953219396 \times 10^{1}
+$$
 
-(When enabled, the file names and meanings follow the same conventions as in `chain.md`.)
+Residual
+
+$$
+|1-(\langle GS|H|GS\rangle)^2 / \langle GS|H^2|GS\rangle|
+=0.
+$$
+
+This indicates convergence to machine precision.
 
 ---
 
-# Summary
+# 13. Observables
 
-This example shows how to run QS³‑ED2 on a **6×6×6 simple‑cubic lattice (spin‑1/2)** with:
+Enabled in the input
 
-- three translation mappings (`list_p1.dat`, `list_p2.dat`, `list_p3.dat`) for 3D translational symmetry reduction,
-- uniform on‑site field (`list_hvec.dat`),
-- nearest‑neighbor couplings on a simple‑cubic lattice (`list_xyz_dm_gamma.dat`, `NO_TWO = 648`),
-- two‑point correlators evaluated for selected pairs (`list_ij_cf.dat`).
+```
+CAL_LM = 1
+CAL_CF = 1
+```
 
-All other parts of the workflow (run method, Lanczos solver, and observable outputs) match the standard `chain` example.
+Generated files
+
+| file | description |
+|-----|-------------|
+| `local_mag.dat` | local magnetization |
+| `two_body_cf_xyz.dat` | spin correlations |
+| `two_body_cf_z+-.dat` | ladder correlations |
+
+Correlation pairs are defined in
+
+```
+list_ij_cf.dat
+```
+
+---
+
+# 14. Runtime
+
+Measured runtime
+
+```
+Time: 2.265 sec
+```
+
+---
+
+# 15. Summary
+
+This example demonstrates a **three-dimensional cubic-lattice quantum spin model**
+calculation with QS³-ED2.
+
+Key features illustrated include
+
+- 3D lattice geometry
+- translational symmetry reduction in three directions
+- momentum-sector diagonalization
+- Lanczos ground-state computation
+- evaluation of correlation functions.
