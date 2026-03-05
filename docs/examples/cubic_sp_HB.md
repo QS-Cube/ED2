@@ -7,9 +7,9 @@ Directory
 examples/cubic_sp_HB/
 ```
 
-This example demonstrates how to run **QS³-ED2** for a three-dimensional
+This example demonstrates how to run **QS³‑ED2** for a three‑dimensional
 **cubic lattice** with periodic boundary conditions in a **fixed NOD sector**
-and with a **sparse Hilbert-space representation**.
+and using additional **reflection symmetries**.
 
 The system contains
 
@@ -17,38 +17,35 @@ $$
 N = 1000
 $$
 
-spin-1/2 sites arranged on a
+spin‑1/2 sites arranged on a
 
 $$
 10 \times 10 \times 10
 $$
 
-lattice, with additional decomposition parameters
-
-$$
-(L_4,L_5,L_6)=(2,2,2).
-$$
+cubic lattice.
 
 The ground state is computed using the **Lanczos method**, and the program evaluates
 
-- ground-state energy
+- ground‑state energy
 - local magnetization
-- two-point spin correlations.
+- two‑point spin correlations.
 
 ---
 
 # 1. Introduction
 
-This example illustrates a large-scale 3D lattice calculation using QS³-ED2,
-where the computation is restricted to a **single NOD sector** and uses the
-internal sparse representation to reduce memory usage.
+This example illustrates a large‑scale 3D lattice calculation using QS³‑ED2,
+where the computation is restricted to a **single NOD sector** and further
+reduced using **translational and reflection symmetries**.
 
 Key features include
 
 - cubic lattice geometry in three dimensions
 - translational symmetry in three directions
-- momentum-sector selection
-- fixed-$\mathrm{NOD}$ restriction ($\mathrm{NODmin}=\mathrm{NODmax}$)
+- reflection symmetry in three directions
+- momentum‑sector selection
+- fixed‑$\mathrm{NOD}$ restriction
 - Lanczos diagonalization in a reduced Hilbert space.
 
 ---
@@ -127,18 +124,13 @@ NOS = 1000
 L1 = 10
 L2 = 10
 L3 = 10
-L4 = 2
-L5 = 2
-L6 = 2
 ```
 
-The physical lattice contains
+For a cubic lattice
 
 $$
-N = L_1 L_2 L_3 = 10 \times 10 \times 10 = 1000
+N = L_1 L_2 L_3 = 10\times10\times10 = 1000
 $$
-
-sites with periodic boundary conditions.
 
 Each site has coordination number
 
@@ -146,26 +138,23 @@ $$
 z = 6
 $$
 
-and the total number of nearest-neighbor bonds is
+Total number of nearest‑neighbor bonds
 
 ```
 NO_TWO = 3000
 ```
 
-This matches
+which matches
 
 $$
-\frac{Nz}{2} = \frac{1000 \times 6}{2} = 3000.
+\frac{Nz}{2} = \frac{1000\times6}{2} = 3000.
 $$
-
-The parameters $L_4,L_5,L_6$ control an internal decomposition used by QS³-ED2
-for this sparse-Hilbert-space workflow.
 
 ---
 
-# 5. Symmetry Operations
+# 5. Translational Symmetry
 
-Translational symmetry is defined by
+Translational symmetry operations are defined by
 
 ```
 FILE_S1 = list_p1.dat
@@ -173,7 +162,7 @@ FILE_S2 = list_p2.dat
 FILE_S3 = list_p3.dat
 ```
 
-These correspond to translations
+corresponding to
 
 $$
 T_x : (x,y,z) \rightarrow (x+1,y,z)
@@ -184,10 +173,10 @@ T_y : (x,y,z) \rightarrow (x,y+1,z)
 $$
 
 $$
-T_z : (x,y,z) \rightarrow (x,y,z+1).
+T_z : (x,y,z) \rightarrow (x,y,z+1)
 $$
 
-Periodic boundary conditions are applied in all three directions.
+with periodic boundary conditions.
 
 ---
 
@@ -218,15 +207,78 @@ $$
 m_1,m_2,m_3 = 0,\dots,9.
 $$
 
-The calculation selects
+The present calculation selects
 
 $$
-(k_x,k_y,k_z) = (0,0,0).
+(k_x,k_y,k_z)=(0,0,0).
 $$
 
 ---
 
-# 7. Local Hilbert Space
+# 7. Reflection (Inversion) Symmetry
+
+In addition to translations, QS³‑ED2 can use **reflection operations**
+along each lattice direction.
+
+The parameters
+
+```
+L4 = 2
+L5 = 2
+L6 = 2
+```
+
+activate reflection operations for the
+
+- x direction
+- y direction
+- z direction
+
+respectively.
+
+These operations correspond to
+
+$$
+R_x : (x,y,z) \rightarrow (-x,y,z)
+$$
+
+$$
+R_y : (x,y,z) \rightarrow (x,-y,z)
+$$
+
+$$
+R_z : (x,y,z) \rightarrow (x,y,-z).
+$$
+
+The corresponding quantum numbers are specified by
+
+```
+M4 = 0
+M5 = 0
+M6 = 0
+```
+
+which select the **even parity sector** under each reflection.
+
+Thus the ground state satisfies
+
+$$
+R_x|\psi\rangle = |\psi\rangle
+$$
+
+$$
+R_y|\psi\rangle = |\psi\rangle
+$$
+
+$$
+R_z|\psi\rangle = |\psi\rangle.
+$$
+
+Using these reflection symmetries significantly reduces the Hilbert‑space size.
+
+---
+
+# 8. Local Hilbert Space
 
 Each site hosts
 
@@ -234,7 +286,7 @@ $$
 S=\frac12
 $$
 
-so the local Hilbert-space dimension is
+so the local Hilbert‑space dimension is
 
 $$
 2S+1=2.
@@ -242,33 +294,30 @@ $$
 
 ---
 
-# 8. NOD Sector Restriction
+# 9. NOD Sector Restriction
 
-In this example the NOD restriction is fixed:
+The NOD restriction is fixed
 
 ```
 NODmin = 3
 NODmax = 3
 ```
 
-Thus the calculation is carried out in a single sector
+Thus
 
 $$
 \mathrm{NOD} = 3.
 $$
 
-For spin-1/2 systems this corresponds to a fixed number of down spins
+For spin‑1/2 systems this corresponds to
 
 $$
 N_\downarrow = 3.
 $$
 
-This fixed-sector restriction is essential for reducing the Hilbert-space size
-in large lattices.
-
 ---
 
-# 9. Hilbert-space Dimension
+# 10. Hilbert‑space Dimension
 
 From `output.dat`
 
@@ -277,20 +326,20 @@ THS   = 166167000
 THS(k)= 23719
 ```
 
-- `THS` : Hilbert-space dimension in the selected NOD sector before symmetry reduction
-- `THS(k)` : representative states after symmetry and momentum reduction
+- `THS` : dimension before symmetry reduction
+- `THS(k)` : representative states after symmetry reduction
 
 ---
 
-# 10. Lanczos Solver
+# 11. Lanczos Solver
 
-In this run, the Lanczos work-space parameter is set explicitly:
+The Lanczos work‑space parameter is fixed
 
 ```
 MNTE = 19
 ```
 
-The output confirms
+Output confirms
 
 ```
 Current MNTE = 19
@@ -306,7 +355,7 @@ MINITR = 5
 ITRINT = 5
 ```
 
-Total Lanczos iterations
+Total iterations
 
 ```
 total lanczos step: 140
@@ -314,9 +363,9 @@ total lanczos step: 140
 
 ---
 
-# 11. Ground-state Energy
+# 12. Ground‑state Energy
 
-The converged ground-state energy is
+The converged ground‑state energy is
 
 $$
 E_0 = 7.367224213680655 \times 10^{2}.
@@ -324,7 +373,7 @@ $$
 
 ---
 
-# 12. Eigenvector Accuracy
+# 13. Eigenvector Accuracy
 
 Verification
 
@@ -342,7 +391,7 @@ $$
 
 ---
 
-# 13. Observables
+# 14. Observables
 
 Enabled in the input
 
@@ -359,15 +408,9 @@ Generated files
 | `two_body_cf_xyz.dat` | spin correlations |
 | `two_body_cf_z+-.dat` | ladder correlations |
 
-Correlation pairs are defined in
-
-```
-list_ij_cf.dat
-```
-
 ---
 
-# 14. Runtime
+# 15. Runtime
 
 Measured runtime
 
@@ -377,14 +420,18 @@ Time: 121.074 sec
 
 ---
 
-# 15. Summary
+# 16. Summary
 
-This example demonstrates a large-scale **$10\times10\times10$ cubic-lattice**
-calculation with QS³-ED2 in a fixed-$\mathrm{NOD}$ sector.
+This example demonstrates a large‑scale
 
-Key features illustrated include
+$$
+10\times10\times10
+$$
 
-- fixed-$\mathrm{NOD}$ restriction ($\mathrm{NOD}=3$)
-- translational symmetry and $(k_x,k_y,k_z)=(0,0,0)$ momentum sector
-- Lanczos ground-state computation in a reduced Hilbert space
-- evaluation of magnetization and correlation functions.
+cubic‑lattice calculation with QS³‑ED2 using
+
+- translational symmetry
+- reflection symmetry
+- fixed‑$\mathrm{NOD}$ restriction
+- Lanczos diagonalization
+- symmetry‑reduced Hilbert spaces.
