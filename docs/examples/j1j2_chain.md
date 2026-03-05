@@ -1,158 +1,388 @@
+
 # J1–J2 Chain Example
 
-The example located in
+Directory
 
 ```
 examples/j1j2_chain/
 ```
 
-demonstrates how to run QS³-ED2 for a **frustrated 1D spin chain** with both **nearest-neighbor ($J_1$)** and **next-nearest-neighbor ($J_2$)** couplings, including anisotropic exchange (XYZ), Dzyaloshinskii–Moriya (DM) interaction, symmetric off-diagonal $\Gamma$ interaction, and a uniform magnetic field.
+This example demonstrates how to run **QS³-ED2** for a frustrated one‑dimensional
+spin chain with both **nearest‑neighbor ($J_1$)** and **next‑nearest‑neighbor ($J_2$)**
+interactions.
 
-This example uses **translational symmetry** (1D momentum sectors) to reduce the Hilbert space size.
+The system consists of
+
+$$
+N = 100
+$$
+
+spin‑1/2 sites on a periodic chain.
+
+The ground state is computed using the **Lanczos method**, and the program evaluates
+
+- ground‑state energy
+- local magnetization
+- two‑point spin correlations
 
 ---
 
-# Model
+# 1. Introduction
 
-We consider a periodic chain of $N$ spin-$1/2$ sites ($N=\texttt{NOS}=100). The Hamiltonian is
+This example extends the basic chain calculation by introducing
+**next‑nearest‑neighbor interactions**, producing a frustrated spin system.
+
+The example demonstrates
+
+- construction of a Hamiltonian with multiple bond ranges
+- symmetry reduction using lattice translations
+- momentum‑sector selection
+- Lanczos diagonalization
+- evaluation of physical observables.
+
+---
+
+# 2. Model Hamiltonian
+
+The Hamiltonian is
 
 $$
 H =
-\sum_{\langle i,j\rangle_1} H_{ij}^{(1)}
+\sum_{\langle i,j\rangle_1} H^{(1)}_{ij}
 +
-\sum_{\langle i,j\rangle_2} H_{ij}^{(2)}
+\sum_{\langle i,j\rangle_2} H^{(2)}_{ij}
 +
-\sum_{i=1}^{N} \mathbf{h}\cdot\mathbf{S}_i ,
+\sum_i \mathbf{h}\cdot\mathbf{S}_i
 $$
 
-where $\langle i,j\rangle_1$ denotes **nearest-neighbor (NN)** bonds and $\langle i,j\rangle_2$ denotes **next-nearest-neighbor (NNN)** bonds (periodic boundary condition).
-For each bond $(i,j)$ we define
+where the bond Hamiltonian is
 
 $$
-\begin{aligned}
-H_{ij}^{(n)}
-&=
-\sum_{\alpha=x,y,z} J_{\alpha}^{(n)}\, S_i^\alpha S_j^\alpha
+H^{(n)}_{ij} =
+\sum_{\alpha=x,y,z}
+J_\alpha^{(n)} S_i^\alpha S_j^\alpha
 +
-\mathbf{D}^{(n)}\cdot\left(\mathbf{S}_i\times\mathbf{S}_j\right)
-\\
-&\quad
+\mathbf{D}^{(n)}\cdot(\mathbf{S}_i \times \mathbf{S}_j)
 +
-\Gamma_x^{(n)}\left(S_i^{y}S_j^{z}+S_i^{z}S_j^{y}\right)
+H_\Gamma^{(n)}(i,j).
+$$
+
+The symmetric anisotropic interaction is
+
+$$
+H_\Gamma^{(n)}(i,j)=
+\Gamma_x^{(n)}(S_i^y S_j^z + S_i^z S_j^y)
 +
-\Gamma_y^{(n)}\left(S_i^{z}S_j^{x}+S_i^{x}S_j^{z}\right)
+\Gamma_y^{(n)}(S_i^z S_j^x + S_i^x S_j^z)
 +
-\Gamma_z^{(n)}\left(S_i^{x}S_j^{y}+S_i^{y}S_j^{x}\right).
-\end{aligned}
+\Gamma_z^{(n)}(S_i^x S_j^y + S_i^y S_j^x).
 $$
 
-Here $n=1$ (NN, $J_1$) or $n=2$ (NNN, $J_2$). The couplings are specified in `list_xyz_dm_gamma.dat` (bond list), while the magnetic field is specified in `list_hvec.dat` (site list).
+Here
 
-## Parameters used in this example
+- $n=1$ denotes **nearest‑neighbor ($J_1$)** interactions
+- $n=2$ denotes **next‑nearest‑neighbor ($J_2$)** interactions.
 
-From `input_param.dat`:
+---
 
-- Spin: `SPIN = 0.5` (spin-$1/2$)
-- System size: `NOS = 100`
-- Magnetization sectors: `NODmin = 0`, `NODmax = 3`
+# 3. Coupling Parameters
 
-Uniform magnetic field:
-
-$$
-\mathbf{h}=(h_x,h_y,h_z)=(-0.1,-0.1,-0.3).
-$$
-
-Nearest-neighbor ($J_1$) couplings:
+Magnetic field
 
 $$
-(J_x^{(1)},J_y^{(1)},J_z^{(1)})=(1.0,0.8,0.7),\quad
-\mathbf{D}^{(1)}=(0.2,0.1,5.0),\quad
-(\Gamma_x^{(1)},\Gamma_y^{(1)},\Gamma_z^{(1)})=(0.1,0.3,-0.2).
+\mathbf{h}=(-0.1,-0.1,-0.3)
 $$
 
-Next-nearest-neighbor ($J_2$) couplings:
+Nearest‑neighbor ($J_1$) couplings
 
 $$
-(J_x^{(2)},J_y^{(2)},J_z^{(2)})=(0.5,0.4,0.35),\quad
-\mathbf{D}^{(2)}=(0.1,0.05,2.5),\quad
-(\Gamma_x^{(2)},\Gamma_y^{(2)},\Gamma_z^{(2)})=(0.05,0.15,-0.1).
+(J_x^{(1)},J_y^{(1)},J_z^{(1)})=(1.0,0.8,0.7)
+$$
+
+$$
+\mathbf{D}^{(1)}=(0.2,0.1,5.0)
+$$
+
+$$
+(\Gamma_x^{(1)},\Gamma_y^{(1)},\Gamma_z^{(1)})=(0.1,0.3,-0.2)
+$$
+
+Next‑nearest‑neighbor ($J_2$) couplings
+
+$$
+(J_x^{(2)},J_y^{(2)},J_z^{(2)})=(0.5,0.4,0.35)
+$$
+
+$$
+\mathbf{D}^{(2)}=(0.1,0.05,2.5)
+$$
+
+$$
+(\Gamma_x^{(2)},\Gamma_y^{(2)},\Gamma_z^{(2)})=(0.05,0.15,-0.1)
 $$
 
 ---
 
-# Input files
+# 4. Lattice Structure
 
-This example uses the same high-level workflow as `chain.md`. The key difference is that this example includes both NN ($J_1$) and NNN ($J_2$) bonds.
+System parameters from `output.dat`
 
-## `input.dat`
+```
+NOS = 100
+L1  = 100
+L2 = L3 = L4 = L5 = L6 = 1
+```
 
-Top-level control file that points to the other inputs (parameter file, lists, symmetry files, etc.).
-(See `chain.md` for the detailed explanation of `input.dat` structure.)
+Thus the system is a **periodic one‑dimensional chain**.
 
-## `input_param.dat`
+Nearest‑neighbor bonds
 
-Parameter file (Fortran namelist `&input_parameters`) specifying system size, sector restriction, and default coupling values.
+$$
+(1,2),(2,3),\dots,(100,1)
+$$
 
-## `list_hvec.dat`
+Next‑nearest‑neighbor bonds
 
-Site list for the magnetic field.
-In this example, the field is uniform (same $(h_x,h_y,h_z)$ for all sites).
+$$
+(1,3),(2,4),\dots,(100,2)
+$$
 
-## `list_xyz_dm_gamma.dat` (bond list)
+Total number of bonds
 
-Bond list for $(J_x,J_y,J_z)$, $(D_x,D_y,D_z)$, and $(\Gamma_x,\Gamma_y,\Gamma_z)$.
-
-**Two-block structure (confirmed):**
-
-- Lines **1–100**: NN bonds ($J_1$): `(1,2),(2,3),...,(99,100),(100,1)`
-- Lines **101–200**: NNN bonds ($J_2$): `(1,3),(2,4),...,(99,1),(100,2)`
-
-The file contains `NO_TWO = 200` bonds in total.
-
-Example lines:
-
-```text
-(1)          1       2  1.000000000000000E+00  8.000000000000000E-01  7.000000000000000E-01  2.000000000000000E-01  1.000000000000000E-01  5.000000000000000E+00  1.000000000000000E-01  3.000000000000000E-01 -2.000000000000000E-01
-(100)      100       1  1.000000000000000E+00  8.000000000000000E-01  7.000000000000000E-01  2.000000000000000E-01  1.000000000000000E-01  5.000000000000000E+00  1.000000000000000E-01  3.000000000000000E-01 -2.000000000000000E-01
-(101)        1       3  5.000000000000000E-01  4.000000000000000E-01  3.500000000000000E-01  1.000000000000000E-01  5.000000000000000E-02  2.500000000000000E+00  5.000000000000000E-02  1.500000000000000E-01 -1.000000000000000E-01
-(200)      100       2  5.000000000000000E-01  4.000000000000000E-01  3.500000000000000E-01  1.000000000000000E-01  5.000000000000000E-02  2.500000000000000E+00  5.000000000000000E-02  1.500000000000000E-01 -1.000000000000000E-01
+```
+NO_TWO = 200
 ```
 
 ---
 
-# Running the example
+# 5. Symmetry Operations
 
-Same as in `chain.md`:
+Translational symmetry
 
-```bash
-../../source/QS3ED2 < input.dat
+```
+FILE_S1 = list_p1.dat
+```
+
+Translation operator
+
+$$
+T(i)=i+1 \quad (i=1,\dots,99), \qquad T(100)=1.
+$$
+
+This corresponds to the cyclic shift
+
+$$
+(S_1,S_2,\dots,S_{100})
+\rightarrow
+(S_2,S_3,\dots,S_{100},S_1).
+$$
+
+---
+
+# 6. Momentum (Wavevector) Sector
+
+Wavevector parameters from the input
+
+```
+L1 = 100
+M1 = 0
+```
+
+The allowed momenta are
+
+$$
+k = \frac{2\pi m}{L_1}, \qquad m=0,1,\dots,L_1-1.
+$$
+
+The parameter
+
+```
+M1 = 0
+```
+
+selects
+
+$$
+k = 0.
+$$
+
+Thus the calculation is performed in the **zero‑momentum sector**
+
+$$
+T|\psi\rangle = |\psi\rangle .
+$$
+
+---
+
+# 7. Local Hilbert Space
+
+Each site hosts
+
+$$
+S=\frac12
+$$
+
+so the local Hilbert space dimension is
+
+$$
+2S+1=2.
+$$
+
+---
+
+# 8. NOD Sector Restriction
+
+QS³‑ED2 labels basis states using
+
+$$
+n_i = S_i - m_i
+$$
+
+For spin‑1/2
+
+$$
+n_i =
+\begin{cases}
+0 & (m_i=+1/2) \\
+1 & (m_i=-1/2)
+\end{cases}
+$$
+
+The global counter
+
+$$
+\mathrm{NOD}=\sum_i n_i
+$$
+
+Input parameters
+
+```
+NODmin = 0
+NODmax = 3
+```
+
+restrict
+
+$$
+N_\downarrow \in \{0,1,2,3\}.
+$$
+
+---
+
+# 9. Hilbert‑space Dimension
+
+From `output.dat`
+
+```
+THS   = 166751
+THS(k)= 1669
+```
+
+- `THS` : dimension before symmetry reduction
+- `THS(k)` : dimension after symmetry and momentum reduction
+
+---
+
+# 10. Lanczos Solver
+
+Solver parameters
+
+```
+LNC_ENE_CONV = 1.0E-14
+MAXITR = 10000
+MINITR = 5
+ITRINT = 5
+```
+
+Total Lanczos iterations
+
+```
+total lanczos step: 160
 ```
 
 ---
 
-# Understanding `output.dat`
+# 11. Ground‑state Energy
 
-Key numbers for this example run:
+The converged ground‑state energy is
 
-- `THS = 166751`
-- `THS(k) = 1669`
-- `E0 = -3.656548...`
-- eigenvector quality: $10^{-15} \sim 10^{-16}$
-
----
-
-# Translational symmetry (`FILE_S1`–`FILE_S6`)
-
-This example uses 1D translation symmetry as in `chain.md`. See `chain.md` for details.
+$$
+E_0 = -3.656548006870278 \times 10^{0}.
+$$
 
 ---
 
-# Observables and output files
+# 12. Eigenvector Accuracy
 
-This example computes the same categories of observables as in `chain.md` (when enabled). See `chain.md` for details.
+Verification
+
+$$
+\langle GS|H|GS\rangle =
+-3.656548006870279
+$$
+
+Residual
+
+$$
+|1-(\langle GS|H|GS\rangle)^2/\langle GS|H^2|GS\rangle|
+=7.771561172376096\times10^{-16}.
+$$
+
+This indicates convergence close to machine precision.
 
 ---
 
-# Summary
+# 13. Observables
 
-This example demonstrates how to set up and run a **frustrated $J_1$–$J_2$ chain** with DM and $\Gamma$ couplings under a magnetic field, while exploiting **translational symmetry** to reduce the Hilbert space and accelerate Lanczos diagonalization.
+Enabled in the input
+
+```
+CAL_LM = 1
+CAL_CF = 1
+```
+
+Generated files
+
+| file | description |
+|-----|-------------|
+| `local_mag.dat` | local magnetization |
+| `two_body_cf_xyz.dat` | spin correlation tensor |
+| `two_body_cf_z+-.dat` | ladder correlations |
+
+Correlation pairs are defined in
+
+```
+list_ij_cf.dat
+```
+
+Example
+
+$$
+(1,2),(1,3),\dots,(1,10).
+$$
+
+---
+
+# 14. Runtime
+
+Measured runtime
+
+```
+Time: 0.329 sec
+```
+
+---
+
+# 15. Summary
+
+This example demonstrates a **frustrated $J_1$–$J_2$ spin chain**
+calculation using QS³‑ED2.
+
+Key features illustrated include
+
+- multi‑range spin interactions
+- translational symmetry reduction
+- momentum‑sector selection
+- Lanczos ground‑state computation
+- evaluation of correlation functions.
+
