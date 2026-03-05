@@ -47,8 +47,8 @@ nav:
       - Kagome lattice: examples/kagome.md
       - Cubic lattice: examples/cubic.md
       - Cubic (sp_HB): examples/cubic_sp_HB.md      
-  - Validation & Performance:
-      - Validation: vp/validation.md
+  - Performance:
+      - wk_dim scaling: vp/wk_dim_scaling.md
       - Performance: vp/performance.md
   - Theory / Algorithms:
       - Overview: theory/algorithms.md
