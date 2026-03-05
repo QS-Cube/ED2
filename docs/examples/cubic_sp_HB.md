@@ -53,7 +53,8 @@ $$
 From `input_param.dat`:
 
 - magnetic field  
-  $$\mathbf{h}=(0,0,0)$$
+
+$$\mathbf{h}=(0,0,0)$$
 
 - exchange couplings  
 
