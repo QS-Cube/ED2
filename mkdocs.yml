@@ -49,7 +49,7 @@ nav:
       - Cubic (sp_HB): examples/cubic_sp_HB.md      
   - Performance:
       - wk_dim scaling: vp/wk_dim_scaling.md
-      - Performance: vp/performance.md
+      - mixed_spin_plateau: vp/mixed_spin_plateau.md
   - Theory / Algorithms:
       - Overview: theory/algorithms.md
   - Reference:
