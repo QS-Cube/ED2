@@ -262,11 +262,7 @@ wk_dim / D
 
 is shown in the figure below.
 
-![wk_dim scaling](wk_dim_scaling.svg)
-
-<p align="center">
-<img src="wk_dim_scaling.svg" width="650">
-</p>
+![wk_dim scaling](wk_dim_scaling.svg){ width="650" }
 
 The computation time decreases approximately **linearly** as a function of
 
