@@ -1,67 +1,60 @@
-# Performance: Magnetization Plateau in a Mixed-Spin Chain
 
-## Overview
+# Performance Study: Magnetization Plateau in a Mixed-Spin Chain
 
-One of the distinctive capabilities introduced in **QS³‑ED2** is the support for **site‑dependent local spin magnitudes** and **site‑dependent limits on the number of lowering operations**.  
-These are specified through the input files
+This performance example demonstrates how **QS³‑ED2** can efficiently handle **site‑dependent spin magnitudes** and **magnetization‑sector constraints** using
 
 - `list_spin.dat`
 - `list_NODmax.dat`
 
-This functionality makes it possible to efficiently treat systems with **non‑uniform local spins**, such as mixed‑spin chains.
+These features allow exact‑diagonalization studies of **mixed‑spin systems**, which are difficult to treat with traditional ED implementations.
 
-As a representative example, we investigate the **magnetization plateau** appearing in an antiferromagnetic mixed‑spin chain with alternating spins
-
-$$
-(S,\,1/2).
-$$
-
-In particular, we study the **dependence of the plateau width on the spin magnitude \(S\)** at the magnetization
+As a representative benchmark, we analyze the **spin‑dependence of the magnetization plateau width** in a one‑dimensional mixed‑spin chain consisting of alternating spins
 
 $$
-\frac{M}{M_s} = \frac{2S-1}{2S+1}.
+(S,1/2).
 $$
 
-This plateau is well known from analytical and numerical studies, including nonlinear spin‑wave theory and density‑matrix renormalization group (DMRG) calculations.
+The plateau occurs at
+
+$$
+\frac{M}{M_s}=\frac{2S-1}{2S+1}.
+$$
 
 ---
 
-# Model
+# Model Hamiltonian
 
-We consider a one‑dimensional mixed‑spin chain with alternating spins \(S\) and \(1/2\).  
-The Hamiltonian is
+We consider an antiferromagnetic mixed‑spin chain described by
 
 $$
 \hat H =
 J\sum_{j=1}^{L}
 \left[
 \hat{\mathbf s}_{2j}\cdot
-\left(\hat{\mathbf S}_{2j-1}+\hat{\mathbf S}_{2j+1}\right)
+(\hat{\mathbf S}_{2j-1}+\hat{\mathbf S}_{2j+1})
 -
-h\left(\hat S^z_{2j-1}+\hat s^z_{2j}\right)
+h(\hat S^z_{2j-1}+\hat s^z_{2j})
 \right],
 $$
 
 with periodic boundary conditions
 
 $$
-\hat{\mathbf S}_{2L+1}=\hat{\mathbf S}_1 .
+\hat{\mathbf S}_{2L+1}=\hat{\mathbf S}_1.
 $$
 
 Here
 
-- \(\hat{\mathbf S}_{2j-1}\) is a spin‑\(S\) operator
-- \(\hat{\mathbf s}_{2j}\) is a spin‑\(1/2\) operator
+- $\hat{\mathbf S}_{2j-1}$ : spin‑$S$ operator
+- $\hat{\mathbf s}_{2j}$ : spin‑$1/2$ operator
 
-located at sites \(2j-1\) and \(2j\), respectively.
-
-The exchange coupling is antiferromagnetic
+The coupling constant satisfies
 
 $$
 J>0
 $$
 
-and throughout this benchmark we use
+and we set
 
 $$
 J=1
@@ -69,80 +62,66 @@ $$
 
 as the unit of energy.
 
-The system contains \(2L\) sites, corresponding to \(L\) unit cells.
-
 ---
 
-# Symmetries
+# Symmetry
 
-The Hamiltonian is invariant under the following symmetry operations:
+The Hamiltonian is invariant under
 
-### Two‑site translation
+- two‑site translation
+- site inversion
 
-Translation by one unit cell (two lattice sites).
+The ground state appears in the symmetry sector
 
-### Site inversion
+- momentum $k=0$
+- even inversion parity
 
-Reflection about the center of a unit cell combined with the exchange of the two sublattices.
-
-These symmetries allow the Hilbert space to be decomposed into symmetry sectors, significantly reducing the computational cost.
-
-In practice, the ground state of this system appears in the sector
-
-- momentum \(k=0\) (Γ point)
-- even parity under site inversion
-
-which corresponds to
+corresponding to
 
 ```
 M1 = 0
 M2 = 0
 ```
 
-in the QS³‑ED2 input file.
+in the ED2 input file.
 
 ---
 
 # Saturation magnetization
 
-The saturation magnetization of the system is
+The saturation magnetization is
 
 $$
 M_s = \sum_{r=1}^{2L} S_r
 $$
 
-where \(S_r\) is the local spin magnitude at site \(r\).
-
 For the alternating chain
 
 $$
-(S,\,1/2)
+(S,1/2)
 $$
 
 this becomes
 
 $$
-M_s = L\left(S+\frac12\right)
-      = \frac{L(2S+1)}{2}.
+M_s = L(S+1/2) = \frac{L(2S+1)}{2}.
 $$
 
 ---
 
 # Magnetization sector
 
-It is convenient to characterize the magnetization sector by the **number of lowering operations applied to the fully polarized state**, denoted
+We denote the number of lowering operations from the fully polarized state by
 
 $$
 N_{\downarrow}.
 $$
 
-In QS³‑ED2 this quantity corresponds directly to the parameter
+In QS³‑ED2 this corresponds to
 
 ```
 NODmax
 ```
-
-in the input configuration.
 
 At the plateau position
 
@@ -150,116 +129,102 @@ $$
 \frac{M}{M_s}=\frac{2S-1}{2S+1},
 $$
 
-the corresponding lowering number is
+the lowering number is
 
 $$
-N_{\downarrow}
-= M_s - M
-= M_s\left(1-\frac{2S-1}{2S+1}\right)
-= L.
+N_{\downarrow}=L.
 $$
 
-Therefore, the plateau is located between the two neighboring magnetization sectors
+Therefore the plateau lies between the sectors
 
 $$
 N_{\downarrow}=L
-\qquad
-\text{and}
-\qquad
+$$
+
+and
+
+$$
 N_{\downarrow}=L-1.
 $$
 
 ---
 
-# QS³‑ED2 input structure
+# Input configuration
 
-For a chain of length \(2L\), the key input parameters are
+For a system with $2L$ sites
 
 ```
-NOS     = 2L
-L1      = L
-L2      = 2
-NO_one  = 0
-NO_two  = 2L
+NOS    = 2L
+L1     = L
+L2     = 2
+NO_one = 0
+NO_two = 2L
 ```
 
-The momentum and inversion sectors are specified as
+Symmetry sector
 
 ```
 M1 = 0
 M2 = 0
 ```
 
-The local spins and lowering limits are provided through
+Local spins and lowering limits are specified using
 
-- `list_spin.dat`
-- `list_NODmax.dat`
-
-which define the allowed local spin values and the maximum number of lowering operations per site.
-
----
-
-# Determining the plateau width
-
-In the presence of a magnetic field \(h\), the ground state minimizes
-
-$$
-E_0(N_{\downarrow}) - h\,M(N_{\downarrow}).
-$$
-
-The critical field separating two neighboring magnetization sectors is determined from the difference of ground‑state energies,
-
-$$
-h_c(N_{\downarrow})
-=
-E_0(N_{\downarrow})
--
-E_0(N_{\downarrow}-1).
-$$
-
-The magnetization plateau width is therefore obtained from the difference between two neighboring critical fields.
-
-For the plateau considered here, the relevant energies are simply
-
-- the ground state in the sector \(N_{\downarrow}=L\)
-- the ground state in the sector \(N_{\downarrow}=L-1\)
-
-so that the plateau width can be computed directly from the difference of these energies.
+```
+list_spin.dat
+list_NODmax.dat
+```
 
 ---
 
-# Finite‑size behavior
+# Plateau width
 
-Using QS³‑ED2, the plateau width can be computed with extremely small finite‑size effects.
-
-Even relatively small systems
+The ground state in magnetic field $h$ minimizes
 
 $$
-L = 2,3,\dots,8
+E_0(N_{\downarrow}) - hM(N_{\downarrow}).
 $$
 
-already provide numerically well‑converged results.
+The critical field between two sectors is
+
+$$
+h_c(N_{\downarrow}) =
+E_0(N_{\downarrow})-E_0(N_{\downarrow}-1).
+$$
+
+Thus the plateau width is obtained from the energy difference between the sectors
+
+- $N_{\downarrow}=L$
+- $N_{\downarrow}=L-1$
 
 ---
 
-# Results
+# Finite‑size behaviour
 
-The resulting plateau width as a function of the spin magnitude \(S\) is shown in Fig. 4.
+Finite‑size effects are extremely small.
 
-The numerical results exhibit the following behavior:
+Accurate results are obtained already for
 
-- For **small \(S\)**, the results reproduce previously reported **DMRG calculations**.
-- For **large \(S\)**, the results approach the **exact nonlinear spin‑wave prediction** in the limit \(S\to\infty\).
-
-This agreement across the entire range of \(S\) demonstrates the reliability of QS³‑ED2 for treating mixed‑spin quantum systems with site‑dependent spin magnitudes.
+$$
+L = 2,3,\dots,8.
+$$
 
 ---
 
-# Practical remarks
+# Benchmark result
 
-This example highlights two important features of QS³‑ED2:
+![plateau width](mixed_spin_plateau.svg){ width="650" }
 
-1. **Support for heterogeneous local spins** via `list_spin.dat`.
-2. **Flexible magnetization‑sector control** through `list_NODmax.dat`.
+The numerical results
 
-Together, these capabilities enable efficient exact‑diagonalization studies of a broad class of quantum spin models that were difficult to treat in earlier implementations.
+- reproduce DMRG data for small $S$
+- approach the nonlinear spin‑wave result as $S\to\infty$.
+
+---
+
+# Summary
+
+This benchmark demonstrates that **QS³‑ED2 can efficiently treat mixed‑spin quantum systems** with
+
+- heterogeneous local spins
+- flexible magnetization‑sector constraints
