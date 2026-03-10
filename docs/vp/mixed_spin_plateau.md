@@ -1,14 +1,14 @@
 
 # Performance Study: Magnetization Plateau in a Mixed-Spin Chain
 
-This performance example demonstrates how **QS³‑ED2** can efficiently handle **site‑dependent spin magnitudes** and **magnetization‑sector constraints** using
+This performance example demonstrates how **QS³-ED2** can efficiently handle **site-dependent spin magnitudes** and **magnetization-sector constraints** using
 
 - `list_spin.dat`
 - `list_NODmax.dat`
 
-These features allow exact‑diagonalization studies of **mixed‑spin systems**, which are difficult to treat with traditional ED implementations.
+These features allow exact-diagonalization studies of **mixed-spin systems**, which are difficult to treat with traditional ED implementations.
 
-As a representative benchmark, we analyze the **spin‑dependence of the magnetization plateau width** in a one‑dimensional mixed‑spin chain consisting of alternating spins
+As a representative benchmark, we analyze the **spin-dependence of the magnetization plateau width** in a one-dimensional mixed-spin chain consisting of alternating spins
 
 $$
 (S,1/2).
@@ -24,7 +24,7 @@ $$
 
 # Model Hamiltonian
 
-We consider an antiferromagnetic mixed‑spin chain described by
+We consider an antiferromagnetic mixed-spin chain described by
 
 $$
 \hat H =
@@ -45,8 +45,8 @@ $$
 
 Here
 
-- $\hat{\mathbf S}_{2j-1}$ : spin‑$S$ operator
-- $\hat{\mathbf s}_{2j}$ : spin‑$1/2$ operator
+- $\hat{\mathbf S}_{2j-1}$ : spin-$S$ operator
+- $\hat{\mathbf s}_{2j}$ : spin-$1/2$ operator
 
 The coupling constant satisfies
 
@@ -62,13 +62,15 @@ $$
 
 as the unit of energy.
 
+The system contains $2L$ sites corresponding to $L$ unit cells.
+
 ---
 
 # Symmetry
 
 The Hamiltonian is invariant under
 
-- two‑site translation
+- two-site translation
 - site inversion
 
 The ground state appears in the symmetry sector
@@ -117,7 +119,7 @@ $$
 N_{\downarrow}.
 $$
 
-In QS³‑ED2 this corresponds to
+In QS³-ED2 this corresponds to
 
 ```
 NODmax
@@ -149,7 +151,7 @@ $$
 
 ---
 
-# Input configuration
+# QS³‑ED2 Input Configuration
 
 For a system with $2L$ sites
 
@@ -161,31 +163,74 @@ NO_one = 0
 NO_two = 2L
 ```
 
-Symmetry sector
+The symmetry sector is specified as
 
 ```
 M1 = 0
 M2 = 0
 ```
 
-Local spins and lowering limits are specified using
+The local spins and lowering limits are defined using
 
 ```
 list_spin.dat
 list_NODmax.dat
 ```
 
+while the interaction pairs are specified using
+
+```
+list_p1.dat
+list_p2.dat
+```
+
 ---
 
-# Plateau width
+# Table 1: Structure of the Input Files
 
-The ground state in magnetic field $h$ minimizes
+The following table summarizes the structure of the input files used in the mixed-spin chain example.
+
+| list_spin.dat | list_NODmax.dat | list_p1.dat | list_p2.dat |
+|---|---|---|---|
+| S   | min[2S, NODmax] | 3 | 1 |
+| 0.5 | 1               | 4 | 2L |
+| S   | min[2S, NODmax] | 5 | 2L − 1 |
+| 0.5 | 1               | 6 | 2L − 2 |
+| S   | min[2S, NODmax] | 7 | 2L − 3 |
+| 0.5 | 1               | 8 | 2L − 4 |
+| …   | …               | … | … |
+| S   | min[2S, NODmax] | 1 | 3 |
+| 0.5 | 1               | 2 | 2 |
+
+### Column descriptions
+
+**`list_spin.dat`**  
+Specifies the local spin magnitude at each lattice site.
+
+**`list_NODmax.dat`**  
+Defines the maximum number of lowering operations allowed at each site.  
+For a spin‑$S$ site the maximum possible number of lowering operations is $2S$, therefore the constraint is written as
+
+```
+min[2S, NODmax]
+```
+
+to ensure consistency with the physical Hilbert space.
+
+**`list_p1.dat`, `list_p2.dat`**  
+Define the interacting site pairs used in the Hamiltonian and generate the alternating couplings along the chain.
+
+---
+
+# Determining the Plateau Width
+
+In a magnetic field $h$, the ground state minimizes
 
 $$
 E_0(N_{\downarrow}) - hM(N_{\downarrow}).
 $$
 
-The critical field between two sectors is
+The critical field between neighboring magnetization sectors is
 
 $$
 h_c(N_{\downarrow}) =
@@ -199,10 +244,9 @@ Thus the plateau width is obtained from the energy difference between the sector
 
 ---
 
-# Finite‑size behaviour
+# Finite‑Size Behaviour
 
-Finite‑size effects are extremely small.
-
+Finite-size effects are extremely small.  
 Accurate results are obtained already for
 
 $$
@@ -211,20 +255,23 @@ $$
 
 ---
 
-# Benchmark result
+# Benchmark Result
 
-![plateau width](mixed_spin_plateau.svg){ width="650" }
+*(Insert Fig. here showing plateau width vs S)*
 
 The numerical results
 
-- reproduce DMRG data for small $S$
-- approach the nonlinear spin‑wave result as $S\to\infty$.
+- reproduce **DMRG results** for small $S$
+- approach the **nonlinear spin‑wave prediction** in the limit $S \to \infty$.
 
 ---
 
 # Summary
 
-This benchmark demonstrates that **QS³‑ED2 can efficiently treat mixed‑spin quantum systems** with
+This benchmark demonstrates that **QS³‑ED2 can efficiently treat mixed-spin quantum systems** with
 
 - heterogeneous local spins
-- flexible magnetization‑sector constraints
+- flexible magnetization-sector constraints
+- symmetry-reduced Hilbert spaces
+
+These features make QS³‑ED2 a powerful tool for investigating quantum spin systems with site-dependent spin magnitudes.
