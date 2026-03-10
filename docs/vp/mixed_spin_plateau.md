@@ -257,7 +257,9 @@ $$
 
 # Benchmark Result
 
-*(Insert Fig. here showing plateau width vs S)*
+<p align="center">
+<img src="hc_vs_S_for_web.svg" width="650">
+</p>
 
 The numerical results
 
