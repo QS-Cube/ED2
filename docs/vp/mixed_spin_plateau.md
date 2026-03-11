@@ -64,7 +64,7 @@ as the unit of energy.
 
 The system contains $2L$ sites corresponding to $L$ unit cells.
 
-![mixed_spin_chain.svg](mixed_spin_chain.svg){ width="650" }
+![mixed_spin_chain.svg](mixed_spin_chain.svg){ width="450" }
 
 ---
 
@@ -259,7 +259,7 @@ $$
 
 # Benchmark Result
 
-![hc_vs_S_for_web.svg](hc_vs_S_for_web.svg){ width="650" }
+![hc_vs_S_for_web.svg](hc_vs_S_for_web.svg){ width="450" }
 
 The numerical results
 
