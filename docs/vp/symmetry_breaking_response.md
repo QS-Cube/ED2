@@ -119,7 +119,7 @@ where $L$ is the linear system size.
 Using QS³-ED2, calculations can be performed for lattice sizes up to
 
 $$
-N = L^2 = 36
+N = L^2 = 81
 $$
 
 in this benchmark example.
