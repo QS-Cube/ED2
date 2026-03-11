@@ -64,6 +64,8 @@ as the unit of energy.
 
 The system contains $2L$ sites corresponding to $L$ unit cells.
 
+![mixed_spin_chain.svg](mixed_spin_chain.svg){ width="650" }
+
 ---
 
 # Symmetry
