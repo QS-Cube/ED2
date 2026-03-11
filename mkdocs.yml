@@ -50,6 +50,7 @@ nav:
   - Performance:
       - wk_dim scaling: vp/wk_dim_scaling.md
       - mixed_spin_plateau: vp/mixed_spin_plateau.md
+      - symmetry_breaking_response: vp/symmetry_breaking_response.md
   - Theory / Algorithms:
       - Overview: theory/algorithms.md
   - Reference:
