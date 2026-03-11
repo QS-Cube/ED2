@@ -149,7 +149,7 @@ $$
 \chi_s \sim L^4 ,
 $$
 
-which is consistent with theoretical expectations and previous studies.
+within the system sizes studied here. At present, we regard this as an empirical scaling observed in the present numerical data. A detailed comparison with previous theoretical and numerical studies remains to be carried out.
 
 The finite‑size extrapolation of the order parameter yields
 
@@ -163,7 +163,7 @@ $$
 H/J = 3.79 \pm 0.03 .
 $$
 
-This value is in good agreement with earlier numerical results reported in the literature.
+This value appears to be compatible with previously reported numerical estimates, although a detailed literature comparison is left for future work.
 
 ---
 
