@@ -1,0 +1,83 @@
+name: ED2 original-main generic complex CSR proof
+
+on:
+  push:
+    branches:
+      - codex/ed2-main-complex-csr
+    paths:
+      - "source/ham2vec.f90"
+      - "tests/cpc_csr_*"
+      - ".github/workflows/main-generic-csr.yml"
+      - "docs/development/generic-complex-csr-main.md"
+  pull_request:
+    paths:
+      - "source/ham2vec.f90"
+      - "tests/cpc_csr_*"
+      - ".github/workflows/main-generic-csr.yml"
+      - "docs/development/generic-complex-csr-main.md"
+  workflow_dispatch:
+
+jobs:
+  original-main-native-safety:
+    name: main + complex CSR exact physics (gfortran-${{ matrix.gnu }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        gnu: [13, 14]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compiler, BLAS and reproducible build tools
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            gfortran-${{ matrix.gnu }} libopenblas-dev liblapack-dev \
+            autoconf automake make python3
+          gfortran-${{ matrix.gnu }} --version | head -1
+      - name: Build ORIGINAL ED2 main lineage without experimental cubic branches
+        run: |
+          autoreconf -vfi
+          # Existing original-main eigen_solver.f90 uses legacy implicit
+          # LAPACK calls that need this compatibility flag under GNU13/14.
+          # This is unrelated to the new CSR H*x code; an explicit-LAPACK
+          # interface modernization should be integrated independently.
+          ./configure FC=gfortran-${{ matrix.gnu }} \
+            FCFLAGS="-O2 -fopenmp -fallow-argument-mismatch"
+          make -j2
+          make check
+      - name: Compile independent native full-H vector bit-pattern driver
+        run: |
+          gfortran-${{ matrix.gnu }} -O2 -fopenmp -I source \
+            -o "$RUNNER_TEMP/cpc-csr-driver" \
+            tests/cpc_csr_matvec_driver.f90 \
+            source/input_param.o source/state_lists.o source/ham2vec.o \
+            -llapack -lopenblas
+      - name: Compare full H*x bits plus direct dense-H reference on real and complex non-U1 models
+        run: |
+          python3 -B tests/cpc_csr_main_regression.py \
+            --driver "$RUNNER_TEMP/cpc-csr-driver" \
+            --output "$RUNNER_TEMP/csr-main-proof" \
+            --sizes 4,6,8 --threads 1,4 --timeout 180
+          test -s "$RUNNER_TEMP/csr-main-proof/summary.json"
+      - name: Historical CPU-feasible example regression (ex1 to ex8)
+        run: |
+          # ex9 = original unoptimized N=1000 three-magnon cubic workload.
+          # It is an HPC-scale calculation; not a CI-timeout-safe test.
+          # Its correctness is separately tested in the established
+          # cubic specializations; this branch does not import them.
+          make -C tests check-long \
+            LONG_TESTS="test_ex1.sh test_ex2.sh test_ex3.sh test_ex4.sh test_ex5.sh test_ex6.sh test_ex7.sh test_ex8.sh"
+      - name: Keep test outputs for audits and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: main-generic-complex-csr-gnu${{ matrix.gnu }}
+          path: |
+            ${{ runner.temp }}/csr-main-proof/summary.json
+            ${{ runner.temp }}/csr-main-proof/*/stdout.log
+            ${{ runner.temp }}/csr-main-proof/*/csr_matvec_bits.txt
+            tests/*.long.log
+            tests/test-suite.log
+          retention-days: 30
+          if-no-files-found: warn
