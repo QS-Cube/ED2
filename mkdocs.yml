@@ -62,6 +62,7 @@ nav:
   - Reference:
       - Citation & Versioning: reference/citation-versioning.md
       - Release qualification: reference/release-qualification.md
+      - Validated compiler backends: reference/backend-validation.md
   - Development notes:
       - Complex CSR implementation: development/generic-complex-csr-main.md
       - Typed BLAS/LAPACK interfaces: development/typed-blas-lapack-main.md

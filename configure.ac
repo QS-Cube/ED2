@@ -12,7 +12,7 @@ AC_PROG_CC
 
 FCFLAGS_PRESERVE=$FCFLAGS
 AC_LANG(Fortran)
-AC_PROG_FC(ifort gfortran)
+AC_PROG_FC(ifx ifort gfortran)
 FCFLAGS=$FCFLAGS_PRESERVE
 
 ## FCFLAGS:
@@ -20,8 +20,12 @@ case "$FC" in
   gfortran*)
     test -n "$FCFLAGS" || FCFLAGS="-fopenmp -Ofast"
     ;;
-  ifort)
+  ifort|*/ifort)
     test -n "$FCFLAGS" || FCFLAGS="-O3 -ipo -no-prec-div -fp-model fast=2 -xHost -parallel -qopenmp"
+    ;;
+  ifx|*/ifx)
+    # Conservative, portable FP defaults for the current Intel LLVM compiler.
+    test -n "$FCFLAGS" || FCFLAGS="-O2 -qopenmp -fp-model precise"
     ;;
 esac
 
@@ -49,12 +53,22 @@ case "$with_lapack" in
            BLAS_FOUND=yes],
           [BLAS_FOUND=no])])])
 
-    # MKL fallback (only when FC=ifort)
-    if test "x$BLAS_FOUND" = "xno" && echo "$FC" | grep -q '^ifort'; then
-      AC_MSG_NOTICE([BLAS... not found; falling back to Intel MKL (-qmkl=parallel)])
-      LIBS="$LIBS -qmkl=parallel"
-      BLAS_FOUND=yes
-      BLAS_LIBS=""
+    # MKL fallback only for an Intel compiler when explicitly available.
+    if test "x$BLAS_FOUND" = "xno"; then
+      case "$FC" in
+        ifort|*/ifort)
+          AC_MSG_NOTICE([BLAS... falling back to Intel MKL (-qmkl=parallel)])
+          LIBS="$LIBS -qmkl=parallel"
+          BLAS_FOUND=yes
+          BLAS_LIBS=""
+          ;;
+        ifx|*/ifx)
+          AC_MSG_NOTICE([BLAS... falling back to Intel LP64 sequential MKL (-qmkl=sequential)])
+          LIBS="$LIBS -qmkl=sequential"
+          BLAS_FOUND=yes
+          BLAS_LIBS=""
+          ;;
+      esac
     fi
 
     if test "x$BLAS_FOUND" = "xno"; then
@@ -70,9 +84,9 @@ Try loading a BLAS module or re-run configure with explicit LIBS/LDFLAGS.])
        LAPACK_FOUND=yes],
       [LAPACK_FOUND=no])
 
-    # Assume MKL provides LAPACK if -qmkl=parallel is active
-    if test "x$LAPACK_FOUND" = "xno" && echo "$LIBS" | grep -q -- '-qmkl=parallel'; then
-      AC_MSG_NOTICE([LAPACK... assuming MKL provides LAPACK via -qmkl=parallel])
+    # Assume MKL provides LAPACK if a tested MKL linking option is active
+    if test "x$LAPACK_FOUND" = "xno" && echo "$LIBS" | grep -q -- '-qmkl='; then
+      AC_MSG_NOTICE([LAPACK... assuming MKL provides LAPACK via -qmkl])
       LAPACK_FOUND=yes
       LAPACK_LIBS=""
     fi
@@ -86,12 +100,16 @@ Try loading a LAPACK module or re-run configure with explicit LIBS/LDFLAGS.])
     ;;
   mkl)
     case "$FC" in
-      ifort)
+      ifort|*/ifort)
         AC_MSG_NOTICE([Using Intel MKL via -qmkl=parallel])
         LIBS="$LIBS -qmkl=parallel"
         ;;
+      ifx|*/ifx)
+        AC_MSG_NOTICE([Using Intel LP64 sequential MKL via -qmkl=sequential])
+        LIBS="$LIBS -qmkl=sequential"
+        ;;
       *)
-        AC_MSG_ERROR([--with-lapack=mkl requires Intel ifort compiler])
+        AC_MSG_ERROR([--with-lapack=mkl requires Intel ifort or ifx compiler])
         ;;
     esac
     ;;

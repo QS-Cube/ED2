@@ -48,9 +48,12 @@ installation is required to run the examples. Optional `make install` installs
 writable local prefix.
 
 The default BLAS search is OpenBLAS, BLAS, then f77blas, with a separate LAPACK
-check. The legacy `ifort` path has an MKL option but was not executed in the
-19 November 2026 audit. `ifx` has no dedicated automatic configuration here.
-ILP64 libraries are incompatible with the declared LP64 interfaces.
+check. The legacy `ifort` option remains supported as a build route; `ifx` with
+Intel oneAPI LP64 oneMKL is available via `FC=ifx --with-lapack=mkl`
+and is verified separately from GNU. Use conservative
+`FCFLAGS="-O2 -qopenmp -fp-model precise"`; see the
+[installation guide](docs/getting-started/installation.md) for the exact
+commands. ILP64 libraries are incompatible with the declared LP64 interfaces.
 
 The audit used Debian 13/GNU Fortran 14.2 and system BLAS/LAPACK. The repository
 CI also exercises GNU Fortran 13 and 14 on Ubuntu 24.04; this is not a blanket
