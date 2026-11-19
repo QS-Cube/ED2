@@ -4,28 +4,20 @@ on:
   push:
     branches: [main]
     paths:
-      - "source/ham2vec.f90"
-      - "source/eigen_solver.f90"
-      - "source/lanczos.f90"
-      - "source/blas_lapack_interfaces.f90"
-      - "source/Makefile.am"
-      - "source/Makefile.in"
-      - "tests/cpc_blas_lapack_contract_driver.f90"
-      - "tests/cpc_partial_cache_allocation_regression.py"
-      - "tests/cpc_csr_*"
+      - "source/**"
+      - "tests/**"
+      - "script_*/**"
+      - "configure.ac"
+      - "Makefile.am"
       - ".github/workflows/main-generic-csr.yml"
       - "docs/development/generic-complex-csr-main.md"
   pull_request:
     paths:
-      - "source/ham2vec.f90"
-      - "source/eigen_solver.f90"
-      - "source/lanczos.f90"
-      - "source/blas_lapack_interfaces.f90"
-      - "source/Makefile.am"
-      - "source/Makefile.in"
-      - "tests/cpc_blas_lapack_contract_driver.f90"
-      - "tests/cpc_partial_cache_allocation_regression.py"
-      - "tests/cpc_csr_*"
+      - "source/**"
+      - "tests/**"
+      - "script_*/**"
+      - "configure.ac"
+      - "Makefile.am"
       - ".github/workflows/main-generic-csr.yml"
       - "docs/development/generic-complex-csr-main.md"
   workflow_dispatch:
@@ -46,7 +38,7 @@ jobs:
           sudo apt-get update -qq
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             gfortran-${{ matrix.gnu }} libopenblas-dev liblapack-dev \
-            autoconf automake make python3
+            autoconf automake make python3 python3-numpy
           gfortran-${{ matrix.gnu }} --version | head -1
       - name: Build ORIGINAL ED2 main lineage without experimental cubic branches
         run: |
@@ -57,6 +49,19 @@ jobs:
             FCFLAGS="-O2 -fopenmp"
           make -j2
           make check
+      - name: Independent spin-matrix physics and guarded solver cases
+        run: |
+          for threads in 1 4; do
+            python3 -B tests/audit_physics_regression.py \
+              --exe "$PWD/source/QS3ED2" \
+              --output "$RUNNER_TEMP/audit-physics-t$threads" \
+              --threads "$threads" --with-iterative --field-cache-variants
+          done
+      - name: Bounds-checked wavefunction and representative-basis regressions
+        run: |
+          python3 -B tests/audit_runtime_regression.py \
+            --fc gfortran-${{ matrix.gnu }} \
+            --output "$RUNNER_TEMP/audit-runtime"
       - name: Native LP64 BLAS complex ABI and full ZHEEVR eigensolver proof
         run: |
           gfortran-${{ matrix.gnu }} -O2 -fopenmp -I source \
@@ -112,6 +117,8 @@ jobs:
             ${{ runner.temp }}/cpc-blas-contract/blas-contract.log
             ${{ runner.temp }}/csr-main-proof/*/stdout.log
             ${{ runner.temp }}/csr-main-proof/*/csr_matvec_bits.txt
+            ${{ runner.temp }}/audit-physics-t*/**
+            ${{ runner.temp }}/audit-runtime/**
             tests/*.long.log
             tests/test-suite.log
           retention-days: 30

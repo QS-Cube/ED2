@@ -11,10 +11,12 @@ SCRIPT_DIR="$1"
 shift
 
 # Repo top (where this script lives is <top>/tests/)
-TOPDIR=$(cd "$(dirname "$0")/.." && pwd)
+TOPDIR=$(cd "${TOP_SRCDIR:-$(dirname "$0")/..}" && pwd)
+BUILDDIR=$(cd "${TOP_BUILDDIR:-$TOPDIR}" && pwd)
 
 # Built executable (do not rely on PATH)
-EXE="$TOPDIR/source/QS3ED2"
+EXE="${ED2_EXE:-$BUILDDIR/source/QS3ED2}"
+EXE="$(cd "$(dirname "$EXE")" && pwd)/$(basename "$EXE")"
 if [ ! -x "$EXE" ]; then
   echo "ERROR: executable not found: $EXE"
   echo "Hint: run 'make' first."
@@ -36,11 +38,16 @@ trap 'rm -rf "$TMPDIR"' EXIT INT TERM
 mkdir -p "$TMPDIR/ED2"
 cp -a "$TOPDIR/$SCRIPT_DIR" "$TMPDIR/ED2/"
 cp -a "$TOPDIR/input"       "$TMPDIR/ED2/"
+# A distcheck source tree is read-only. Both copied directories need to be
+# writable for generated inputs and for the exit trap to remove its sandbox.
+chmod u+w "$TMPDIR/ED2/$SCRIPT_DIR" "$TMPDIR/ED2/input"
+# The source tree and build tree can differ (for example, make distcheck).
+cp "$BUILDDIR/$SCRIPT_DIR/mk_input" "$TMPDIR/ED2/$SCRIPT_DIR/mk_input"
 
 # Run inside sandbox
 cd "$TMPDIR/ED2/$SCRIPT_DIR"
 
-ED2_EXE="$EXE" FC="$FC" ./run.sh > test.log 2>&1 || {
+TOPDIR="$TMPDIR/ED2" ED2_EXE="$EXE" FC="$FC" ./run.sh > test.log 2>&1 || {
   echo "===== ${SCRIPT_DIR}/run.sh failed; last 200 lines ====="
   tail -n 200 test.log || true
   exit 1
@@ -54,6 +61,11 @@ for f in "$@"; do
     tail -n 200 test.log || true
     exit 1
   fi
+  case "$f" in
+    */eigenvalues.dat)
+      awk -f "$TOPDIR/tests/check_eigenvalues.awk" "$TMPDIR/ED2/$f" || exit 1
+      ;;
+  esac
 done
 
 echo "OK: ${SCRIPT_DIR} passed."

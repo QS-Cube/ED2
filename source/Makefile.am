@@ -1,4 +1,5 @@
 bin_PROGRAMS = QS3ED2
+CLEANFILES = *.mod
 QS3ED2_SOURCES = blas_lapack_interfaces.f90 \
               input_param.f90 \
               state_lists.f90 \
