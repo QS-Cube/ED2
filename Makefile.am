@@ -43,6 +43,7 @@ EXTRA_DIST = \
   docs/index.md \
   docs/javascripts/mathjax.js \
   docs/reference/citation-versioning.md \
+  docs/reference/backend-validation.md \
   docs/reference/release-qualification.md \
   docs/requirements.txt \
   docs/theory/algorithms.md \

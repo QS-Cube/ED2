@@ -147,6 +147,15 @@ jobs:
           set -eo pipefail
           source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
           make distcheck
+          make dist
+          shopt -s nullglob
+          archives=(./*.tar.gz)
+          test "${#archives[@]}" -eq 1
+          python3 -B tests/release_archive_preflight.py \
+            --archive "${archives[0]}" \
+            --expected-commit "$(git rev-parse HEAD)" \
+            --json-out "$RUNNER_TEMP/release-source-manifest.json"
+          test -s "$RUNNER_TEMP/release-source-manifest.json"
 
       - name: Preserve complete Intel ABI, physical audit and failure logs
         if: always()
@@ -157,6 +166,7 @@ jobs:
             ${{ runner.temp }}/intel-setvars*.log
             ${{ runner.temp }}/ifx-version.txt
             ${{ runner.temp }}/ifx-mkl-ldd.txt
+            ${{ runner.temp }}/release-source-manifest.json
             ${{ runner.temp }}/ifx-physics-t*/**
             ${{ runner.temp }}/ifx-runtime/**
             ${{ runner.temp }}/ifx-blas-output/**
