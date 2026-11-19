@@ -2,12 +2,13 @@ name: ED2 documentation and navigation QA
 
 on:
   push:
-    branches: [docs/ed2-general-performance-cpc-20261119]
+    branches: [main]
     paths:
       - "docs/**"
       - "mkdocs.yml"
       - "README.md"
       - "docs/requirements.txt"
+      - ".readthedocs.yaml"
       - ".github/workflows/ed2-docs-qa.yml"
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - "mkdocs.yml"
       - "README.md"
       - "docs/requirements.txt"
+      - ".readthedocs.yaml"
       - ".github/workflows/ed2-docs-qa.yml"
   workflow_dispatch:
 
