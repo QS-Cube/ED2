@@ -2,7 +2,7 @@ name: ED2 optional CSR-only padded cache release proof
 
 on:
   push:
-    branches: [codex/ed2-main-csr-release-typed-base, codex/ed2-main-coefficient-cache-bound]
+    branches: [main]
     paths:
       - "source/ham2vec.f90"
       - "tests/cpc_csr_matvec_driver.f90"

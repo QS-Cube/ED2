@@ -1,11 +1,11 @@
 # Hamiltonian caching, performance, and memory
 
-This guide describes **general features of the current development
-`ueda1984/ED2` main branch**. The public Read the Docs site is built
-from [QS-Cube/ED2](https://github.com/QS-Cube/ED2); changes available
-only in a fork are **not available in the official executable** until
-the upstream project merges and publishes them. Always check your
-executable's source commit before enabling an option.
+This guide describes general caching features integrated into the
+official [QS-Cube/ED2](https://github.com/QS-Cube/ED2) `main` branch
+via [PR #1](https://github.com/QS-Cube/ED2/pull/1) on 19 November 2026.
+These options are **disabled by default**. Tagged releases, previously
+built executables, and deployed documentation may lag upstream `main`;
+check the executable's source commit before enabling an option.
 
 No optimization listed below changes the physical Hamiltonian.
 Most controls are intentionally **off by default**; explicit opt-in
@@ -49,9 +49,9 @@ the dimension of the cached matrix.
 
 ## Generic optional cache controls
 
-The following environment variables are available in the **fork
-development main as of 19 November 2026**, not necessarily in
-the official QS-Cube release.
+The following environment variables are available in the **official
+upstream `main` source as of 19 November 2026**. Do not assume an older
+tagged release or an existing executable includes them.
 
 | Environment variable | Effect | Conditions and tradeoff |
 | --- | --- | --- |
@@ -137,7 +137,7 @@ then an explicitly stated numerical tolerance, **not** unconditional
 bitwise reproducibility. The direct CSR and CSR-release variants
 are tested separately to ensure no terms were omitted.
 
-Relevant reproducibility tests in the development fork include:
+Reproducibility tests maintained in the upstream repository include:
 
 ```bash
 make check
@@ -152,7 +152,7 @@ historical ex1–ex8 cases independently; do not describe the complete
 
 For scientific work, inspect eigensolver residuals and compare
 independent small-system spectra, including nonzero DM models.
-For numerical proof, the fork tests check **two independent complex
+For numerical proof, the repository's native tests check **two independent complex
 input vectors and the complete output bit patterns**, plus
 independently constructed dense Hamiltonians for small systems.
 

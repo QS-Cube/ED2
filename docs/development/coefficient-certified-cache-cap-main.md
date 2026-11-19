@@ -1,5 +1,12 @@
 # Coefficient-certified padded Hamiltonian row capacity (general ED2)
 
+> **Upstream integration (19 November 2026):** The general ED2
+> functionality documented here is included in `QS-Cube/ED2:main` through
+> [PR #1](https://github.com/QS-Cube/ED2/pull/1). Branch names, PR numbers,
+> and local measurements below document the development and verification
+> history; they do not establish a separately tagged release or a
+> measured reduction in whole-process peak RSS.
+
 **Status:** opt-in general peak-construction *allocation* improvement, independent
 of the experimental cubic-symmetry stack and applicable before the mainline
 complex CSR conversion. Default behavior is unchanged.

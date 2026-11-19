@@ -2,7 +2,7 @@ name: ED2 two-pass direct complex CSR construction exactness
 
 on:
   push:
-    branches: [codex/ed2-main-direct-csr-two-pass]
+    branches: [main]
     paths:
       - "source/ham2vec.f90"
       - "tests/cpc_csr_direct_build_regression.py"

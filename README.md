@@ -35,10 +35,14 @@ Official documentation:
 
 https://ed2.readthedocs.io/en/latest/
 
-**Development-versus-release note:** the Read the Docs site is built from
-`QS-Cube/ED2`; some general optimization options described in the
-`ueda1984/ED2` fork are not present upstream until its maintainers
-merge the corresponding changes and rebuild the site.
+**Source and release status (19 November 2026):** The general caching and
+memory-management improvements described below were merged into
+[`QS-Cube/ED2:main`](https://github.com/QS-Cube/ED2) in
+[PR #1](https://github.com/QS-Cube/ED2/pull/1). The optional controls
+remain **off by default**. Older tags, installed executables, and the
+currently deployed Read the Docs version may not include these changes;
+check the actual source commit before enabling a feature. Separate
+cubic-specific development experiments are not part of this merge.
 
 Includes:
 
