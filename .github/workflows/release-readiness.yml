@@ -1,0 +1,56 @@
+name: ED2 citation metadata and archived ex9 integrity
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+    tags:
+      - "v*"
+    paths:
+      - "CITATION.cff"
+      - "configure.ac"
+      - "examples/ref_data/cubic_sp_HB/**"
+      - "tests/check_release_metadata.py"
+      - "tests/verify_ex9.py"
+      - ".github/workflows/release-readiness.yml"
+  pull_request:
+    paths:
+      - "CITATION.cff"
+      - "configure.ac"
+      - "examples/ref_data/cubic_sp_HB/**"
+      - "tests/check_release_metadata.py"
+      - "tests/verify_ex9.py"
+      - ".github/workflows/release-readiness.yml"
+  workflow_dispatch:
+
+jobs:
+  release-metadata-and-reference:
+    name: Citation and archived ex9 integrity (no ex9 compute)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate citation metadata for development or proposed release tag
+        shell: bash
+        env:
+          GIT_REF_TYPE: ${{ github.ref_type }}
+          GIT_REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$GIT_REF_TYPE" = tag ]; then
+            python3 -B tests/check_release_metadata.py --release-tag "$GIT_REF_NAME"
+          else
+            python3 -B tests/check_release_metadata.py
+          fi
+      - name: Validate archived ex9 energies, full observable files, and spin sum rule
+        run: |
+          python3 -B tests/verify_ex9.py \
+            --json-out "${{ runner.temp }}/ex9-archive-check.json"
+      - name: Preserve archive validation JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ed2-ex9-archived-reference-check
+          path: ${{ runner.temp }}/ex9-archive-check.json
+          if-no-files-found: warn
+          retention-days: 30
