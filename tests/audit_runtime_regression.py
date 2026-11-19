@@ -44,8 +44,19 @@ def main():
     ):
         work = root / ('build-' + name)
         work.mkdir()
-        command = shlex.split(args.fc) + ['-O0', '-g', '-fopenmp', '-fcheck=all',
-                  '-J', str(work)] + [str(repo / s) for s in sources] + ['-o', 'driver']
+        compiler = shlex.split(args.fc)
+        # GNU's -J/-fcheck flags are not accepted by Intel ifx/ifort.
+        # The Intel path uses LP64 sequential MKL for a consistent link ABI.
+        intel = Path(compiler[0]).name in ('ifx', 'ifort')
+        if intel:
+            flags = ['-O0', '-g', '-qopenmp', '-check', 'all',
+                     '-traceback', '-module', str(work)]
+            libs = ['-qmkl=sequential']
+        else:
+            flags = ['-O0', '-g', '-fopenmp', '-fcheck=all', '-J', str(work)]
+            libs = []
+        command = compiler + flags + [str(repo / s) for s in sources] + [
+                  '-o', 'driver'] + libs
         status = execute(command, work, 'compile.log')
         if status:
             raise RuntimeError(f'{name} driver compilation failed; see {work}/compile.log')

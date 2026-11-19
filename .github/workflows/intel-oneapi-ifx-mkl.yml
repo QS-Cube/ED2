@@ -1,0 +1,169 @@
+name: ED2 Intel oneAPI ifx and LP64 oneMKL physics qualification
+
+on:
+  push:
+    branches:
+      - audit/ifx-mkl-release-20261119
+      - main
+    paths:
+      - configure.ac
+      - source/**
+      - tests/**
+      - script_*/**
+      - .github/workflows/intel-oneapi-ifx-mkl.yml
+  pull_request:
+    paths:
+      - configure.ac
+      - source/**
+      - tests/**
+      - .github/workflows/intel-oneapi-ifx-mkl.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  intel-ifx-mkl:
+    name: oneAPI ifx + oneMKL LP64 (Ubuntu 24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      OMP_DYNAMIC: "FALSE"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      MKL_DYNAMIC: "FALSE"
+      MKL_INTERFACE_LAYER: "LP64"
+      MKL_THREADING_LAYER: "SEQUENTIAL"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install signed Intel oneAPI APT packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            gpg-agent wget ca-certificates autoconf automake make gcc \
+            python3 python3-numpy
+          wget -qO- \
+            https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+            | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg >/dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+            | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            intel-oneapi-compiler-fortran intel-oneapi-mkl-devel
+          df -h /
+
+      - name: Configure Intel environment and validate compiler version
+        shell: bash
+        run: |
+          set -eo pipefail
+          source /opt/intel/oneapi/setvars.sh > "$RUNNER_TEMP/intel-setvars.log" 2>&1
+          command -v ifx
+          ifx --version | tee "$RUNNER_TEMP/ifx-version.txt"
+          test -d "$MKLROOT"
+          echo "MKLROOT=$MKLROOT"
+
+      - name: Build with ifx, precisely linked sequential LP64 oneMKL
+        shell: bash
+        run: |
+          set -eo pipefail
+          source /opt/intel/oneapi/setvars.sh > "$RUNNER_TEMP/intel-setvars-build.log" 2>&1
+          autoreconf -vfi
+          ./configure FC=ifx FCFLAGS="-O2 -qopenmp -fp-model precise -qmkl=sequential" \
+            --with-lapack=mkl
+          make -j2
+          make check
+          ldd source/QS3ED2 | tee "$RUNNER_TEMP/ifx-mkl-ldd.txt"
+          grep -qi 'libmkl' "$RUNNER_TEMP/ifx-mkl-ldd.txt"
+          if grep -qi 'openblas' "$RUNNER_TEMP/ifx-mkl-ldd.txt"; then
+            echo "Unexpected OpenBLAS linkage in MKL-only test" >&2
+            exit 1
+          fi
+          python3 -B tests/check_release_metadata.py
+          python3 -B tests/verify_ex9.py
+          python3 -B tests/test_ex9_legacy_projection.py
+
+      - name: Independent physical operators vs NumPy (OpenMP 1 and 4)
+        shell: bash
+        run: |
+          set -eo pipefail
+          source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+          for threads in 1 4; do
+            python3 -B tests/audit_physics_regression.py \
+              --exe "$PWD/source/QS3ED2" \
+              --output "$RUNNER_TEMP/ifx-physics-t$threads" \
+              --threads "$threads" --with-iterative --field-cache-variants
+          done
+
+      - name: Intel bounds-checked native runtime and basis tests
+        shell: bash
+        run: |
+          set -eo pipefail
+          source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+          python3 -B tests/audit_runtime_regression.py \
+            --fc ifx --output "$RUNNER_TEMP/ifx-runtime"
+
+      - name: Native complex ZHEEVR and typed BLAS/LAPACK contract
+        shell: bash
+        run: |
+          set -eo pipefail
+          source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+          ifx -O2 -qopenmp -fp-model precise -qmkl=sequential -I source \
+            -o "$RUNNER_TEMP/ifx-blas-contract" \
+            tests/cpc_blas_lapack_contract_driver.f90 \
+            source/blas_lapack_interfaces.o source/input_param.o \
+            source/state_lists.o source/ham2vec.o source/eigen_solver.o
+          mkdir -p "$RUNNER_TEMP/ifx-blas-output"
+          ( cd "$RUNNER_TEMP/ifx-blas-output" && \
+            OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+            "$RUNNER_TEMP/ifx-blas-contract" | tee output.log )
+          grep -q BLAS_LAPACK_TYPED_INTERFACE_REGRESSION_PASS \
+            "$RUNNER_TEMP/ifx-blas-output/output.log"
+
+      - name: Native dense-H and complex CSR proofs
+        shell: bash
+        run: |
+          set -eo pipefail
+          source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+          ifx -O2 -qopenmp -fp-model precise -qmkl=sequential -I source \
+            -o "$RUNNER_TEMP/ifx-csr-driver" \
+            tests/cpc_csr_matvec_driver.f90 source/input_param.o \
+            source/state_lists.o source/ham2vec.o
+          python3 -B tests/cpc_csr_main_regression.py \
+            --driver "$RUNNER_TEMP/ifx-csr-driver" \
+            --output "$RUNNER_TEMP/ifx-csr-proof" \
+            --sizes 4,6,8 --threads 1,4 --timeout 180
+          python3 -B tests/cpc_partial_cache_allocation_regression.py \
+            --driver "$RUNNER_TEMP/ifx-csr-driver" \
+            --output "$RUNNER_TEMP/ifx-partial-cache-proof" \
+            --sizes 4,6,8 --threads 1,4 --timeout 180
+
+      - name: Source distribution compatibility with ifx/oneMKL
+        shell: bash
+        run: |
+          set -eo pipefail
+          source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+          make distcheck
+
+      - name: Preserve complete Intel ABI, physical audit and failure logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-ifx-oneapi-mkl-lp64-evidence
+          path: |
+            ${{ runner.temp }}/intel-setvars*.log
+            ${{ runner.temp }}/ifx-version.txt
+            ${{ runner.temp }}/ifx-mkl-ldd.txt
+            ${{ runner.temp }}/ifx-physics-t*/**
+            ${{ runner.temp }}/ifx-runtime/**
+            ${{ runner.temp }}/ifx-blas-output/**
+            ${{ runner.temp }}/ifx-csr-proof/**
+            ${{ runner.temp }}/ifx-partial-cache-proof/**
+            config.log
+            tests/test-suite.log
+            tests/*.long.log
+          retention-days: 30
+          if-no-files-found: warn

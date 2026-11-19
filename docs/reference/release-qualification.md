@@ -16,8 +16,12 @@ full Git commit used for each calculation.
    two-body correlation files**, or document that the expensive example is not
    yet independently reproduced. `make check` and the regular CI do not
    execute this complete 1000-site workload.
-4. Review solver residuals and numerical limitations. Document compiler
-   backends that have not actually been exercised (notably Intel/MKL/ifx).
+4. Review solver residuals and numerical limitations. Treat GNU 13/14
+   results and any Intel oneAPI ifx/LP64 oneMKL run as **separate recorded
+   configurations**, with compiler versions, link libraries, and audit
+   artifacts. An Intel compiler build alone is not a validation of all
+   scientific input families; a 1000-site ifx ex9 run is an independent
+   optional benchmark.
 5. Decide the public `vMAJOR.MINOR.PATCH` identifier; update `AC_INIT` in
    `configure.ac` and the `version` field of `CITATION.cff` to match, and enter
    the *actual* release date as `date-released` in `CITATION.cff`. The existing
