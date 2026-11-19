@@ -66,6 +66,14 @@ jobs:
           test -d "$MKLROOT"
           echo "MKLROOT=$MKLROOT"
 
+      - name: Require clean tracked Git checkout before generated build files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD
+          git status --short
+          test -z "$(git status --porcelain --untracked-files=no)"
+
       - name: Build with ifx, precisely linked sequential LP64 oneMKL
         shell: bash
         run: |

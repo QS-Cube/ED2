@@ -30,8 +30,10 @@ def audit(root, tarball, expected_sha, release_tag):
     sha = git(root, "rev-parse", "HEAD")
     if expected_sha and sha != expected_sha:
         raise ValueError("HEAD and expected full Git SHA differ")
-    if git(root, "status", "--porcelain", "--untracked-files=no"):
-        raise ValueError("Tracked files changed after checkout")
+    # Autotools may update tracked, generated build files after a clean
+    # checkout. Required scientific/source files must still equal Git HEAD.
+    postbuild_modified = git(root, "status", "--porcelain",
+                             "--untracked-files=no").splitlines()
     check = [sys.executable, str(root / "tests/check_release_metadata.py"),
              "--repo", str(root)]
     if release_tag:
@@ -47,7 +49,12 @@ def audit(root, tarball, expected_sha, release_tag):
             raise ValueError("Missing regular source: " + name)
         if not git(root, "ls-files", "--", name):
             raise ValueError("Untracked required source: " + name)
-        expected[name] = sha256(path.read_bytes())
+        disk_bytes = path.read_bytes()
+        commit_bytes = subprocess.check_output(
+            ["git", "-C", str(root), "show", "HEAD:" + name])
+        if disk_bytes != commit_bytes:
+            raise ValueError("Tracked required file modified after checkout: " + name)
+        expected[name] = sha256(commit_bytes)
     with tarfile.open(tarball, "r:*") as tar:
         members = tar.getmembers()
         if not members:
@@ -76,6 +83,7 @@ def audit(root, tarball, expected_sha, release_tag):
         "git_sha": sha, "citation": metadata, "archive_name": tarball.name,
         "archive_sha256": sha256(tarball.read_bytes()), "package_root": root_dir,
         "verified_files": len(REQUIRED), "source_sha256": expected,
+        "postbuild_modified_tracked_paths": postbuild_modified,
     }
 
 
