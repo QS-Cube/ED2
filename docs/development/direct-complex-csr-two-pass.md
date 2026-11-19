@@ -1,5 +1,12 @@
 # Experimental direct two-pass complex CSR Hamiltonian construction
 
+> **Upstream integration (19 November 2026):** The general ED2
+> functionality documented here is included in `QS-Cube/ED2:main` through
+> [PR #1](https://github.com/QS-Cube/ED2/pull/1). Branch names, PR numbers,
+> and local measurements below document the development and verification
+> history; they do not establish a separately tagged release or a
+> measured reduction in whole-process peak RSS.
+
 **Status: experimental, default OFF, independent general-ED2 optimization.**
 This branch starts from main *after* the general complex CSR cache, typed
 BLAS/LAPACK, lazy H*x scratch and coefficient-certified capacity changes.
