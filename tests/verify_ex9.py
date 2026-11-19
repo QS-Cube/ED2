@@ -157,6 +157,11 @@ def main():
             raise ValueError("Positive, finite tolerances required")
         ref = read_results(args.reference)
         report["reference_checks"] = check_physics(ref)
+        if report["reference_checks"]["max_ladder_hermiticity_gap"] > 1e-8:
+            report["historical_archive_warning"] = (
+                "Legacy ex9 ladder data violate operator Hermiticity; "
+                "archive-only PASS checks structural data, not this physical identity. "
+                "Fresh runs require an explicit legacy symmetry projection.")
         if args.actual is not None:
             observed = read_results(args.actual)
             report["mode"] = "computed_vs_archive"
