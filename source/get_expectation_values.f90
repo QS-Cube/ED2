@@ -15,8 +15,9 @@ contains
     !
     allocate(expe_lm(3,NOS,nvec),list_n(NOS),list_check(NOS))
     expe_lm=-9.999d0
-    list_check=0
     do k = 1, nvec
+      ! Site orbits must be revisited independently for each eigenvector.
+      list_check=0
       no_tot = 0
       do j = 1, NOS
         if(no_tot == NOS)then
@@ -110,7 +111,8 @@ contains
   subroutine mk_list_n(list_n,list_check,non,NOS,n) 
     use input_param, only: L1,L2,L3,L4,L5,L6,shift_1,shift_2,shift_3,shift_4,shift_5,shift_6
     integer,intent(in)  :: n, NOS 
-    integer,intent(out) :: list_n(NOS), list_check(NOS), non
+    integer,intent(out) :: list_n(NOS), non
+    integer,intent(inout) :: list_check(NOS)
     integer :: i1,i2,i3,i4,i5,i6
     integer :: nd
     if(list_check(n)==1)then

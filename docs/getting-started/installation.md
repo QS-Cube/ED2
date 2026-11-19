@@ -153,9 +153,10 @@ python3 tests/audit_runtime_regression.py \
 ```
 
 It builds isolated test drivers with `-fcheck=all`, checks wavefunction
-round-trips with three and twelve saved vectors, and compares representative
-counts against an analytical symmetry count with one/four threads and redundant
-generators. This comprises six cases. Use an output directory that does not
+round-trips with three and twelve saved vectors, verifies that two supplied
+states produce independent site-magnetization results with one/four threads,
+and compares representative counts against an analytical symmetry count with
+one/four threads and redundant generators. This comprises eight cases. Use an output directory that does not
 already exist, and preserve its `summary.json` and logs.
 
 ## 5. Run a supplied example manually

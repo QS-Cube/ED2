@@ -107,8 +107,9 @@ checks cover the tested cases, not all possible inputs. The unqualified
 `make check-long` additionally runs ex9, a 1000-site cubic three-magnon
 calculation that requires separate resource planning.
 
-For bounds-checked wavefunction I/O and basis-allocation checks, a separate
-runner needs only Python's standard library and GNU Fortran:
+For bounds-checked wavefunction I/O, site-magnetization output for multiple
+vectors, and basis-allocation checks, a separate runner needs only Python's
+standard library and GNU Fortran:
 
 ```bash
 python3 tests/audit_runtime_regression.py \

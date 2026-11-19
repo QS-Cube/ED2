@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounds-checked native tests of wavefunction I/O and representative allocation.
+"""Bounds-checked wavefunction I/O, representative allocation, and local observables.
 
 Uses the standard library only. Each Fortran driver is built from the selected
 source tree in an isolated directory. No installed ED2 binary is required.
@@ -38,6 +38,9 @@ def main():
         ('io', ['source/input_param.f90', 'tests/audit_wavefunction_io.f90']),
         ('basis', ['source/input_param.f90', 'source/state_lists.f90',
                    'tests/audit_basis_driver.f90']),
+        ('multivector_lm', ['source/input_param.f90', 'source/state_lists.f90',
+                            'source/ham2vec.f90', 'source/get_expectation_values.f90',
+                            'tests/audit_multivector_local_mag.f90']),
     ):
         work = root / ('build-' + name)
         work.mkdir()
@@ -52,6 +55,14 @@ def main():
         status = execute([str(root / 'build-io/driver'), str(nvec)], work, 'stdout.log')
         results.append(dict(name=f'io-{nvec}', returncode=status,
                             status='PASS' if status == 0 else 'FAIL'))
+    for threads in (1, 4):
+        work = root / f'multivector-lm-{threads}-threads'
+        work.mkdir()
+        env = dict(os.environ, OMP_NUM_THREADS=str(threads), OMP_DYNAMIC='FALSE')
+        status = execute([str(root / 'build-multivector_lm/driver')],
+                         work, 'stdout.log', env=env)
+        results.append(dict(name=f'multivector-lm-{threads}-threads',
+                            returncode=status, status='PASS' if status == 0 else 'FAIL'))
     # Burnside's lemma for reversal of 30 spin-1/2 sites and 0..4 deviations:
     # identity fixes sum C(30,k) states; reversal fixes sum C(15,k) for k=0..2.
     expected = (sum(math.comb(30, k) for k in range(5))
@@ -94,7 +105,7 @@ OUTDIR='./',FILE_wf='./',wr_wf=0,re_wf=0,cal_lm=0,cal_cf=0
             except Exception as error:
                 result.update(status='FAIL', error=str(error))
             results.append(result)
-    summary = dict(compiler=args.fc, reference='Analytic Burnside count and exact I/O round-trip',
+    summary = dict(compiler=args.fc, reference='Analytic Burnside count, exact I/O round-trip, and two-state magnetization reference',
                    results=results, passed=sum(x['status'] == 'PASS' for x in results),
                    failed=sum(x['status'] == 'FAIL' for x in results))
     (root / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
