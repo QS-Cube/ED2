@@ -4,19 +4,165 @@ module ham2vec
   real(8), parameter :: eps = 1.0d-15
   integer, allocatable :: wk_loc(:,:)
   complex(8), allocatable :: wk_ele(:,:)
+  ! Optional compressed row-wise copy of fully cached COMPLEX Hamiltonian.
+  ! Default is historical padded storage; no effect unless enabled.
+  logical, save :: csr_complex_cache=.false.
+  ! Separate optional release of historical padded cache after CSR packing.
+  ! Keeping the arrays available is the default public module behavior.
+  logical, save :: csr_release_padded=.false.
+  ! Optional coefficient-certified upper bound on padded cache row width.
+  logical, save :: cache_coeff_bound=.false.
+  logical, save :: csr_direct_build=.false.
+  integer, allocatable, save :: csr_rowptr(:),csr_target(:)
+  complex(8), allocatable, save :: csr_coeff(:)
   !
 contains
+
+  subroutine configure_csr_complex_cache(lv)
+    use iso_fortran_env, only: int64
+    use input_param, only: wk_dim
+    integer, intent(in) :: lv
+    integer :: status,release_status,istat,i,j,nnz,p
+    integer(int64) :: entries,extra_bytes,old_bytes
+    character(len=16) :: setting,release_setting
+    setting=''
+    call get_environment_variable('ED2_CSR_COMPLEX_CACHE',setting,status=status)
+    if(status==0)then
+      if(trim(adjustl(setting))/='0'.and.trim(adjustl(setting))/='1') &
+        error stop 'ED2_CSR_COMPLEX_CACHE must be 0 or 1'
+    else if(status/=1)then
+      error stop 'ED2_CSR_COMPLEX_CACHE flag too long or invalid'
+    end if
+    csr_complex_cache=status==0.and.trim(adjustl(setting))=='1'
+    release_setting=''
+    call get_environment_variable('ED2_CSR_RELEASE_PADDED_CACHE', &
+      release_setting,status=release_status)
+    if(release_status==0)then
+      if(trim(adjustl(release_setting))/='0'.and. &
+         trim(adjustl(release_setting))/='1') &
+        error stop 'ED2_CSR_RELEASE_PADDED_CACHE must be 0 or 1'
+    else if(release_status/=1)then
+      error stop 'ED2_CSR_RELEASE_PADDED_CACHE flag too long or invalid'
+    end if
+    csr_release_padded=release_status==0.and.trim(adjustl(release_setting))=='1'
+    if(csr_release_padded.and..not.csr_complex_cache) &
+      error stop 'ED2_CSR_RELEASE_PADDED_CACHE requires ED2_CSR_COMPLEX_CACHE=1'
+    if(allocated(csr_rowptr))deallocate(csr_rowptr)
+    if(allocated(csr_target))deallocate(csr_target)
+    if(allocated(csr_coeff))deallocate(csr_coeff)
+    if(.not.csr_complex_cache)return
+    if(wk_dim/=lv)error stop 'ED2_CSR_COMPLEX_CACHE requires fully cached matrix'
+
+    ! Preserve all original non-sentinel terms, including explicit zeros.
+    ! No sorting or floating-point reassociation is allowed.
+    allocate(csr_rowptr(lv+1),stat=istat)
+    if(istat/=0)error stop 'ED2_CSR_COMPLEX_CACHE row allocation failed'
+    csr_rowptr(1)=1
+    entries=0_int64
+    do i=1,lv
+      nnz=0
+      do j=1,size(wk_loc,1)
+        if(wk_loc(j,i)==0)exit
+        if(wk_loc(j,i)<1.or.wk_loc(j,i)>lv) &
+          error stop 'ED2_CSR_COMPLEX_CACHE invalid target'
+        nnz=nnz+1
+      end do
+      entries=entries+int(nnz,int64)
+      if(entries>=int(huge(i),int64)) &
+        error stop 'ED2_CSR_COMPLEX_CACHE row index capacity exceeded'
+      csr_rowptr(i+1)=int(entries)+1
+    end do
+
+    allocate(csr_target(int(entries)),csr_coeff(int(entries)),stat=istat)
+    if(istat/=0)error stop 'ED2_CSR_COMPLEX_CACHE values allocation failed'
+    do i=1,lv
+      p=csr_rowptr(i)
+      do j=1,size(wk_loc,1)
+        if(wk_loc(j,i)==0)exit
+        csr_target(p)=wk_loc(j,i)
+        csr_coeff(p)=wk_ele(j,i)
+        p=p+1
+      end do
+      if(p/=csr_rowptr(i+1))error stop 'ED2_CSR_COMPLEX_CACHE row count mismatch'
+    end do
+    extra_bytes=int(storage_size(csr_rowptr)/8,int64)*int(size(csr_rowptr),int64)+ &
+      int(storage_size(csr_target)/8,int64)*int(size(csr_target),int64)+ &
+      int(storage_size(csr_coeff)/8,int64)*int(size(csr_coeff),int64)
+    write(*,'(a,i0,a,i0)') &
+      'Hamiltonian action: csr-complex cache entries=',size(csr_coeff), &
+      ', extra_bytes=',extra_bytes
+    if(csr_release_padded)then
+      old_bytes=int(storage_size(wk_loc)/8,int64)*int(size(wk_loc),int64)+ &
+        int(storage_size(wk_ele)/8,int64)*int(size(wk_ele),int64)
+      ! Peak construction memory still includes both representations.
+      ! Deallocation reduces long-lived cached storage, not peak RSS.
+      deallocate(wk_loc,wk_ele,stat=istat)
+      if(istat/=0)error stop 'ED2_CSR_RELEASE_PADDED_CACHE deallocation failed'
+      write(*,'(a,i0,a,i0)') &
+        'Hamiltonian action: csr-padded-cache released_bytes=',old_bytes, &
+        ', net_saved_bytes=',old_bytes-extra_bytes
+    end if
+  end subroutine configure_csr_complex_cache
+
+
+  subroutine coefficient_certified_cache_width(width)
+    use iso_fortran_env, only: int64
+    use input_param, only: NO_one,NO_two,p_one,hvec,Jint
+    integer, intent(out) :: width
+    integer :: j,i1
+    integer(int64) :: upper
+    complex(8) :: c
+    ! Each physical one-site and two-site operator can contribute at most
+    ! ONE row term per applicable transition, irrespective of basis size.
+    ! Exactly repeat the coefficient tests in make_wk_loc_and_ele.
+    upper=1_int64 ! required diagonal record
+    do j=1,NO_one
+      i1=p_one(j)
+      c=0.5d0*(hvec(1,i1)+zi*hvec(2,i1))
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.5d0*(hvec(1,i1)-zi*hvec(2,i1))
+      if(abs(c)>eps) upper=upper+1_int64
+    end do
+    do j=1,NO_two
+      c=0.5d0*(zi*(Jint(4,j)+Jint(7,j))-Jint(5,j)+Jint(8,j))
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.25d0*(Jint(1,j)-Jint(2,j))+zi*0.5d0*Jint(9,j)
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.25d0*(Jint(1,j)+Jint(2,j))-zi*0.5d0*Jint(6,j)
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.5d0*(-zi*(Jint(4,j)-Jint(7,j))+Jint(5,j)+Jint(8,j))
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.25d0*(Jint(1,j)+Jint(2,j))+zi*0.5d0*Jint(6,j)
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.5d0*(-zi*(Jint(4,j)+Jint(7,j))-Jint(5,j)+Jint(8,j))
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.5d0*(zi*(Jint(4,j)-Jint(7,j))+Jint(5,j)+Jint(8,j))
+      if(abs(c)>eps) upper=upper+1_int64
+      c=0.25d0*(Jint(1,j)-Jint(2,j))-zi*0.5d0*Jint(9,j)
+      if(abs(c)>eps) upper=upper+1_int64
+    end do
+    if(upper>int(huge(width),int64)) &
+      error stop 'ED2_CACHE_COEFF_BOUND upper bound exceeds index range'
+    width=int(upper)
+  end subroutine coefficient_certified_cache_width
 
   subroutine make_wk_loc_and_ele(lv)
     use state_lists, only: j_flip_ni, representative_SQ, findstate, list_fly, a_down_spin, &
       c_down_spin, a2_down_spin, c2_down_spin
     use input_param, only: NODmax,NODmin,NO_one,NO_two,p_one,p_two,list_s,list_r,explist, &
       Jint,hvec,NOS,local_NODmax,local_spin,wk_dim,MNTE
+    use iso_fortran_env, only: int64
     implicit none
     integer, intent(in)::lv
     integer :: s, id, wk_dim1
     integer :: n0, n1, n2, i1, i2, dN
-    integer :: i, j, ell(6), jd, max_jd
+    integer :: i, j, ell(6), jd, max_jd,nominal_width,width_status
+    integer :: direct_status,prereq_status,alloc_status
+    integer :: pass,first,last,batch_rows,ib,batch_max,nnz,pos
+    integer, parameter :: direct_batch_rows=64
+    integer(int64) :: nominal_bytes,bounded_bytes,bytes_per_element
+    integer(int64) :: entries,extra_bytes,stage_bytes,max_stage_bytes
+    character(len=16) :: width_setting,direct_setting,prereq_setting
     integer, allocatable :: ni(:), st_list(:)
     complex(8) :: c
     !
@@ -26,25 +172,154 @@ contains
       wk_dim = min(wk_dim,lv)
     end if
     !
+    width_setting=''
+    call get_environment_variable('ED2_CACHE_COEFF_BOUND',width_setting,status=width_status)
+    if(width_status==0)then
+      if(trim(adjustl(width_setting))/='0'.and.trim(adjustl(width_setting))/='1') &
+        error stop 'ED2_CACHE_COEFF_BOUND must be 0 or 1'
+    else if(width_status/=1)then
+      error stop 'ED2_CACHE_COEFF_BOUND flag too long or invalid'
+    end if
+    cache_coeff_bound=width_status==0.and.trim(adjustl(width_setting))=='1'
     if(MNTE < 0)then
       wk_dim1= 2*NO_one+8*NO_two+1
+      if(cache_coeff_bound)then
+        nominal_width=wk_dim1
+        call coefficient_certified_cache_width(wk_dim1)
+        if(wk_dim1<1.or.wk_dim1>nominal_width) &
+          error stop 'ED2_CACHE_COEFF_BOUND invalid row width'
+        bytes_per_element=int(storage_size(wk_dim1)/8,int64)+ &
+          int(storage_size(c)/8,int64)
+        nominal_bytes=bytes_per_element*int(nominal_width,int64)*int(wk_dim,int64)
+        bounded_bytes=bytes_per_element*int(wk_dim1,int64)*int(wk_dim,int64)
+        write(*,'(a,i0,a,i0,a,i0)') &
+          'Hamiltonian cache: coefficient-bound width=',wk_dim1, &
+          ', nominal_width=',nominal_width, &
+          ', initial_bytes_saved=',nominal_bytes-bounded_bytes
+      end if
     else
       wk_dim1= MNTE + 1
+      if(cache_coeff_bound) &
+        write(*,'(a)') 'Hamiltonian cache: explicit MNTE override preserved'
     end if
     !
-    allocate(wk_loc(wk_dim1,wk_dim))
-    allocate(wk_ele(wk_dim1,wk_dim))
-    !
+    ! Explicit opt-in direct CSR build: keep only one small staging batch.
+    ! The same row-generating Fortran code is called by both paths.
+    direct_setting=''
+    call get_environment_variable('ED2_CSR_DIRECT_BUILD',direct_setting,status=direct_status)
+    if(direct_status==0)then
+      if(trim(adjustl(direct_setting))/='0'.and.trim(adjustl(direct_setting))/='1') &
+        error stop 'ED2_CSR_DIRECT_BUILD must be 0 or 1'
+    else if(direct_status/=1)then
+      error stop 'ED2_CSR_DIRECT_BUILD flag too long or invalid'
+    end if
+    csr_direct_build=direct_status==0.and.trim(adjustl(direct_setting))=='1'
+    if(csr_direct_build)then
+      prereq_setting=''
+      call get_environment_variable('ED2_CSR_COMPLEX_CACHE',prereq_setting,status=prereq_status)
+      if(prereq_status/=0.or.trim(adjustl(prereq_setting))/='1') &
+        error stop 'ED2_CSR_DIRECT_BUILD requires ED2_CSR_COMPLEX_CACHE=1'
+      prereq_setting=''
+      call get_environment_variable('ED2_CSR_RELEASE_PADDED_CACHE',prereq_setting,status=prereq_status)
+      if(prereq_status/=0.or.trim(adjustl(prereq_setting))/='1') &
+        error stop 'ED2_CSR_DIRECT_BUILD requires ED2_CSR_RELEASE_PADDED_CACHE=1'
+      if(wk_dim/=lv)error stop 'ED2_CSR_DIRECT_BUILD requires fully cached matrix'
+      csr_complex_cache=.true.
+      csr_release_padded=.true.
+      if(allocated(csr_rowptr))deallocate(csr_rowptr)
+      if(allocated(csr_target))deallocate(csr_target)
+      if(allocated(csr_coeff))deallocate(csr_coeff)
+    end if
+
     allocate(ni(NODmax),st_list(NODmax))
     dN = NODmax-NODmin
-    !
-    max_jd = 1
-    !
-    !$omp parallel do private(n0,n1,n2,i1,i2,s,ni,id,ell,i,j,st_list,c,jd) reduction(max:max_jd)
-    do i = 1, wk_dim
-      wk_loc(1,i)  = i
-      wk_loc(2:,i) = 0
-      wk_ele(:,i) = zz
+    max_jd=1
+    if(csr_direct_build)then
+      allocate(csr_rowptr(lv+1),stat=alloc_status)
+      if(alloc_status/=0)error stop 'ED2_CSR_DIRECT_BUILD rowptr allocation failed'
+      csr_rowptr(1)=1
+      entries=0_int64
+      max_stage_bytes=0_int64
+      ! Pass 1 counts occupied records with no global padded matrix.
+      ! Pass 2 allocates EXACT CSR capacity and generates the same rows.
+      do pass=1,2
+        do first=1,lv,direct_batch_rows
+          last=min(lv,first+direct_batch_rows-1)
+          batch_rows=last-first+1
+          allocate(wk_loc(wk_dim1,batch_rows),wk_ele(wk_dim1,batch_rows),stat=alloc_status)
+          if(alloc_status/=0)error stop 'ED2_CSR_DIRECT_BUILD batch allocation failed'
+          stage_bytes=int(storage_size(wk_loc)/8,int64)*int(size(wk_loc),int64)+ &
+            int(storage_size(wk_ele)/8,int64)*int(size(wk_ele),int64)
+          max_stage_bytes=max(max_stage_bytes,stage_bytes)
+          call fill_cache_batch(first,last,batch_max)
+          max_jd=max(max_jd,batch_max)
+          do i=first,last
+            ib=i-first+1
+            nnz=0
+            do j=1,wk_dim1
+              if(wk_loc(j,ib)==0)exit
+              if(wk_loc(j,ib)<1.or.wk_loc(j,ib)>lv) &
+                error stop 'ED2_CSR_DIRECT_BUILD invalid target index'
+              nnz=nnz+1
+            end do
+            if(pass==1)then
+              entries=entries+int(nnz,int64)
+              if(entries>=int(huge(i),int64)) &
+                error stop 'ED2_CSR_DIRECT_BUILD row offset capacity exceeded'
+              csr_rowptr(i+1)=int(entries)+1
+            else
+              if(nnz/=csr_rowptr(i+1)-csr_rowptr(i)) &
+                error stop 'ED2_CSR_DIRECT_BUILD two-pass row count mismatch'
+              pos=csr_rowptr(i)
+              do j=1,nnz
+                csr_target(pos)=wk_loc(j,ib)
+                csr_coeff(pos)=wk_ele(j,ib)
+                pos=pos+1
+              end do
+              if(pos/=csr_rowptr(i+1)) &
+                error stop 'ED2_CSR_DIRECT_BUILD row copy mismatch'
+            end if
+          end do
+          deallocate(wk_loc,wk_ele)
+        end do
+        if(pass==1)then
+          allocate(csr_target(int(entries)),csr_coeff(int(entries)),stat=alloc_status)
+          if(alloc_status/=0)error stop 'ED2_CSR_DIRECT_BUILD CSR allocation failed'
+        end if
+      end do
+      extra_bytes=int(storage_size(csr_rowptr)/8,int64)*int(size(csr_rowptr),int64)+ &
+        int(storage_size(csr_target)/8,int64)*int(size(csr_target),int64)+ &
+        int(storage_size(csr_coeff)/8,int64)*int(size(csr_coeff),int64)
+      write(*,'(a,i0,a,i0)') &
+        'Hamiltonian action: csr-complex cache entries=',size(csr_coeff), &
+        ', extra_bytes=',extra_bytes
+      write(*,'(a,i0,a,i0,a,i0)') &
+        'Hamiltonian action: csr-direct-build passes=',2, &
+        ', max_staging_bytes=',max_stage_bytes, &
+        ', peak_cache_payload_upper_bytes=',extra_bytes+max_stage_bytes
+    else
+      allocate(wk_loc(wk_dim1,wk_dim))
+      allocate(wk_ele(wk_dim1,wk_dim))
+      call fill_cache_batch(1,wk_dim,max_jd)
+    end if
+
+    write(*,*) "Current MNTE = ", wk_dim1 - 1
+    write(*,*) "Optimal MNTE = ", max_jd - 1
+
+    if(.not.csr_direct_build)call configure_csr_complex_cache(lv)
+    return
+  contains
+    subroutine fill_cache_batch(first,last,batch_max)
+      integer, intent(in) :: first,last
+      integer, intent(out) :: batch_max
+      integer :: ib
+      batch_max=1
+    !$omp parallel do private(n0,n1,n2,i1,i2,s,ni,id,ell,i,j,ib,st_list,c,jd) reduction(max:batch_max)
+    do i = first, last
+      ib = i - first + 1
+      wk_loc(1,ib)  = i
+      wk_loc(2:,ib) = 0
+      wk_ele(:,ib) = zz
       jd = 2
       st_list = list_fly(list_s(i),NODmax,NODmin,NOS)
       n0 = count(st_list == 0 )
@@ -52,7 +327,7 @@ contains
       do j = 1, NO_one
         i1 = p_one(j)
         n1 = count(st_list == i1)
-        wk_ele(1,i) = wk_ele(1,i) + hvec(3,i1) * (local_spin(i1)-n1)
+        wk_ele(1,ib) = wk_ele(1,ib) + hvec(3,i1) * (local_spin(i1)-n1)
         ! - term
         c = 0.5d0 * ( hvec(1,i1) + zi * hvec(2,i1) )
         if(n0 < dN .and. n1>0 .and. abs(c) > eps)then
@@ -61,8 +336,8 @@ contains
           call findstate(s,list_s,id,lv)
           if(id > 0)then
             if(jd > wk_dim1) stop "MNTE is too small!!"
-            wk_loc(jd,i) = id
-            wk_ele(jd,i) = c &
+            wk_loc(jd,ib) = id
+            wk_ele(jd,ib) = c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
               * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
             jd = jd + 1
@@ -76,8 +351,8 @@ contains
           call findstate(s,list_s,id,lv)
           if(id > 0)then
             if(jd > wk_dim1) stop "MNTE is too small!!"
-            wk_loc(jd,i) = id
-            wk_ele(jd,i) = c &
+            wk_loc(jd,ib) = id
+            wk_ele(jd,ib) = c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
               * list_r(id) / list_r(i) &
               * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -92,7 +367,7 @@ contains
         n1 = count(st_list == i1)
         n2 = count(st_list == i2)
         ! zz term
-        wk_ele(1,i) = wk_ele(1,i) + Jint(3,j) * &
+        wk_ele(1,ib) = wk_ele(1,ib) + Jint(3,j) * &
           (local_spin(i1)-n1)*(local_spin(i2)-n2)
         if(n1>0)then
           ! -z term
@@ -103,8 +378,8 @@ contains
             call findstate(s,list_s,id,lv)
             if(id > 0)then
               if(jd > wk_dim1) stop "MNTE is too small!!"
-              wk_loc(jd,i) = id
-              wk_ele(jd,i) = c &
+              wk_loc(jd,ib) = id
+              wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -119,8 +394,8 @@ contains
             call findstate(s,list_s,id,lv)
             if(id > 0)then
               if(jd > wk_dim1) stop "MNTE is too small!!"
-              wk_loc(jd,i) = id
-              wk_ele(jd,i) = c &
+              wk_loc(jd,ib) = id
+              wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -135,8 +410,8 @@ contains
             call findstate(s,list_s,id,lv)
             if(id > 0)then
               if(jd > wk_dim1) stop "MNTE is too small!!"
-              wk_loc(jd,i) = id
-              wk_ele(jd,i) = c &
+              wk_loc(jd,ib) = id
+              wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -153,8 +428,8 @@ contains
             call findstate(s,list_s,id,lv)
             if(id > 0)then
               if(jd > wk_dim1) stop "MNTE is too small!!"
-              wk_loc(jd,i) = id
-              wk_ele(jd,i) = c &
+              wk_loc(jd,ib) = id
+              wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -169,8 +444,8 @@ contains
             call findstate(s,list_s,id,lv)
             if(id > 0)then
               if(jd > wk_dim1) stop "MNTE is too small!!"
-              wk_loc(jd,i) = id
-              wk_ele(jd,i) = c &
+              wk_loc(jd,ib) = id
+              wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -187,8 +462,8 @@ contains
             call findstate(s,list_s,id,lv)
             if(id > 0)then
               if(jd > wk_dim1) stop "MNTE is too small!!"
-              wk_loc(jd,i) = id
-              wk_ele(jd,i) = c &
+              wk_loc(jd,ib) = id
+              wk_ele(jd,ib) = c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
                 * list_r(id) / list_r(i) &
                 * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -204,8 +479,8 @@ contains
               call findstate(s,list_s,id,lv)
               if(id > 0)then
                 if(jd > wk_dim1) stop "MNTE is too small!!"
-                wk_loc(jd,i) = id
-                wk_ele(jd,i) = c &
+                wk_loc(jd,ib) = id
+                wk_ele(jd,ib) = c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
                   * list_r(id) / list_r(i) &
                   * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -220,8 +495,8 @@ contains
               call findstate(s,list_s,id,lv)
               if(id > 0)then
                 if(jd > wk_dim1) stop "MNTE is too small!!"
-                wk_loc(jd,i) = id
-                wk_ele(jd,i) = c &
+                wk_loc(jd,ib) = id
+                wk_ele(jd,ib) = c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
                   * list_r(id) / list_r(i) &
                   * explist(ell(1),ell(2),ell(3),ell(4),ell(5),ell(6))
@@ -236,10 +511,7 @@ contains
       if(jd > max_jd) max_jd = jd
     end do
 
-    write(*,*) "Current MNTE = ", wk_dim1 - 1
-    write(*,*) "Optimal MNTE = ", max_jd - 1
-
-    return
+    end subroutine fill_cache_batch
   end subroutine make_wk_loc_and_ele
 
   subroutine make_full_hamiltonian(lv,Ham) 
@@ -440,19 +712,37 @@ contains
     integer :: n0, n1, n2, i1, i2, dN
     complex(8) :: c
     
-    allocate(ni(NODmax),st_list(NODmax))
+    ! Scratch state transitions are needed only for uncached rows.
+    ! Fully cached H*x must not allocate these arrays per application.
+    if(wk_dim<lv)allocate(ni(NODmax),st_list(NODmax))
     dN = NODmax - NODmin
 
-    wk_dim1= size(wk_ele,1)
+    if(csr_complex_cache)then
+      ! The padded array is intentionally absent in CSR release mode.
+      wk_dim1=0
+    else
+      if(.not.allocated(wk_ele))error stop 'ED2 cached matrix unavailable'
+      wk_dim1=size(wk_ele,1)
+    end if
 
-    !$omp parallel do private(i,j)
-    do i = 1, wk_dim
-      v0(i) = 0.0d0
-      do j = 1, wk_dim1
-        if(wk_loc(j,i) == 0) exit
-        v0(i) = v0(i) + wk_ele(j,i) * v1(wk_loc(j,i))
+    if(csr_complex_cache)then
+      !$omp parallel do private(i,j)
+      do i = 1, wk_dim
+        v0(i) = 0.0d0
+        do j = csr_rowptr(i),csr_rowptr(i+1)-1
+          v0(i) = v0(i) + csr_coeff(j) * v1(csr_target(j))
+        end do
       end do
-    end do
+    else
+      !$omp parallel do private(i,j)
+      do i = 1, wk_dim
+        v0(i) = 0.0d0
+        do j = 1, wk_dim1
+          if(wk_loc(j,i) == 0) exit
+          v0(i) = v0(i) + wk_ele(j,i) * v1(wk_loc(j,i))
+        end do
+      end do
+    end if
     !
 
     !$omp parallel do private(n0,n1,n2,i1,i2,s,ni,id,ell,i,j,st_list,c)
