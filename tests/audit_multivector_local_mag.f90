@@ -1,6 +1,6 @@
 ! Independent two-vector observable regression:
-! Both columns contain the same fully polarized state, so every reported
-! local magnetization must agree. A visited-orbit bitmap shared between
+! Column 1 is fully polarized, while column 2 has the first site down.
+! Reusing the first state's visited-site bitmap would leave column 2 blank. A visited-orbit bitmap shared between
 ! eigenvectors incorrectly leaves the second set uncomputed.
 program audit_multivector_local_mag
   use input_param, only: NOS,NODmax,NODmin,L1,L2,L3,L4,L5,L6, &
@@ -31,7 +31,8 @@ program audit_multivector_local_mag
   call get_cum_ltd_rep_combination(NOS,NODmax,NODmin,local_NODmax)
 
   vectors=(0.0d0,0.0d0)
-  vectors(1,:)=(1.0d0,0.0d0)
+  vectors(1,1)=(1.0d0,0.0d0)
+  vectors(2,2)=(1.0d0,0.0d0)
   OUTDIR='./'
   call get_lm(vectors,NODmax,NODmin,3,2,NOS)
 
@@ -43,8 +44,15 @@ program audit_multivector_local_mag
     if(site/=i)error stop 'Wrong site ordering in two-vector magnetization'
     if(any(abs(observed(1:2,:))>1.0d-12)) &
       error stop 'Unexpected transverse local magnetization'
-    if(any(abs(observed(3,:)-0.5d0)>1.0d-12)) &
-      error stop 'Incorrect or uninitialized two-vector local magnetization'
+    if(abs(observed(3,1)-0.5d0)>1.0d-12) &
+      error stop 'Incorrect magnetization for the polarized state'
+    if(i==1)then
+      if(abs(observed(3,2)+0.5d0)>1.0d-12) &
+        error stop 'Incorrect second-state magnetization at the down-spin site'
+    else
+      if(abs(observed(3,2)-0.5d0)>1.0d-12) &
+        error stop 'Incorrect second-state magnetization at the up-spin site'
+    end if
   end do
   read(unit,*,iostat=io_status) site
   if(io_status>=0)error stop 'Unexpected extra magnetization row'
