@@ -1,5 +1,12 @@
 # Experimental release of padded original H cache after complex CSR packing
 
+> **Upstream integration (19 November 2026):** The general ED2
+> functionality documented here is included in `QS-Cube/ED2:main` through
+> [PR #1](https://github.com/QS-Cube/ED2/pull/1). Branch names, PR numbers,
+> and local measurements below document the development and verification
+> history; they do not establish a separately tagged release or a
+> measured reduction in whole-process peak RSS.
+
 **Scope:** independent small opt-in improvement of the general complex
 CSR backend introduced in fork-main PR26. Requires **both**
 environment flags:
