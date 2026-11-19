@@ -1,5 +1,12 @@
 # Native ED2 cached H*x scratch allocation elision
 
+> **Upstream integration (19 November 2026):** The general ED2
+> functionality documented here is included in `QS-Cube/ED2:main` through
+> [PR #1](https://github.com/QS-Cube/ED2/pull/1). Branch names, PR numbers,
+> and local measurements below document the development and verification
+> history; they do not establish a separately tagged release or a
+> measured reduction in whole-process peak RSS.
+
 A general, non-cubic source-level optimization that eliminates
 two unused per-application allocations in the ED2
 `ham_to_vec_wave_vector` routine when `wk_dim == lv`
