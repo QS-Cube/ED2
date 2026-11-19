@@ -324,6 +324,37 @@ def rejected_excited_only_restart(exe, root, threads):
     return result
 
 
+def first_ritz_checkpoint(exe, root, threads):
+    """A loose tolerance must not mistake the first Ritz sample for convergence."""
+    work = root / 'first_ritz_checkpoint'
+    case = dict(cases())['mixed_tensor']
+    env = write_deck(work, case, algorithm=1, cache=-1, mode={}, threads=threads)
+    inp = work / 'input.dat'
+    text = inp.read_text().replace(
+        'lnc_ene_conv=1d-13,minitr=5,maxitr=300,itrint=5',
+        'lnc_ene_conv=2d0,minitr=5,maxitr=30,itrint=5')
+    inp.write_text(text)
+    with inp.open() as stream:
+        native = subprocess.run([str(exe)], cwd=work, env=env, stdin=stream,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, timeout=60, check=False)
+    (work / 'stdout.log').write_text(native.stdout)
+    result = dict(name='first_ritz_checkpoint', threads=threads,
+                  exit_code=native.returncode)
+    try:
+        assert native.returncode == 0, f'native exit status {native.returncode}'
+        lines = [line for line in native.stdout.splitlines()
+                 if 'total lanczos step:' in line.lower()]
+        assert lines, 'Missing Lanczos iteration diagnostic'
+        result['steps'] = int(lines[-1].split(':')[-1].strip())
+        assert result['steps'] >= 10, 'First Ritz estimate caused premature convergence'
+        result['status'] = 'PASS'
+    except Exception as exc:
+        result.update(status='FAIL', error=str(exc))
+    (work / 'comparison.json').write_text(json.dumps(result, indent=2) + '\n')
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--exe', type=Path, required=True)
@@ -356,6 +387,10 @@ def main():
             print(json.dumps(result), flush=True)
     if not args.case or 'rejected_excited_only_restart' in args.case:
         result = rejected_excited_only_restart(exe, root, args.threads)
+        results.append(result)
+        print(json.dumps(result), flush=True)
+    if not args.case or 'first_ritz_checkpoint' in args.case:
+        result = first_ritz_checkpoint(exe, root, args.threads)
         results.append(result)
         print(json.dumps(result), flush=True)
     if args.with_iterative:

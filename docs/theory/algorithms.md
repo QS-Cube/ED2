@@ -84,8 +84,9 @@ dimension and includes eigensolver work arrays and eigenvectors.
 `ALG=1` is a conventional Lanczos implementation for one lowest state. It
 stores a small number of full vectors, diagonalizes the tridiagonal Krylov
 matrix, and reconstructs the eigenvector in another pass. Its stopping test
-uses relative changes in the lowest Ritz energy, not an explicit residual
-criterion. A numerically closed Krylov subspace is handled without
+uses relative changes between successive lowest Ritz estimates, not an
+explicit residual criterion. The first Ritz estimate is recorded but cannot
+itself satisfy convergence because there is no previous estimate. A numerically closed Krylov subspace is handled without
 normalizing a zero vector; a one-dimensional invariant subspace retains its
 complete normalized vector. The implementation does not perform full basis
 reorthogonalization in this path.

@@ -62,7 +62,7 @@ contains
     real(8), allocatable :: alpha(:), beta(:), z(:,:)
     integer :: i, m, info, ell, il = 1, iu = 1, mitr
     real(8) :: tmp(2), abstol, conv, hnorm, vl = 0.0d0, vu = 0.0d0
-    logical :: breakdown
+    logical :: breakdown, have_previous_ritz
     integer, allocatable :: iwork(:), ifail(:)
     real(8), allocatable :: work(:), w(:), d(:), e(:)
     abstol = 2.0d0*dlamch('S')
@@ -82,6 +82,7 @@ contains
     call zdscal( dim, 1.0d0 / beta(0), psi(1,1), 1 )
     call zcopy(dim,psi(1,1),1,psi_io,1)
     tmp = 0.0d0
+    have_previous_ritz = .false.
     mitr= min(maxitr,dim)
     do i = 1, mitr
       call ham_to_vec_wave_vector(psi(:,2),psi(:,1),dim,NODmax,NODmin,list_s,list_r,explist) 
@@ -127,14 +128,22 @@ contains
           error stop 'Lanczos projected eigensolver failed'
         end if
         ene = w(1)
-        conv = abs(tmp(1)-ene)/max(abs(tmp(1)),abs(ene),tiny(1.0d0))
+        ! A first Ritz estimate has no predecessor and cannot certify convergence.
+        if(have_previous_ritz)then
+          conv = abs(tmp(1)-ene)/max(abs(tmp(1)),abs(ene),tiny(1.0d0))
+        else
+          conv = 1.0d0 ! explicit nonconvergence marker, not a measured change
+        end if
         write(*,'("itr, ene, conv: ", i5, es25.15, es11.1)') i, ene, conv
-        if(i>=mitr.and.mitr<dim.and..not.breakdown.and.conv>=lnc_ene_conv) &
+        if(i>=mitr.and.mitr<dim.and..not.breakdown.and. &
+          (.not.have_previous_ritz.or.conv>=lnc_ene_conv)) &
           error stop 'Lanczos iteration limit reached before convergence'
-        if(i>=mitr.or.breakdown.or.conv<lnc_ene_conv)then
+        if(i>=mitr.or.breakdown.or. &
+          (have_previous_ritz.and.conv<lnc_ene_conv))then
           exit
         end if
         tmp(1) = ene
+        have_previous_ritz = .true.
         deallocate(w, d, e, iwork, ifail, work, z)
       end if
     end do

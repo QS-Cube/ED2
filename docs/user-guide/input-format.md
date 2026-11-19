@@ -215,7 +215,9 @@ pass. A numerically closed Krylov subspace terminates without dividing by a
 vanishing next-vector norm; a one-dimensional invariant subspace retains the
 complete normalized starting vector. The relative energy change uses
 `abs(E_old-E_new)/max(abs(E_old),abs(E_new),tiny(1d0))`, which avoids division
-by zero but does not replace a residual test. Check the printed
+by zero but does not replace a residual test. The first Ritz estimate does not
+count as convergence; at least two Ritz checks are required unless the Krylov
+subspace closes or spans the available space. Check the printed
 `Residual norm ||H psi - E psi||`, especially near zero energy, and compare
 small systems with dense diagonalization. Energy stagnation and an ordinary
 process exit are not sufficient convergence tests. See
