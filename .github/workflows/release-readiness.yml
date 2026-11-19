@@ -54,3 +54,21 @@ jobs:
           path: ${{ runner.temp }}/ex9-archive-check.json
           if-no-files-found: warn
           retention-days: 30
+
+  source-distcheck:
+    name: Standalone GNU source-distribution reproducibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install compiler, BLAS/LAPACK and Autotools
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            gcc gfortran make autoconf automake libopenblas-dev liblapack-dev
+      - name: Build and independently unpack/check packaged source
+        run: |
+          autoreconf -vfi
+          ./configure FC=gfortran FCFLAGS="-O2 -fopenmp"
+          make -j2
+          make distcheck
