@@ -36,11 +36,42 @@ The ground state is computed using the **Lanczos method**, and the program evalu
     The numerical values shown in this document are taken from the
     reference output stored in
 
-    `examples/ref_dat/cubic_sp_HB/output.dat`.
+    `examples/ref_data/cubic_sp_HB/output.dat`.
 
-    These files are provided as reference data for documentation
-    and regression testing. The exact numerical values may vary
-    slightly depending on the compilation environment and hardware.
+    These are archived reference data, not a measurement on your current
+    build. The original compiler, flags, and hardware are not recorded
+    alongside every fixture. Numerical values and iteration counts can vary.
+    The bundled example smoke tests check output production; a successful
+    smoke test alone does not establish agreement with these energies.
+
+## Running this example
+
+After completing the [installation](../getting-started/installation.md),
+run the following from the repository root:
+
+```sh
+(cd script_cubic_sp_HB && ./run.sh)
+```
+
+The script generates `examples/cubic_sp_HB/input.dat` and its companion
+files, then runs the already built solver. Copy the generated input and
+output files before rerunning: some observable files append new records.
+
+!!! warning "Large example"
+
+    This is the 1000-site, fixed-three-magnon example. Its unreduced sector
+    has 166,167,000 configurations. Assess representative-state setup time
+    and memory before running it; the archived 121-second timing is not a
+    resource guarantee. For an initial installation check use the chain
+    smoke test described in the installation guide.
+
+!!! note "Sector ground state"
+
+    For the isotropic, zero-field Hamiltonian used here, total $S^z$ is
+    conserved. `NODmin=NODmax=3` is an exact magnetization sector. The
+    quoted energy is the lowest energy within this sector and the selected
+    zero-momentum, even-reflection representation; it is not the global
+    zero-field antiferromagnetic ground-state energy.
 
 ---
 
@@ -100,28 +131,32 @@ $$
 
 # 3. Coupling Parameters
 
+The shipped script and archived `input_param.dat` use the isotropic
+antiferromagnetic Heisenberg Hamiltonian $H=\sum_{\langle i,j\rangle}
+\mathbf S_i\cdot\mathbf S_j$ with unit exchange and no fields.
+
 Magnetic field
 
 $$
-\mathbf{h}=(-0.1,-0.1,-0.3)
+\mathbf{h}=(0,0,0)
 $$
 
 Exchange parameters
 
 $$
-(J_x,J_y,J_z)=(1.0,0.8,0.7)
+(J_x,J_y,J_z)=(1,1,1)
 $$
 
 Dzyaloshinskii–Moriya interaction
 
 $$
-\mathbf{D}=(0.2,0.1,5.0)
+\mathbf{D}=(0,0,0)
 $$
 
 $\Gamma$ interaction
 
 $$
-(\Gamma_x,\Gamma_y,\Gamma_z)=(0.1,0.3,-0.2)
+(\Gamma_x,\Gamma_y,\Gamma_z)=(0,0,0)
 $$
 
 ---
@@ -247,18 +282,19 @@ activate reflection operations for the
 
 respectively.
 
-These operations correspond to
+With the generator’s one-based coordinates $x=1,\ldots,L_x$ (and
+likewise for $y,z$), these bond-centered reflections are
 
 $$
-R_x : (x,y,z) \rightarrow (-x,y,z)
-$$
-
-$$
-R_y : (x,y,z) \rightarrow (x,-y,z)
+R_x : (x,y,z) \rightarrow (L_x+1-x,y,z)
 $$
 
 $$
-R_z : (x,y,z) \rightarrow (x,y,-z).
+R_y : (x,y,z) \rightarrow (x,L_y+1-y,z)
+$$
+
+$$
+R_z : (x,y,z) \rightarrow (x,y,L_z+1-z).
 $$
 
 The corresponding quantum numbers are specified by
@@ -344,7 +380,7 @@ THS(k)= 23719
 
 # 11. Lanczos Solver
 
-The Lanczos work‑space parameter is fixed
+The padded Hamiltonian-cache transition-capacity parameter is fixed
 
 ```
 MNTE = 19
@@ -356,6 +392,12 @@ Output confirms
 Current MNTE = 19
 Optimal MNTE = 19
 ```
+
+The diagnostic reports the maximum occupied count including the diagonal.
+The allocation uses `MNTE+1` slots per cached row. For three separated
+magnons the physical count is at most 18 hopping records plus one diagonal;
+`MNTE=19` is a conservative supplied value, not a requirement that the
+Lanczos basis contain 19 vectors.
 
 Solver parameters
 
@@ -393,7 +435,7 @@ $$
 7.367224213680651 \times 10^{2}
 $$
 
-Residual
+Dimensionless variance diagnostic
 
 $$
 |1-(\langle GS|H|GS\rangle)^2/\langle GS|H^2|GS\rangle|
@@ -423,7 +465,7 @@ Generated files
 
 # 15. Runtime
 
-Measured runtime
+Runtime recorded in the archived reference output
 
 ```
 Time: 121.074 sec

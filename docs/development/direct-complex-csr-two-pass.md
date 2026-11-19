@@ -8,7 +8,7 @@
 > measured reduction in whole-process peak RSS.
 
 **Status: experimental, default OFF, independent general-ED2 optimization.**
-This branch starts from main *after* the general complex CSR cache, typed
+The development branch started from main *after* the general complex CSR cache, typed
 BLAS/LAPACK, lazy H*x scratch and coefficient-certified capacity changes.
 It does not depend on the cubic three-magnon acceleration stack.
 
@@ -146,8 +146,9 @@ adoption. The earlier general complex CSR, LP64 BLAS/LAPACK,
 coefficient-bound and release checks remain active in their
 own PR CI workflows.
 
-No PRESTO computation, journal-ready performance number,
-automatic default enable, upstream QS-Cube main change,
-or final release is implied. The default remains the
+The implementation is now integrated into upstream `QS-Cube/ED2:main`.
+The historical validation above does not establish a PRESTO measurement,
+journal-ready performance number, automatic default enable, or tagged
+release. The default remains the
 original padded cache, with no new externally visible
 arrays unless this explicit experimental opt-in is used.

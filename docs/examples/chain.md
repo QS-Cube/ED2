@@ -28,11 +28,36 @@ The ground state is computed using the **Lanczos method**, and the program evalu
     The numerical values shown in this document are taken from the
     reference output stored in
 
-    `examples/ref_dat/chain/output.dat`.
+    `examples/ref_data/chain/output.dat`.
 
-    These files are provided as reference data for documentation
-    and regression testing. The exact numerical values may vary
-    slightly depending on the compilation environment and hardware.
+    These are archived reference data, not a measurement on your current
+    build. The original compiler, flags, and hardware are not recorded
+    alongside every fixture. Numerical values and iteration counts can vary.
+    The bundled example smoke tests check output production; a successful
+    smoke test alone does not establish agreement with these energies.
+
+## Running this example
+
+After completing the [installation](../getting-started/installation.md),
+run the following from the repository root:
+
+```sh
+(cd script_chain && ./run.sh)
+```
+
+The script generates `examples/chain/input.dat` and its companion
+files, then runs the already built solver. Copy the generated input and
+output files before rerunning: some observable files append new records.
+
+!!! warning "Projected calculation"
+
+    The listed anisotropic couplings and transverse fields do not conserve
+    total $S^z$. The `NODmin=0, NODmax=3` window therefore defines the
+    projected operator $P H P$, followed by the stated momentum projection.
+    Every “ground-state energy” below means the lowest energy **within that
+    chosen subspace**, not the unrestricted many-spin ground state.
+    Increase the occupation window and compare momentum sectors before
+    drawing conclusions about the full physical model.
 
 ---
 
@@ -222,8 +247,9 @@ $$
 T|\psi\rangle = |\psi\rangle .
 $$
 
-This sector contains the translationally invariant states and typically hosts
-the ground state for many spin models.
+This sector contains translationally invariant states. This calculation
+does not establish that the lowest energy among all momentum sectors
+occurs at $k=0$.
 
 ---
 
@@ -337,14 +363,18 @@ $$
 -1.299620173300453 \times 10^{1}
 $$
 
-Residual
+Dimensionless variance diagnostic
 
 $$
 |1-(\langle GS|H|GS\rangle)^2 / \langle GS|H^2|GS\rangle|
 =4.440892098500626 \times 10^{-16}
 $$
 
-This indicates convergence close to machine precision.
+This is the program’s dimensionless variance diagnostic, not the norm
+$\|H\psi-E\psi\|$. A value near machine epsilon does not establish
+machine-precision eigenvector accuracy: the expression involves cancellation
+and depends on the energy origin. Check a direct residual and convergence
+under tighter solver settings when accuracy matters.
 
 ---
 
@@ -381,7 +411,7 @@ $$
 
 # 14. Runtime
 
-Measured runtime
+Runtime recorded in the archived reference output
 
 ```
 Time: 0.221 sec

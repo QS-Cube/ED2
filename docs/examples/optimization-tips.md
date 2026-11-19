@@ -26,14 +26,14 @@ produce a different projected operator.
 
 ## Alternating mixed-spin chain
 
-For an alternating spin-1/2/spin-1 chain with (L) unit
+For an alternating spin-1/2/spin-1 chain with $L$ unit
 cells, the full Hilbert space has dimension $6^L$.
 Translation by **one unit cell** preserves the spin
 magnitudes; a one-site shift generally does not.
 
-An XYZ model with unequal (J_x,J_y), transverse
-field, or oriented DM interaction generally breaks
-conservation of total (S^z). In that case:
+An XYZ model with unequal $J_x,J_y$, transverse
+field, or DM components perpendicular to $z$ generally breaks
+conservation of total $S^z$. In that case:
 
 - Use the **full physical occupation window** if the
   goal is the unrestricted spectrum. A smaller
@@ -103,7 +103,7 @@ software release target remain unresolved.
 Accordingly, its timing ratios are **not** recommended
 as general CPC performance figures.
 
-The stable [cubic example](cubic.md) includes
+The [cubic example](cubic.md) includes
 an anisotropic XYZ/DM model. Its symmetries should
 be checked against its actual couplings; do
 **not** transfer the isotropic $O_h$ example's

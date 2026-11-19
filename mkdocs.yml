@@ -1,4 +1,5 @@
 site_name: ED2 Documentation
+site_url: !ENV [READTHEDOCS_CANONICAL_URL, "https://ed2.readthedocs.io/en/latest/"]
 repo_url: https://github.com/QS-Cube/ED2
 
 theme:
@@ -8,6 +9,10 @@ docs_dir: docs
 
 plugins:
   - search
+
+validation:
+  links:
+    anchors: warn
 
 markdown_extensions:
   - admonition

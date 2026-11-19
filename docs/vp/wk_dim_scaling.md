@@ -1,367 +1,101 @@
+# Performance: dependence of runtime on `wk_dim`
 
-# Performance: Dependence of Computational Time on `wk_dim`
+`wk_dim` controls the **number of representative-state Hamiltonian rows
+cached**, rather than the number of individual matrix elements. A negative
+value requests all rows in the selected space; zero requests on-demand
+construction; a positive value caches up to that many rows. See
+[Hamiltonian caching, performance, and memory](../user-guide/performance-and-memory.md)
+for the current implementation and optional CSR controls.
 
-## Overview
+## Model used in the archived figure
 
-One distinctive feature of **QS³‑ED2** is the ability to **cache Hamiltonian matrix elements in memory**.
-This functionality was not present in the original QS³‑ED implementation. By storing matrix elements
-within the available memory, repeated evaluations of the Hamiltonian action can be avoided, which can
-significantly accelerate the Lanczos iterations.
-
-In conventional exact diagonalization implementations, the action of the Hamiltonian on a basis state
-
-$$
-\hat H |a\rangle
-$$
-
-is recomputed every time it is required. In QS³‑ED2, however, matrix elements can optionally be
-**cached and reused**, reducing the computational overhead of repeated Hamiltonian applications.
-
-To illustrate the effect of this design, we investigate how the **computation time depends on the
-parameter `wk_dim`**, which controls how many Hamiltonian matrix elements are stored in memory.
-
-The benchmark is performed using the calculation conditions of **Example 9 (`cubic_sp_HB`)**, except
-that the calculation of local magnetization and correlation functions is disabled.
-
----
-
-# Benchmark model
-
-The `cubic_sp_HB` example corresponds to an **antiferromagnetic Heisenberg model** on a cubic lattice
-of size
+The historical experiment uses the isotropic antiferromagnetic Heisenberg
+model from [Example 9](../examples/cubic_sp_HB.md):
 
 $$
-10 \times 10 \times 10
+H=\sum_{\langle r,r'\rangle}\mathbf S_r\cdot\mathbf S_{r'}
 $$
 
-with periodic boundary conditions.
-
-The Hamiltonian is
-
-$$
-\hat H =
-\sum_{\langle r,r'\rangle}
-\mathbf{S}_r \cdot \mathbf{S}_{r'} .
-$$
-
-The calculation is performed in a symmetry sector defined by the following quantum numbers.
-
-## Magnetization sector
-
-The total magnetization is fixed to
+on a periodic $10\times10\times10$ lattice of spin-$1/2$ sites. The
+calculation fixes three down spins, zero momentum, and even reflection
+parities. Thus $S^z=1000/2-3=497$. The unreduced fixed-magnetization
+space has
 
 $$
-S^z = M_s - N_{\downarrow},
+\binom{1000}{3}=166{,}167{,}000
 $$
 
-where
+states, and the selected symmetry representation has $D=23{,}719$ states.
+These are dimensions of the specified few-magnon sector, not of the full
+$2^{1000}$ product space. The archived timing study disabled local
+magnetization and correlation output.
+
+## Transition capacity and memory
+
+Three well-separated magnons each have six possible hops, giving at most
+18 off-diagonal hopping records, plus a diagonal record. `MNTE` is an
+allocation capacity: padded arrays allocate `MNTE+1` slots per cached row.
+The shipped input uses the conservative value `MNTE=19`; the printed
+`Optimal MNTE = 19` diagnostic counts occupied records **including** the
+diagonal. It does not mean that `MNTE` controls the Lanczos-vector count.
+
+For the current LP64 implementation, the main padded coefficient/location
+arrays use approximately
 
 $$
-M_s = \frac{N}{2}
+(16+4)\,\mathrm{wk\_dim}\,(\mathrm{MNTE}+1)\ \text{bytes},
 $$
 
-is the **saturation magnetization** of a spin‑1/2 system with \(N\) sites, and
-
-$$
-N_{\downarrow}
-$$
-
-denotes the number of down spins.
-
-In this benchmark
-
-$$
-N_{\downarrow} = 3 .
-$$
-
-The dimension of the Hilbert space in this magnetization sector is therefore
-
-$$
-\binom{N}{N_{\downarrow}}
-=
-\binom{1000}{3}
-=
-166{,}167{,}000 .
-$$
-
-## Momentum sector
-
-The calculation is performed at the Γ point
-
-$$
-\mathbf{k} = (0,0,0).
-$$
-
-## Reflection symmetries
-
-The state belongs to the **even‑parity sector** with respect to reflections about the
-
-- XY plane
-- YZ plane
-- ZX plane
-
-which corresponds to the input condition
-
-```
-M1 = M2 = M3 = M4 = M5 = M6 = 0
-```
-
-After applying all translational and reflection symmetries, the working Hilbert space becomes
-
-$$
-D = 23{,}719 ,
-$$
-
-corresponding to a reduction of approximately
-
-$$
-\sim 1/7000
-$$
-
-compared with the original Hilbert space.
-
----
-
-# Optimal value of MNTE
-
-Before tuning `wk_dim`, an appropriate value of **MNTE** must be specified.
-
-`MNTE` represents the maximum number of Hamiltonian matrix elements generated when the Hamiltonian
-acts on a single representative state.
-
-For the present model it is straightforward to determine that
-
-```
-MNTE = 19
-```
-
-is optimal.
-
-This can be understood by considering a configuration in which the
-
-$$
-N_{\downarrow} = 3
-$$
-
-down spins are well separated.
-
-When the Hamiltonian acts once,
-
-- each spin can hop to its nearest neighbors
-- the cubic lattice has coordination number
-
-$$
-z = 6 .
-$$
-
-Therefore the number of off‑diagonal transitions is
-
-$$
-z \times N_{\downarrow} = 6 \times 3 = 18 .
-$$
-
-In addition, the Hamiltonian contains the diagonal interaction term
-
-$$
-\hat S^z_r \hat S^z_{r'} .
-$$
-
-Thus the total number of generated matrix elements becomes
-
-$$
-MNTE = z N_{\downarrow} + 1 = 19 .
-$$
-
----
-
-# Computational cost with and without caching
-
-Let
-
-```
-NO_one + NO_two ~ O(N)
-```
-
-denote the cost of applying the Hamiltonian once to a representative state.
-
-The computational cost of evaluating
-
-$$
-\hat H |a\rangle
-$$
-
-depends on whether the matrix elements are cached.
-
-### With matrix‑element caching
-
-$$
-O(N)
-$$
-
-### Without caching
-
-$$
-O\!\left(
-N
-\times
-\left(\prod_{m=1}^{6} L_m \right)
-\times
-N_{\downarrow}
-\times
-\log(N_{\downarrow})
-\right)
-$$
-
-The additional cost arises because, after generating a new configuration, the program must determine
-**which representative state the configuration belongs to** under the symmetry group.
-
-This requires an additional search over the symmetry operations, producing the factor
-
-$$
-\left(\prod_{m=1}^{6} L_m \right)
-\times
-N_{\downarrow}
-\times
-\log(N_{\downarrow}).
-$$
-
-Therefore, **when sufficient memory is available, caching matrix elements is strongly recommended.**
-
----
-
-# Cost of each computational stage
-
-The computational complexity of the main stages of the calculation can be roughly estimated as follows.
-
-## Selection of representative states
-
-$$
-O\!\left(
-D \times N^2 \times N_{\downarrow} \times \log(N_{\downarrow})
-\right)
-$$
-
-## Matrix‑element storage
-
-$$
-O\!\left(
-wk\_dim \times N \times N_{\downarrow} \times \log(N_{\downarrow})
-\right)
-$$
-
-## Lanczos iterations
-
-$$
-O\!\left(
-N_{itr}
-\left[
-wk\_dim +
-(D-wk\_dim)
-N \times N_{\downarrow} \times \log(N_{\downarrow})
-\right]
-\right)
-$$
-
-where
-
-$$
-N_{itr} \sim O(10\text{–}100)
-$$
-
-is the number of Lanczos iterations.
-
-Since
-
-$$
-\prod_{m=1}^{6} L_m \sim O(N)
-$$
-
-and
-
-$$
-D \sim O\!\left(\frac{\binom{N}{N_{\downarrow}}}{N}\right),
-$$
-
-the dominant computational cost becomes
-
-### Case 1: `wk_dim = 0`
-
-$$
-O\!\left(
-N_{itr} \times D \times N^2 \times N_{\downarrow} \times \log(N_{\downarrow})
-\right)
-$$
-
-### Case 2: `wk_dim = D`
-
-$$
-O\!\left(
-D \times N^2 \times N_{\downarrow} \times \log(N_{\downarrow})
-+
-N_{itr} \times N \times D
-\right)
-$$
-
----
-
-# Expected speedup
-
-The ratio between these two limits is approximately
-
-$$
-R =
-O\!\left(
-N_{itr}^{-1}
-+
-(N \times N_{\downarrow} \times \log N_{\downarrow})^{-1}
-\right).
-$$
-
-For typical QS³ calculations the first term dominates, leading to a theoretical speedup of roughly
-
-$$
-\sim O(N_{itr})
-$$
-
-which corresponds to **up to about two orders of magnitude**.
-
----
-
-# Benchmark result
-
-The measured dependence of the runtime on
-
-```
-wk_dim / D
-```
-
-is shown in the figure below.
+plus row counts and other program allocations. This array payload is not
+peak process RSS. Changing to CSR, retaining or releasing padded arrays,
+and using direct two-pass construction changes which allocations coexist.
+Record the complete cache configuration for any comparison.
+
+## What caching avoids
+
+Without caching, a Hamiltonian action regenerates transition coefficients
+and maps destination configurations into the selected representative-state
+basis. Cached rows reuse those results. The cost of a cached action scales
+with the occupied records traversed, while uncached rows also incur row
+construction and symmetry lookup. Construction cost, row occupancy,
+symmetry-group size, the number of Hamiltonian actions, and memory bandwidth
+all affect the total runtime.
+
+Increasing `wk_dim` can therefore reduce repeated construction work, but
+it also increases memory use and setup time. There is no general speedup
+factor determined by `wk_dim` alone. For low-iteration calculations or a
+different model, the balance can change.
+
+## Archived figure and evidence limits
 
 ![wk_dim scaling](wk_dim_scaling.svg){ width="650" }
 
-The computation time decreases approximately **linearly** as a function of
+The original accompanying description reported approximately a 17-fold
+runtime reduction and an eightfold memory increase over the range shown.
+These are historical descriptions of this figure, not measurements made
+on the current `main` build or universal performance guarantees.
 
-$$
-wk\_dim / D .
-$$
+The repository contains the figure, but does not provide a complete raw
+run table with the exact source commit, compiler and flags, processor,
+thread affinity, memory measurement definition, and repeat statistics.
+Consequently this figure cannot yet serve as a fully reproducible benchmark
+or as quantitative evidence for a new performance claim. Regenerate it
+with the metadata below before using its ratios in a publication.
 
-For the present benchmark
+## Reproducing a new comparison
 
-- the runtime is reduced by approximately **17×**
-- the required memory increases by approximately **8×**
+Use the same generated physical input and solver tolerance for each cache
+setting. Set `CAL_LM=0` and `CAL_CF=0` if reproducing the historical scope.
+Record at least:
 
-This clearly demonstrates the effectiveness of the matrix‑element caching mechanism.
+1. Source commit, input checksums, compiler and flags, BLAS/LAPACK backend.
+2. Hardware, OpenMP and BLAS thread counts, CPU affinity, and concurrent load.
+3. `wk_dim`, `MNTE`, all `ED2_*` cache flags, and actual projected dimension.
+4. Setup time, Hamiltonian-action or iteration count, total time, and peak RSS
+   with the measurement tool specified.
+5. Eigenvalues, a direct residual, repeat count, and the individual raw runs.
 
----
-
-# Practical recommendation
-
-When sufficient memory is available, increasing `wk_dim` is an effective strategy for accelerating the
-Lanczos iterations.
-
-However, caution is required for models **without U(1) symmetry**, since
-
-- the value of `MNTE` typically becomes larger
-- the memory consumption grows significantly
-
-and the caching strategy may become memory‑limited.
+Run the 1000-site example only after assessing the available resources.
+A smaller model is appropriate for checking the workflow first. For a model
+without conserved total $S^z$, a limited `NOD` window is a projected
+approximation and must be checked for convergence independently of caching.

@@ -1,265 +1,147 @@
 # ED2 (QS³-ED2): Exact Diagonalization for Quantum Spin Systems
 
-**ED2 (QS³-ED2)** is a research-grade Fortran code for **Exact
-Diagonalization of quantum spin lattice models**.
+**ED2 (QS³-ED2)** is a Fortran code for quantum spin lattice calculations.
+QS³ stands for **Quantum Spin System Solver**. The code provides dense and
+Lanczos-type diagonalization, local magnetizations, and two-site correlations,
+with explicit control of the retained basis and spatial symmetries.
 
-QS³ stands for **Quantum Spin System Solver**, reflecting the design
-philosophy of ED2:
-
-> **transparent physics, reproducible numerics, and controllable Hilbert
-> spaces.**
-
-ED2 is developed for:
-
--   **Reproducible computational physics**
--   **Explicit symmetry-resolved calculations**
--   **Controlled Hilbert-space truncation**
--   **High-performance shared-memory execution via OpenMP**
-
-This documentation constitutes the **official user and developer
-reference**.
-
-Its primary objective is to guarantee that any third party can:
-
-1.  Build ED2 from source,
-2.  Run automated regression tests,
-3.  Perform reference calculations,
-4.  Understand all inputs and outputs,
-5.  Reproduce published results,
-6.  Cite the software unambiguously.
-
-------------------------------------------------------------------------
-
-## Overview
-
-Exact Diagonalization remains one of the most reliable and transparent
-approaches for strongly correlated quantum many-body systems.
-
-ED2 focuses on **quantum spin lattice models** and supports both:
-
--   full Hilbert spaces, and\
--   **restricted (truncated) subspaces**,
-
-allowing efficient calculations in dilute or symmetry-constrained
-sectors.
-
-Typical applications include:
-
--   Ground-state calculations\
--   Low-energy excitation spectra\
--   Local magnetization\
--   Two-body correlation functions
-
-ED2 emphasizes **explicit construction of Hilbert spaces and
-symmetries**, prioritizing clarity and reproducibility over black-box
-automation.
-
-------------------------------------------------------------------------
+Start with [Installation](getting-started/installation.md) to prepare the
+compiler and libraries, then follow the [Quickstart](getting-started/quickstart.md)
+to run the supplied chain example. The [input reference](user-guide/input-format.md)
+and [output reference](user-guide/outputs.md) describe the exact data formats
+and numerical checks needed for scientific calculations.
 
 ## Physical model and scientific scope
 
-ED2 inherits the core design philosophy of the quantum spin solver QS3,
-originally developed for studies of spin-1/2 XXZ systems near saturation
-magnetization, and generalizes it to fully anisotropic quantum spin
-Hamiltonians of the form
+For bonds normalized to the site order $i<j$, the input convention is
 
 $$
-\hat H =
-\sum_{r>r'} \sum_{\alpha\in\{x,y,z\}}
-\Big[
-J^{\alpha}_{rr'} \hat S^{\alpha}_r \hat S^{\alpha}_{r'}
-+ D^{\alpha}_{rr'} ( \hat{\mathbf S}_r \times \hat{\mathbf S}_{r'} )_{\alpha}
-+ \Gamma^{\alpha}_{rr'} ( \hat S^{\beta}_r \hat S^{\gamma}_{r'} + \hat S^{\gamma}_r \hat S^{\beta}_{r'} )
-\Big]
-- \sum_r \mathbf h_r \cdot \hat{\mathbf S}_r .
+\hat H = \sum_{i<j}\left[
+\sum_{\alpha=x,y,z}J^\alpha_{ij}\hat S_i^\alpha\hat S_j^\alpha
++\mathbf D_{ij}\cdot(\hat{\mathbf S}_i\times\hat{\mathbf S}_j)
++\sum_{\mathrm{cyc}(\alpha,\beta,\gamma)}
+\Gamma^\alpha_{ij}
+(\hat S_i^\beta\hat S_j^\gamma+\hat S_i^\gamma\hat S_j^\beta)
+\right]
++\sum_i\mathbf h_i\cdot\hat{\mathbf S}_i.
 $$
 
-with mutually distinct indices $\alpha\neq\beta\neq\gamma$. Here
-$J^{\alpha}_{rr'}$, $D^{\alpha}_{rr'}$, and $\Gamma^{\alpha}_{rr'}$
-denote exchange, Dzyaloshinskii--Moriya, and symmetric anisotropic
-interactions between spins on sites $r,r'$, while $\mathbf h_r$
-represents local Zeeman fields. Local spin magnitudes
-$S_r = 1/2, 1, 3/2, \ldots$ may be specified independently at each site.
+Here the cyclic triples are $(x,y,z)$, $(y,z,x)$, and $(z,x,y)$.
+The inputs specify exchange $J$, Dzyaloshinskii–Moriya interactions $D$,
+symmetric off-diagonal exchange $\Gamma$, and site-dependent spin magnitudes.
+Repeated interaction records contribute additively.
 
-Typical scientific applications include:
+**The field sign is plus: $+\mathbf h\cdot\mathbf S$.** For the physical
+Zeeman convention $-\mathbf B\cdot\mathbf S$, supply $\mathbf h=-\mathbf B$.
+Reversing a bond's site order reverses its DM vector. See
+[Hamiltonian lists and sign conventions](user-guide/input-format.md#hamiltonian-lists-and-sign-conventions)
+for the list format and the internal orientation rule.
 
--   finite-size scaling analyses of quantum phase transitions\
--   level spectroscopy of low-energy excitations\
--   identification of Berezinskii--Kosterlitz--Thouless transitions via
-    twisted boundary conditions\
--   Anderson tower analyses of symmetry breaking
+### Symmetry sectors and truncated spaces
 
-These techniques are widely used in numerical studies of low-dimensional
-quantum magnetism.
+ED2 can restrict the total number of local spin-lowering operations and can
+use supplied site-permutation symmetries to reduce the working basis. A fixed
+occupation sector is exact only when the Hamiltonian conserves it. With terms
+that connect outside the retained space, the calculation instead diagonalizes
+$P H P$, where $P$ projects onto that space. Check convergence as the retained
+space is enlarged before interpreting a truncated result as a full-system
+prediction.
 
-------------------------------------------------------------------------
+Spatial permutations must preserve the complete Hamiltonian, site spins, and
+local occupation caps. A successful run does not establish that an arbitrary
+symmetry input is valid. The [algorithm overview](theory/algorithms.md)
+explains the basis, solver paths, and verification limits.
 
-## Key features
+## Solvers and execution model
 
-### Explicit symmetry decomposition
+| Facility | Scope |
+|---|---|
+| `ALG=1` | Conventional Lanczos ground-state calculation |
+| `ALG=2` | Thick-restart Lanczos for requested low-lying eigenpairs |
+| `ALG=3` | Dense Hermitian diagonalization of the selected space |
+| OpenMP | Shared-memory parallelism within one node |
+| BLAS/LAPACK | Explicit LP64 Fortran interfaces; a compatible implementation is required |
 
-Users explicitly specify symmetry generators (translations, rotations,
-inversion, etc.) in the input file. ED2 constructs symmetry-resolved
-Hilbert spaces, enabling block-diagonalization of the Hamiltonian and
-substantial reductions in computational cost.
-
-------------------------------------------------------------------------
-
-### General quantum spin Hamiltonians
-
--   Heisenberg and XYZ-type interactions\
--   Dzyaloshinskii--Moriya and symmetric anisotropies\
--   External magnetic fields
-
-------------------------------------------------------------------------
-
-### Controlled Hilbert-space truncation
-
-Calculations may be restricted to sectors with a fixed number of
-spin-down excitations or equivalent constraints, dramatically reducing
-memory and runtime.
-
-------------------------------------------------------------------------
-
-### Numerical solvers
-
--   Full diagonalization (small systems)
--   Lanczos and Thick-Restart Lanczos iterative solvers (larger systems)
-
-------------------------------------------------------------------------
-
-### Parallelization
-
-Shared-memory parallelism via **OpenMP**.\
-ED2 follows a single-node execution model (no MPI dependency).
-
-------------------------------------------------------------------------
-
-### Linear algebra backends
-
-BLAS/LAPACK via:
-
--   OpenBLAS
--   Intel MKL
--   Vendor implementations
-
-------------------------------------------------------------------------
+Dense matrices require storage proportional to the square of the projected
+dimension. Iterative solvers require independent convergence checks. The
+program has no MPI dependency.
 
 ## Current performance features and release scope
 
-The official [`QS-Cube/ED2:main`](https://github.com/QS-Cube/ED2) source
-includes optional general-purpose complex Hamiltonian caching
-(ordered CSR), coefficient-certified cache capacity, padded-cache
-release, and two-pass CSR construction following
-[PR #1](https://github.com/QS-Cube/ED2/pull/1) (19 November 2026).
-These options are **disabled by default** and are not necessarily
-faster or smaller on every model.
+Official [`QS-Cube/ED2:main`](https://github.com/QS-Cube/ED2) includes the
+general-purpose cache features merged in
+[PR #1](https://github.com/QS-Cube/ED2/pull/1) on 19 November 2026:
 
-See [Hamiltonian caching, performance, and memory](
-user-guide/performance-and-memory.md) and
-[lattice/model-specific optimization tips](
-examples/optimization-tips.md) for exact prerequisites and
-numerical verification requirements.
+- ordered complex CSR caching;
+- coefficient-certified cache capacity;
+- optional release of the padded cache;
+- direct two-pass CSR construction.
 
-**Version note:** Integration into upstream `main` does not itself
-constitute a tagged software release. A previously installed executable
-or an older Read the Docs build may not yet include these features.
-For reproducible use, verify the executable's Git commit and consult
-the configuration prerequisites in the linked user guide. Other
-experimental fork branches remain outside the official mainline.
+All four environment controls are **off by default**. Their benefit depends
+on the model and available memory. Read
+[Hamiltonian caching, performance, and memory](user-guide/performance-and-memory.md)
+and [model-specific optimization tips](examples/optimization-tips.md) for
+prerequisites, compiler policies, and the distinction between cache-array
+payload and whole-process memory.
 
-------------------------------------------------------------------------
+A merge to `main` is not a tagged release. Verify the source commit used to
+build an executable and the Read the Docs build commit when comparing versions.
+Separate experimental fork branches are not part of the official feature set
+unless their changes have actually been merged.
 
 ## Typical workflow
 
-``` bash
+After installing the [required build dependencies](getting-started/installation.md#1-requirements):
+
+```bash
 git clone https://github.com/QS-Cube/ED2.git
 cd ED2
+git rev-parse HEAD
 autoreconf -vfi
-./configure FC=gfortran   # or FC=ifort / ifx
-make -j
-make check
-make check-long
-```
-
-The commands
-
-``` bash
-make check
-make check-long
-```
-
-provide automated regression tests and reference examples.
-
-After successful compilation:
-
-``` bash
-cd examples/...
-../source/QS3ED2 < input.dat > output.dat
-```
-
-Output files contain energies and physical observables.
-
-------------------------------------------------------------------------
-
-## Important threading note
-
-ED2 uses OpenMP internally. When combined with threaded BLAS libraries
-(e.g. MKL), nested parallelism should be avoided:
-
-``` bash
-export OMP_NUM_THREADS=4
+./configure FC=gfortran FCFLAGS="-O2 -fopenmp"
+make -j2
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1
+make check
+(cd script_chain && ./run.sh)
+head -n 5 examples/chain/eigenvalues.dat
 ```
 
-Failure to do so may significantly degrade performance.
+`make check` uses a temporary directory, checks nonempty outputs, and requires
+a positive state index and finite-number energy syntax on every eigenvalue row. The
+explicit script invocation generates the reusable example under
+`examples/chain/`. A prepared input can be run from that directory with
+`../../source/QS3ED2`; the relative path has two `..` components.
 
-------------------------------------------------------------------------
+The supplied chain is a restricted-space example. Its successful execution is
+an installation check, not a proof that an arbitrary model, symmetry, or
+solver setting is correct. The [independent small-system checks](getting-started/installation.md#independent-small-system-physics-checks)
+compare against separately constructed NumPy Hamiltonians.
 
-## Reproducibility
+Do not use unqualified `make check-long` as the first installation check: it
+includes the large ex9 cubic three-magnon calculation. The installation guide
+gives the ex1–ex8 subset and explains what the execution-check wrapper actually
+checks.
 
-For scientific publications, users are strongly encouraged to record:
+## Reproducibility and citation
 
--   ED2 version or Git commit hash
--   Compiler and version
--   BLAS/LAPACK backend
--   OpenMP settings
--   Input files
+For each scientific result, preserve the exact source commit and local patch,
+compiler flags, BLAS/LAPACK implementation, thread counts, all model inputs,
+solver diagnostics, and independent reference-check results. Direct runs append
+several output tables, so keep results from distinct runs separate.
 
-This information is essential for long-term reproducibility.
+The [citation and versioning guide](reference/citation-versioning.md)
+distinguishes development commits, future tagged releases, software archives,
+and journal articles. Contributor metadata is available in
+[CITATION.cff](https://github.com/QS-Cube/ED2/blob/main/CITATION.cff).
 
-------------------------------------------------------------------------
+## License, maintainers, and support
 
-## Citation
+ED2 uses the [MIT License](https://github.com/QS-Cube/ED2/blob/main/LICENSE).
+Maintainers listed here are Hiroshi Ueda and Daisuke Yamamoto; citation
+metadata lists the software contributors.
 
-A journal manuscript describing ED2 is in preparation.
-
-Until a DOI becomes available, please cite:
-
-    ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository,
-    version <tag> or commit <hash>.
-
-A `CITATION.cff` file is provided.
-
-------------------------------------------------------------------------
-
-## License
-
-ED2 is released under the **MIT License**.
-
-------------------------------------------------------------------------
-
-## Authors and maintainers
-
--   Hiroshi Ueda\
--   Daisuke Yamamoto
-
-------------------------------------------------------------------------
-
-## Support and contributions
-
-Bug reports and feature requests are welcome via GitHub Issues.
-Contributions can be made through Pull Requests.
-
-For scientific use, always accompany results with sufficient metadata to
-guarantee reproducibility.
+Report reproducible problems through [GitHub Issues](https://github.com/QS-Cube/ED2/issues)
+with the source revision, build configuration, smallest failing input, and
+logs. Contributions can be proposed through pull requests.

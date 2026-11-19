@@ -1,18 +1,25 @@
 
 # Performance Example: Response Analysis with Fictitious Symmetry-Breaking Fields
 
-This performance example demonstrates how **QS³‑ED2** can reproduce numerical analyses of symmetry‑breaking responses in quantum spin systems near saturation magnetization.
+This page outlines a workflow for symmetry-breaking responses near
+saturation magnetization. The original figures, per-point input decks, raw
+energy and magnetization data, and fit scripts are not included in the
+repository. Quantitative results quoted below remain **unverified historical
+claims**, not a reproducible benchmark of the current source revision.
 
-The purpose of this page is **not to present new physics**, but to demonstrate that the numerical procedure used in previous studies can be **practically executed using QS³‑ED2** for relatively large system sizes.
+Use the model and analysis definitions as a starting point for new
+calculations. Archive the missing inputs, software revision, execution
+metadata, and numerical results before presenting the historical values
+as validated ED2 results.
 
-In particular, this benchmark illustrates that QS³‑ED2 enables
+The proposed calculation consists of
 
 - calculations close to **saturation magnetization**
 - controlled truncation of the Hilbert space using the **number of down spins**
 - systematic analysis of **responses to small transverse fields**
 - **finite‑size scaling analysis** of susceptibilities and order parameters
 
-for lattice sizes that are difficult to treat using conventional exact‑diagonalization approaches.
+with an explicit check of the occupation cutoff at each system size.
 
 The calculations below are performed for the **antiferromagnetic Heisenberg model on the square lattice** near the saturation field.
 
@@ -43,7 +50,12 @@ Here
 
 The transverse fields are introduced as **fictitious symmetry‑breaking fields** in order to probe the response of the system and detect spontaneous symmetry breaking.
 
-All calculations are performed **near the saturation magnetization**, where the number of down spins is small and QS³‑ED2 is particularly efficient.
+The intended regime is near saturation, where a small occupation window
+may be useful. ED2 adds input fields with a **plus** sign: to realize the
+Hamiltonian above, the input coefficients are
+$h^x_i=-(\delta h_u+\delta h_s^{(i)})$, $h^y_i=0$, and $h^z_i=-H$.
+A staggered pattern can reduce the allowed lattice-translation symmetry;
+check every supplied generator against the complete field pattern.
 
 ---
 
@@ -57,7 +69,9 @@ $$
 
 for the number of down spins.
 
-Because the system is studied close to the saturation magnetization, the relevant states are contained in sectors with **small $N_{\downarrow}$**.
+A transverse field does not conserve total $S^z$. Limiting the occupation
+window therefore computes $P H P$ and is an approximation to the full
+problem, even near saturation.
 
 The first numerical task is therefore to determine **how large the cutoff $N_{\downarrow}$ must be** when small transverse perturbations are applied.
 
@@ -74,12 +88,13 @@ $$
 H/J = 3.7 .
 $$
 
-This value corresponds to the **center of the magnetization plateau** intersecting this value of $H/J$.
+For a finite system, determine the magnetization-sector crossing fields
+from its zero-field energies before choosing a field within a sector
+interval. The number 3.7 does not by itself identify a plateau center for
+every size, and the missing data do not establish a thermodynamic-limit
+plateau center at this value.
 
-Using the plateau center stabilizes the numerical calculation when transverse fields are introduced.  
-Although the optimal longitudinal field slightly shifts for finite systems, the extrapolated value **converges to $H/J = 3.7$ in the thermodynamic limit**, so the procedure remains consistent.
-
-The numerical results show that the Hilbert‑space cutoff only needs to include
+The original discussion proposed an upper cutoff of
 
 $$
 N_{\downarrow}^{\prime} + 1
@@ -87,10 +102,16 @@ $$
 
 where $N_{\downarrow}^{\prime}$ is the number of down spins in the ground state when the transverse fields are zero.
 
-This is physically reasonable because the transverse perturbation only mixes the ground state with nearby sectors.
+A single transverse-spin operator changes the lowering number by one.
+This motivates including neighboring sectors for linear response about a
+nondegenerate, fixed-sector unperturbed ground state. Finite perturbations
+also mix more distant sectors at higher order; increase the cutoff until
+energies and the response converge. The proposed cutoff is not a general
+accuracy guarantee, especially near level crossings.
 
-Another important observation is that the response to the **staggered transverse field** is much larger than the response to the uniform transverse field.  
-This behavior is physically natural because the staggered field couples directly to the spin pattern associated with the symmetry‑broken state.
+Uniform and staggered responses must be measured separately, with the
+matching spatial weight in each observable. Their relative magnitudes
+cannot be recovered quantitatively from the missing figure.
 
 ---
 
@@ -117,19 +138,23 @@ $$
 
 These functions do not have a strict theoretical justification; they are introduced as **empirical fitting forms** to test the stability of the extrapolation.
 
-A key point is that in both cases the parameter
+In this empirical fit, the parameter
 
 $$
 a
 $$
 
-corresponds to the **staggered magnetization in the thermodynamic limit**
+is intended to estimate the nonlinear response amplitude at each finite
+size. Interpreting its extrapolation as the spontaneous staggered
+magnetization requires stability under changes of fit window, fit form,
+occupation cutoff, and system size. Symbolically, the proposed estimate is
 
 $$
-m_x = a \qquad (L \rightarrow \infty).
+m_x = \lim_{L\to\infty} a(L).
 $$
 
-Thus, by fitting the finite‑field response we obtain an estimate of the spontaneous order parameter.
+The fit parameter alone does not establish the order of the
+$L\to\infty$ and $\delta h_s\to0$ limits.
 
 ---
 
@@ -149,20 +174,27 @@ Two quantities are examined:
 $$
 \chi_s =
 \frac{1}{N\,\delta h_s}
-\sum_i \langle S_i^x \rangle
+\sum_i \eta_i\langle S_i^x \rangle
 $$
 
-2. **Spontaneous staggered magnetization** extracted from the fitting parameter $a$.
+Here $\delta h_s^{(i)}=\eta_i\delta h_s$ and $\eta_i=\pm1$ is the
+chosen staggered pattern. Without $\eta_i$, the expression measures the
+uniform response rather than the staggered response. The displayed ratio
+approximates the zero-field derivative only in the linear regime.
 
-The susceptibility exhibits the scaling
+2. **Spontaneous staggered magnetization** estimated by extrapolating $a(L)$.
+
+The original, currently unarchived calculation reported the scaling
 
 $$
 \chi_s \sim L^4 ,
 $$
 
-within the system sizes studied here. At present, we regard this as an empirical scaling observed in the present numerical data. A detailed comparison with previous theoretical and numerical studies remains to be carried out.
+over its studied sizes. Without the raw data, size definition, fitting
+range, and uncertainty analysis, this exponent is not independently
+verified and should not be generalized.
 
-The finite‑size extrapolation of the order parameter yields
+The same historical description quotes an extrapolated order parameter
 
 $$
 m_x \approx 0.19
@@ -174,21 +206,26 @@ $$
 H/J = 3.79 \pm 0.03 .
 $$
 
-This value appears to be compatible with previously reported numerical estimates, although a detailed literature comparison is left for future work.
+Neither this estimate and uncertainty nor its agreement with earlier
+literature is verified by the files currently supplied. Add the source
+citations and complete numerical analysis before using it as a benchmark.
 
 ---
 
 # Significance for QS³‑ED2
 
-This benchmark demonstrates that QS³‑ED2 can reproduce the numerical analysis used to identify spontaneous symmetry breaking in quantum spin systems.
+A reproducible version of this study requires generated input files for
+every size and field, raw outputs, cutoff-convergence tests, the software
+revision and build settings, and scripts for all fits and figures.
 
-In particular, QS³‑ED2 enables
+The implementation provides components for
 
 - efficient calculations **near saturation magnetization**
 - controlled truncation using the **number of down spins**
 - numerical evaluation of **response functions**
-- reliable **finite‑size scaling analyses**
+- subsequent **finite-size scaling analyses** outside the solver
 
-for system sizes that are difficult to treat using conventional exact‑diagonalization approaches.
+for explicitly specified finite-size calculations.
 
-Therefore QS³‑ED2 provides a practical numerical platform for investigating symmetry‑breaking phenomena in strongly correlated quantum spin systems.
+Keep solver verification, truncation convergence, and the physical
+extrapolation as separate checks when evaluating the final conclusions.
