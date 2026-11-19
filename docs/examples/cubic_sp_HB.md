@@ -46,9 +46,15 @@ The ground state is computed using the **Lanczos method**, and the program evalu
     `python3 tests/verify_ex9.py` checks only the archived reference file
     shapes, finite values, sum rules and paired-output consistency. After
     completing a fresh full ex9 calculation, use
-    `python3 tests/verify_ex9.py --actual examples/cubic_sp_HB` to compare
-    all generated energies and observables with the archived files. This is
+    `python3 tests/verify_ex9.py --actual examples/cubic_sp_HB --legacy-ex9-symmetry-projection` to compare all output files to the
+    historical archive, with the corrected reflection-symmetric ladder
+    comparison explicitly enabled. This is
     not a substitute for independent solver convergence and model checks.
+    The historical archive omits reflection averaging in its ladder
+    +-/-+ entries; those entries violate operator Hermiticity by up to
+    `2.78299e-5`. The revised code restores that reflection averaging.
+    See [Release qualification](../reference/release-qualification.md)
+    for the completed independent-environment ex9 comparison and raw errors.
 
 ## Running this example
 

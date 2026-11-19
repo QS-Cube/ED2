@@ -9,7 +9,7 @@ EXTRA_DIST = test_ex1.sh test_common.sh \
              audit_wavefunction_io.f90 audit_basis_driver.f90 \
              audit_multivector_local_mag.f90 \
              verify_ex9.py check_release_metadata.py \
-             run_ex9_reproducibility.sh \
+             run_ex9_reproducibility.sh test_ex9_legacy_projection.py \
              test_ex2.sh test_ex3.sh test_ex4.sh test_ex5.sh \
              test_ex6.sh test_ex7.sh test_ex8.sh test_ex9.sh \
              cpc_csr_matvec_driver.f90 cpc_csr_main_regression.py \

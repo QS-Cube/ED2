@@ -108,8 +108,11 @@ checks cover the tested cases, not all possible inputs. The unqualified
 calculation that requires separate resource planning. The archived output
 format can be validated quickly with `python3 tests/verify_ex9.py`; this
 **does not run ex9**. To check an independently completed HPC run, use
-`python3 tests/verify_ex9.py --actual examples/cubic_sp_HB` and retain the
-full runtime log. Inside an authorized compute-node allocation, use
+`python3 tests/verify_ex9.py --actual examples/cubic_sp_HB --legacy-ex9-symmetry-projection` and retain the full runtime log.
+The historical ladder archive contains non-Hermitian +-/-+ entries because
+reflection generators were omitted in the old correlation average; the
+explicit projection applies **only** to these ex9 legacy channels, and raw
+differences remain reported. Inside an authorized compute-node allocation, use
 `sh tests/run_ex9_reproducibility.sh` from a fresh checkout to capture logs,
 verify both correlation files, and archive input/output checksums.
 See [release qualification](docs/reference/release-qualification.md).

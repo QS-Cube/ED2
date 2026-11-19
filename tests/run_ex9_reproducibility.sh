@@ -47,7 +47,8 @@ if ! (cd "$root/script_cubic_sp_HB" && TOPDIR="$root" \
 fi
 if ! python3 "$root/tests/verify_ex9.py" \
       --reference "$root/examples/ref_data/cubic_sp_HB" \
-      --actual "$out" --json-out "$audit/comparison.json" \
+      --actual "$out" --legacy-ex9-symmetry-projection \
+      --json-out "$audit/comparison.json" \
       > "$audit/verification.log" 2>&1; then
   echo "ERROR: ex9 outputs failed verification; see $audit/comparison.json." >&2
   exit 1
