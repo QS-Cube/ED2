@@ -232,7 +232,7 @@ All seven values must be specified.
 | `NOM` | INTEGER | Krylov-space size. Values below `2*NOK` are raised to `2*NOK`; the resulting value must not exceed the projected dimension. |
 | `maxitr` | INTEGER | Positive maximum number of restart iterations, not simply the number of Hamiltonian applications. |
 | `lnc_ene_conv` | REAL(8) | Positive relative energy-change stopping tolerance across the retained states; not a residual bound. |
-| `i_vec_min`, `i_vec_max` | INTEGER | Saved/read vector range; use `1 <= i_vec_min <= i_vec_max <= NOE`. For ground-state observables after restart, include vector `1`. |
+| `i_vec_min`, `i_vec_max` | INTEGER | Saved/read vector range; use `1 <= i_vec_min <= i_vec_max <= NOE`. For ground-state observables after restart, require `i_vec_min=1`; an excited-state-only restart with `cal_lm=1` or `cal_cf=1` is rejected. |
 
 The code checks positive counts and tolerance, `NOE <= NOK`, the vector
 range, and the resulting workspace against the projected dimension. The

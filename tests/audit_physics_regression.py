@@ -296,6 +296,34 @@ def iteration_limit(exe, root, algorithm, threads):
     return result
 
 
+def rejected_excited_only_restart(exe, root, threads):
+    """An excited-state-only restart must never be labeled as a ground state."""
+    work = root / 'rejected_excited_only_restart'
+    case = dict(cases())['mixed_tensor']
+    env = write_deck(work, case, algorithm=2, cache=-1, mode={}, threads=threads)
+    inp = work / 'input.dat'
+    text = inp.read_text().replace('re_wf=0', 're_wf=1').replace(
+        'i_vec_min=1,i_vec_max=2', 'i_vec_min=2,i_vec_max=2')
+    inp.write_text(text)
+    with inp.open() as stream:
+        native = subprocess.run([str(exe)], cwd=work, env=env, stdin=stream,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, timeout=60, check=False)
+    (work / 'stdout.log').write_text(native.stdout)
+    result = dict(name='rejected_excited_only_restart', threads=threads,
+                  exit_code=native.returncode)
+    try:
+        assert native.returncode != 0, 'Excited-state-only restart accepted as GS'
+        assert 'TRLan restart observables require i_vec_min=1' in native.stdout
+        assert not (work / 'local_mag.dat').exists()
+        assert not (work / 'two_body_cf_xyz.dat').exists()
+        result['status'] = 'PASS'
+    except Exception as exc:
+        result.update(status='FAIL', error=str(exc))
+    (work / 'comparison.json').write_text(json.dumps(result, indent=2) + '\n')
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--exe', type=Path, required=True)
@@ -326,6 +354,10 @@ def main():
             result = iteration_limit(exe, root, algorithm, args.threads)
             results.append(result)
             print(json.dumps(result), flush=True)
+    if not args.case or 'rejected_excited_only_restart' in args.case:
+        result = rejected_excited_only_restart(exe, root, args.threads)
+        results.append(result)
+        print(json.dumps(result), flush=True)
     if args.with_iterative:
         mixed = dict(cases())['mixed_tensor']
         modes = [

@@ -129,7 +129,9 @@ source revision, and compatible compiler/runtime binary format. The binary
 format is not a portable interchange or archival format.
 
 `ALG=1` saves/reads vector 1. `ALG=2` saves/reads `i_vec_min..i_vec_max` and
-uses `NOE` for the energy table. Include vector 1 for ground-state observables.
+uses `NOE` for the energy table. With a TRLan restart, `i_vec_min=1` is
+required whenever local magnetizations or correlations are requested; an
+excited-state-only restart is rejected to avoid mislabeling its observables.
 `ALG=3` writes all vectors if requested, but does not implement the
 `re_wf=1` restart path. Existing saved files can be overwritten.
 
