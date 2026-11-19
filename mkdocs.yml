@@ -26,7 +26,6 @@ markdown_extensions:
       
 extra_javascript:
   - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
@@ -56,4 +55,11 @@ nav:
   - Theory / Algorithms:
       - Overview: theory/algorithms.md
   - Reference:
-      - Citation & Versioning: reference/citation-versioning.md      
+      - Citation & Versioning: reference/citation-versioning.md
+  - Development notes:
+      - Complex CSR implementation: development/generic-complex-csr-main.md
+      - Typed BLAS/LAPACK interfaces: development/typed-blas-lapack-main.md
+      - Coefficient-certified cache capacity: development/coefficient-certified-cache-cap-main.md
+      - Optional padded-cache release: development/csr-release-padded-main.md
+      - Direct two-pass CSR construction: development/direct-complex-csr-two-pass.md
+      - Full-cache H-action scratch allocation: development/lazy-matvec-scratch-main.md
