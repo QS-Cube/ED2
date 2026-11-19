@@ -109,7 +109,10 @@ calculation that requires separate resource planning. The archived output
 format can be validated quickly with `python3 tests/verify_ex9.py`; this
 **does not run ex9**. To check an independently completed HPC run, use
 `python3 tests/verify_ex9.py --actual examples/cubic_sp_HB` and retain the
-full runtime log. See [release qualification](docs/reference/release-qualification.md).
+full runtime log. Inside an authorized compute-node allocation, use
+`sh tests/run_ex9_reproducibility.sh` from a fresh checkout to capture logs,
+verify both correlation files, and archive input/output checksums.
+See [release qualification](docs/reference/release-qualification.md).
 
 For bounds-checked wavefunction I/O, site-magnetization output for multiple
 vectors, and basis-allocation checks, a separate runner needs only Python's

@@ -60,15 +60,19 @@ export MKL_NUM_THREADS=1
 
 git rev-parse HEAD
 git status --short
-(cd script_cubic_sp_HB && ./run.sh) > ex9-run.log 2>&1
+sh tests/run_ex9_reproducibility.sh
 
+# If you already have a completed full run, compare it independently:
 python3 tests/verify_ex9.py \
   --actual examples/cubic_sp_HB \
   --json-out ex9-comparison.json
 ```
 
-The script is CPU/memory intensive. Select the node class, thread count, and
-job walltime under the local scheduler's policy; retain scheduler peak RSS,
+The compute is CPU/memory intensive. The wrapper does not submit a job or
+request scheduler resources. It refuses pre-existing outputs to prevent
+append contamination, then preserves complete inputs, output files, checksums,
+and a run log under a new `ex9-audit-*` directory. Select the node class,
+thread count, and job walltime under the local scheduler's policy; retain scheduler peak RSS,
 walltime, stdout/stderr, complete input files, and the resulting
 `eigenvalues.dat`, `local_mag.dat`, `two_body_cf_xyz.dat`, and
 `two_body_cf_z+-.dat`. A killed, partial, or appended observable file is
