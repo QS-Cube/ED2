@@ -43,6 +43,12 @@ The ground state is computed using the **Lanczos method**, and the program evalu
     alongside every fixture. Numerical values and iteration counts can vary.
     The bundled example smoke tests check output production; a successful
     smoke test alone does not establish agreement with these energies.
+    `python3 tests/verify_ex9.py` checks only the archived reference file
+    shapes, finite values, sum rules and paired-output consistency. After
+    completing a fresh full ex9 calculation, use
+    `python3 tests/verify_ex9.py --actual examples/cubic_sp_HB` to compare
+    all generated energies and observables with the archived files. This is
+    not a substitute for independent solver convergence and model checks.
 
 ## Running this example
 

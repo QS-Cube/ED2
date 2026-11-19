@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 title: "ED2 (QS³-ED2): Exact Diagonalization for Quantum Spin Systems"
-message: "If you use this software, please cite it as described below."
+message: "Please cite the full Git commit used for the calculation; this repository has no tagged software release yet."
 type: software
 
 authors:
@@ -22,6 +22,3 @@ keywords:
   - many-body physics
   - computational physics
 
-version: "0.1.0"
-
-date-released: "2026-01-01"

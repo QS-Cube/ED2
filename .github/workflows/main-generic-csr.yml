@@ -49,6 +49,10 @@ jobs:
             FCFLAGS="-O2 -fopenmp"
           make -j2
           make check
+      - name: Verify unreleased citation metadata and archived ex9 output integrity
+        run: |
+          python3 -B tests/check_release_metadata.py
+          python3 -B tests/verify_ex9.py
       - name: Independent spin-matrix physics and guarded solver cases
         run: |
           for threads in 1 4; do

@@ -26,11 +26,13 @@ the build log and compiler flags with the calculation results.
 
 The repository's [CITATION.cff](https://github.com/QS-Cube/ED2/blob/main/CITATION.cff)
 contains the software title and contributor metadata for citation tools.
-Its version and release-date fields must not be used as substitutes for
-the source commit: they do not establish that a particular `main` checkout
-is a tagged release. In particular, the CSR changes merged in November
-2026 are identified by their commits and are not implied by an older
-version string.
+Because no tagged release has been issued, `CITATION.cff` deliberately
+omits the release-specific `version` and `date-released` fields. Before
+this correction it contained a historical `0.1.0` version and an unverified
+`2026-01-01` release date; those values did not identify a Git release.
+The `AC_INIT` version `1.0.0` in `configure.ac` is currently a historical
+Autotools **package identifier**, not evidence of a `v1.0.0` tag. Until
+an actual version is approved and issued, cite the exact source commit.
 
 ## Tags, releases, and documentation versions
 
@@ -68,6 +70,12 @@ Names such as `v1.0.0` are examples of this scheme, not claims that those
 releases exist. A release should identify a frozen source commit, matching
 documentation, validation results, and an archive. A merge to `main` alone
 does not complete that process.
+
+For the full release gate, including the expensive cubic benchmark, see
+[Release qualification and ex9 validation](release-qualification.md).
+Check development metadata using `python3 tests/check_release_metadata.py`;
+a future release must explicitly set the agreed package and citation version
+and the real release date before tagging.
 
 ## Archival software DOI and article citation
 

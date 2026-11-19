@@ -61,6 +61,7 @@ nav:
       - Overview: theory/algorithms.md
   - Reference:
       - Citation & Versioning: reference/citation-versioning.md
+      - Release qualification: reference/release-qualification.md
   - Development notes:
       - Complex CSR implementation: development/generic-complex-csr-main.md
       - Typed BLAS/LAPACK interfaces: development/typed-blas-lapack-main.md

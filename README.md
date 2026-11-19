@@ -105,7 +105,14 @@ python3 tests/audit_physics_regression.py \
 Use a new output directory and retain `summary.json` and the case logs. These
 checks cover the tested cases, not all possible inputs. The unqualified
 `make check-long` additionally runs ex9, a 1000-site cubic three-magnon
-calculation that requires separate resource planning.
+calculation that requires separate resource planning. The archived output
+format can be validated quickly with `python3 tests/verify_ex9.py`; this
+**does not run ex9**. To check an independently completed HPC run, use
+`python3 tests/verify_ex9.py --actual examples/cubic_sp_HB` and retain the
+full runtime log. Inside an authorized compute-node allocation, use
+`sh tests/run_ex9_reproducibility.sh` from a fresh checkout to capture logs,
+verify both correlation files, and archive input/output checksums.
+See [release qualification](docs/reference/release-qualification.md).
 
 For bounds-checked wavefunction I/O, site-magnetization output for multiple
 vectors, and basis-allocation checks, a separate runner needs only Python's
@@ -148,9 +155,12 @@ conditions and verify solver convergence for their calculation.
 Retain the source commit and any local changes, compiler/version/flags,
 BLAS/LAPACK backend, thread settings, complete input files, solver diagnostics,
 and reference-check results. Consult
-[citation and versioning](docs/reference/citation-versioning.md) and
+[citation and versioning](docs/reference/citation-versioning.md),
+[release qualification](docs/reference/release-qualification.md), and
 [CITATION.cff](CITATION.cff). Until a versioned archival DOI is available, cite
-the repository with the full commit hash used for the calculation.
+the repository with the full commit hash used for the calculation. No GitHub
+release is implied by the historical `AC_INIT` package number; the CFF file
+intentionally omits release-specific version/date metadata until tagging.
 
 ## License and maintainers
 
