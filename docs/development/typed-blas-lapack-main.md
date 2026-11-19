@@ -1,5 +1,12 @@
 # Mainline ED2 explicit BLAS/LAPACK interfaces — compiler portability
 
+> **Upstream integration (19 November 2026):** The general ED2
+> functionality documented here is included in `QS-Cube/ED2:main` through
+> [PR #1](https://github.com/QS-Cube/ED2/pull/1). Branch names, PR numbers,
+> and local measurements below document the development and verification
+> history; they do not establish a separately tagged release or a
+> measured reduction in whole-process peak RSS.
+
 **Scope:** General ED2 implementation, independent of cubic point-group
 optimizations and of the optional complex CSR cache. This change is not
 a solver rewrite. It makes the intended Fortran LP64 ABI explicit and
