@@ -2,9 +2,7 @@ name: ED2 original-main complex CSR and typed BLAS/LAPACK proof
 
 on:
   push:
-    branches:
-      - codex/ed2-main-complex-csr
-      - codex/ed2-main-typed-blas-lapack
+    branches: [main]
     paths:
       - "source/ham2vec.f90"
       - "source/eigen_solver.f90"
