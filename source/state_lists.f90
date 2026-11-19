@@ -178,20 +178,42 @@ contains
     use input_param, only: NODmax,NODmin,rk1,rk2,rk3,rk4,rk5,rk6,THS,NOS,list_s,list_r,&
       L1,L2,L3,L4,L5,L6
     use omp_lib
-    integer :: dim, a, i, j
+    use iso_fortran_env, only: int64
+    integer :: dim, a, i, j, period, new_capacity, alloc_status
+    integer(int64) :: estimated_capacity
     real(8) :: r
     integer :: num = 1
     real(8), allocatable :: tmp_list_r(:)
     integer, allocatable :: order(:)
     real(8), allocatable :: tmp_list_r_pre(:)
     integer, allocatable :: list_s_pre(:)
+    integer, allocatable :: grown_s(:)
+    real(8), allocatable :: grown_r(:)
     num = omp_get_max_threads()
     write(*,*) "********************"
     write(*,*) "max_threads", num
     write(*,*) "********************"
     !
-    dim = max(2*THS/(L1*L2*L3*L4*L5*L6),10000)
-    allocate(list_s_pre(dim),tmp_list_r_pre(dim))
+    if(THS<1)error stop 'Representative construction requires a nonempty space'
+    ! The group-size estimate is only an initial capacity: stabilizers and
+    ! dependent generators can leave many more representatives than it predicts.
+    ! Divide sequentially in int64 to avoid overflowing an intermediate product.
+    estimated_capacity=2_int64*int(THS,int64)
+    do j=1,6
+      select case(j)
+      case(1); period=L1
+      case(2); period=L2
+      case(3); period=L3
+      case(4); period=L4
+      case(5); period=L5
+      case(6); period=L6
+      end select
+      if(period<1)error stop 'Symmetry periods must be positive'
+      estimated_capacity=estimated_capacity/int(period,int64)
+    end do
+    dim=int(min(int(THS,int64),max(estimated_capacity,10000_int64)))
+    allocate(list_s_pre(dim),tmp_list_r_pre(dim),stat=alloc_status)
+    if(alloc_status/=0)error stop 'Representative workspace allocation failed'
     write(*,'(" ### Count # of representative states. ")')
     a = 0
     !$omp parallel
@@ -201,6 +223,19 @@ contains
         call checkstate_SQ(i,r,NODmax,NODmin,rk1,rk2,rk3,rk4,rk5,rk6)
         if(r>1.0d-15) then
           !$omp critical
+          ! All accesses to these temporary arrays occur under this lock;
+          ! readers below run only after the parallel-region barrier.
+          if(a==dim)then
+            new_capacity=int(min(int(THS,int64),2_int64*int(dim,int64)))
+            if(new_capacity<=dim)error stop 'Representative count exceeds the input space'
+            allocate(grown_s(new_capacity),grown_r(new_capacity),stat=alloc_status)
+            if(alloc_status/=0)error stop 'Representative workspace growth failed'
+            grown_s(1:a)=list_s_pre(1:a)
+            grown_r(1:a)=tmp_list_r_pre(1:a)
+            call move_alloc(grown_s,list_s_pre)
+            call move_alloc(grown_r,tmp_list_r_pre)
+            dim=new_capacity
+          end if
           a = a + 1
           list_s_pre(a) = i
           tmp_list_r_pre(a) = r
@@ -225,7 +260,7 @@ contains
     ! !$omp end do
     ! !$omp end parallel
 
-    if(a==0) stop 'THS = 0.'
+    if(a==0)error stop 'THS = 0: the requested symmetry sector is empty'
 
     !
     write(*,'(" ### Allocate work arrays for lists. ")')

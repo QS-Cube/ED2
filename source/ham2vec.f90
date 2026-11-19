@@ -107,9 +107,9 @@ contains
 
   subroutine coefficient_certified_cache_width(width)
     use iso_fortran_env, only: int64
-    use input_param, only: NO_one,NO_two,p_one,hvec,Jint
+    use input_param, only: NO_one,NO_two,hvec,Jint
     integer, intent(out) :: width
-    integer :: j,i1
+    integer :: j
     integer(int64) :: upper
     complex(8) :: c
     ! Each physical one-site and two-site operator can contribute at most
@@ -117,10 +117,9 @@ contains
     ! Exactly repeat the coefficient tests in make_wk_loc_and_ele.
     upper=1_int64 ! required diagonal record
     do j=1,NO_one
-      i1=p_one(j)
-      c=0.5d0*(hvec(1,i1)+zi*hvec(2,i1))
+      c=0.5d0*(hvec(1,j)+zi*hvec(2,j))
       if(abs(c)>eps) upper=upper+1_int64
-      c=0.5d0*(hvec(1,i1)-zi*hvec(2,i1))
+      c=0.5d0*(hvec(1,j)-zi*hvec(2,j))
       if(abs(c)>eps) upper=upper+1_int64
     end do
     do j=1,NO_two
@@ -327,15 +326,15 @@ contains
       do j = 1, NO_one
         i1 = p_one(j)
         n1 = count(st_list == i1)
-        wk_ele(1,ib) = wk_ele(1,ib) + hvec(3,i1) * (local_spin(i1)-n1)
+        wk_ele(1,ib) = wk_ele(1,ib) + hvec(3,j) * (local_spin(i1)-n1)
         ! - term
-        c = 0.5d0 * ( hvec(1,i1) + zi * hvec(2,i1) )
+        c = 0.5d0 * ( hvec(1,j) + zi * hvec(2,j) )
         if(n0 < dN .and. n1>0 .and. abs(c) > eps)then
           ni = a_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
-            if(jd > wk_dim1) stop "MNTE is too small!!"
+            if(jd > wk_dim1) error stop "MNTE is too small!!"
             wk_loc(jd,ib) = id
             wk_ele(jd,ib) = c &
               * sqrt((2.0d0*local_spin(i1)-n1+1)*n1) * list_r(id) / list_r(i) &
@@ -344,13 +343,13 @@ contains
           end if
         end if
         ! + term
-        c = 0.5d0 * ( hvec(1,i1) - zi * hvec(2,i1) )
+        c = 0.5d0 * ( hvec(1,j) - zi * hvec(2,j) )
         if( n0>0 .and. n1<local_NODmax(i1) .and. abs(c) > eps )then
           ni = c_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
           call findstate(s,list_s,id,lv)
           if(id > 0)then
-            if(jd > wk_dim1) stop "MNTE is too small!!"
+            if(jd > wk_dim1) error stop "MNTE is too small!!"
             wk_loc(jd,ib) = id
             wk_ele(jd,ib) = c &
               * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)) &
@@ -377,7 +376,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              if(jd > wk_dim1) stop "MNTE is too small!!"
+              if(jd > wk_dim1) error stop "MNTE is too small!!"
               wk_loc(jd,ib) = id
               wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1)*(local_spin(i2)-n2) &
@@ -393,7 +392,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              if(jd > wk_dim1) stop "MNTE is too small!!"
+              if(jd > wk_dim1) error stop "MNTE is too small!!"
               wk_loc(jd,ib) = id
               wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(2.0d0*local_spin(i2)-n2+1)*n2) &
@@ -409,7 +408,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              if(jd > wk_dim1) stop "MNTE is too small!!"
+              if(jd > wk_dim1) error stop "MNTE is too small!!"
               wk_loc(jd,ib) = id
               wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i1)-n1+1)*n1*(n2+1)*(2.0d0*local_spin(i2)-n2) ) &
@@ -427,7 +426,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              if(jd > wk_dim1) stop "MNTE is too small!!"
+              if(jd > wk_dim1) error stop "MNTE is too small!!"
               wk_loc(jd,ib) = id
               wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2)*(local_spin(i1)-n1) &
@@ -443,7 +442,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              if(jd > wk_dim1) stop "MNTE is too small!!"
+              if(jd > wk_dim1) error stop "MNTE is too small!!"
               wk_loc(jd,ib) = id
               wk_ele(jd,ib) = c &
                 * sqrt((2.0d0*local_spin(i2)-n2+1)*n2*(n1+1)*(2.0d0*local_spin(i1)-n1) ) &
@@ -461,7 +460,7 @@ contains
             call representative_SQ(NODmax,s,ell,ni)
             call findstate(s,list_s,id,lv)
             if(id > 0)then
-              if(jd > wk_dim1) stop "MNTE is too small!!"
+              if(jd > wk_dim1) error stop "MNTE is too small!!"
               wk_loc(jd,ib) = id
               wk_ele(jd,ib) = c &
                 * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1))*(local_spin(i2)-n2) &
@@ -478,7 +477,7 @@ contains
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
-                if(jd > wk_dim1) stop "MNTE is too small!!"
+                if(jd > wk_dim1) error stop "MNTE is too small!!"
                 wk_loc(jd,ib) = id
                 wk_ele(jd,ib) = c &
                   * sqrt((n2+1)*(2.0d0*local_spin(i2)-n2))*(local_spin(i1)-n1) &
@@ -494,7 +493,7 @@ contains
               call representative_SQ(NODmax,s,ell,ni)
               call findstate(s,list_s,id,lv)
               if(id > 0)then
-                if(jd > wk_dim1) stop "MNTE is too small!!"
+                if(jd > wk_dim1) error stop "MNTE is too small!!"
                 wk_loc(jd,ib) = id
                 wk_ele(jd,ib) = c &
                   * sqrt((n1+1)*(2.0d0*local_spin(i1)-n1)*(n2+1)*(2.0d0*local_spin(i2)-n2)) &
@@ -508,7 +507,7 @@ contains
         !
       end do
       !
-      if(jd > max_jd) max_jd = jd
+      if(jd > batch_max) batch_max = jd
     end do
 
     end subroutine fill_cache_batch
@@ -537,9 +536,9 @@ contains
       do j = 1, NO_one
         i1 = p_one(j)
         n1 = count(st_list == i1)
-        Ham(i,i) = Ham(i,i) + hvec(3,i1) * (local_spin(i1)-n1)
+        Ham(i,i) = Ham(i,i) + hvec(3,j) * (local_spin(i1)-n1)
         ! - term
-        c = 0.5d0 * ( hvec(1,i1) + zi * hvec(2,i1) )
+        c = 0.5d0 * ( hvec(1,j) + zi * hvec(2,j) )
         if(n1>0 .and. n0 < dN .and. abs(c) > eps)then
           ni = a_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
@@ -552,7 +551,7 @@ contains
           end if
         end if
         ! + term
-        c = 0.5d0 * ( hvec(1,i1) - zi * hvec(2,i1) )
+        c = 0.5d0 * ( hvec(1,j) - zi * hvec(2,j) )
         if( n0 > 0 .and. n1<local_NODmax(i1) .and. abs(c) > eps )then
           ni = c_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
@@ -754,9 +753,9 @@ contains
       do j = 1, NO_one
         i1 = p_one(j)
         n1 = count(st_list == i1)
-        v0(i) = v0(i) + hvec(3,i1) * (local_spin(i1)-n1) * v1(i)
+        v0(i) = v0(i) + hvec(3,j) * (local_spin(i1)-n1) * v1(i)
         ! - term
-        c = 0.5d0 * ( hvec(1,i1) + zi * hvec(2,i1) )
+        c = 0.5d0 * ( hvec(1,j) + zi * hvec(2,j) )
         if(n0 < dN .and. n1>0 .and. abs(c) > eps)then
           ni = a_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
@@ -768,7 +767,7 @@ contains
           end if
         end if
         ! + term
-        c = 0.5d0 * ( hvec(1,i1) - zi * hvec(2,i1) )
+        c = 0.5d0 * ( hvec(1,j) - zi * hvec(2,j) )
         if( n0>0 .and. n1<local_NODmax(i1) .and. abs(c) > eps )then
           ni = c_down_spin(i1,st_list,NODmax)
           call representative_SQ(NODmax,s,ell,ni)
@@ -982,7 +981,7 @@ contains
   subroutine calcu_cf(v1,lv,NODmax,NODmin,expe_cf,p_two_cf)
     use state_lists, only: list_fly,a_down_spin,representative_SQ,findstate,a2_down_spin,&
       j_flip_ni,c_down_spin,c2_down_spin
-    use input_param, only: local_spin,NOS,list_s,L1,L2,L3,explist,list_r,local_NODmax
+    use input_param, only: local_spin,NOS,list_s,L1,L2,L3,L4,L5,L6,explist,list_r,local_NODmax
     implicit none
     integer, intent(in) :: lv, NODmax, NODmin
     complex(8), intent(in) :: v1(lv)
@@ -992,7 +991,7 @@ contains
     complex(8) :: expval(3,3)
     integer, allocatable :: ni(:), st_list(:), p_two(:,:)
     logical, allocatable :: fswap(:)
-    V = L1*L2*L3
+    V = L1*L2*L3*L4*L5*L6
     allocate(ni(NODmax), st_list(NODmax),p_two(2,V),fswap(V))
     !
     expval = 0.0d0
@@ -1143,26 +1142,36 @@ contains
     end subroutine get_a_b
     !
     subroutine mk_p_two_and_fswap
-      use input_param, only: L1, L2, L3, shift_1, shift_2, shift_3
+      use input_param, only: L1,L2,L3,L4,L5,L6, &
+        shift_1,shift_2,shift_3,shift_4,shift_5,shift_6
       implicit none
-      integer :: i, j, k, t
+      integer :: i1,i2,i3,i4,i5,i6,t
       integer :: pp_two(2)
       t = 0
       pp_two(1:2) = p_two_cf(1:2)
-      do k = 1, L3
-        pp_two(:) = shift_3(pp_two(:))
-        do j = 1, L2
-          pp_two(:) = shift_2(pp_two(:))
-          do i = 1, L1
-            pp_two(:) = shift_1(pp_two(:))
-            t = t + 1
-            if(pp_two(1) < pp_two(2))then
-              p_two(1:2,t) = pp_two(1:2)
-              fswap(t) = .false.
-            else
-              p_two(1:2,t) = pp_two(2:1:-1)
-              fswap(t) = .true.
-            end if
+      do i6 = 1, L6
+        pp_two(:) = shift_6(pp_two(:))
+        do i5 = 1, L5
+          pp_two(:) = shift_5(pp_two(:))
+          do i4 = 1, L4
+            pp_two(:) = shift_4(pp_two(:))
+            do i3 = 1, L3
+              pp_two(:) = shift_3(pp_two(:))
+              do i2 = 1, L2
+                pp_two(:) = shift_2(pp_two(:))
+                do i1 = 1, L1
+                  pp_two(:) = shift_1(pp_two(:))
+                  t = t + 1
+                  if(pp_two(1) < pp_two(2))then
+                    p_two(1:2,t) = pp_two(1:2)
+                    fswap(t) = .false.
+                  else
+                    p_two(1:2,t) = pp_two(2:1:-1)
+                    fswap(t) = .true.
+                  end if
+                end do
+              end do
+            end do
           end do
         end do
       end do
