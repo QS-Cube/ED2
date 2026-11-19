@@ -65,6 +65,7 @@ sh tests/run_ex9_reproducibility.sh
 # If you already have a completed full run, compare it independently:
 python3 tests/verify_ex9.py \
   --actual examples/cubic_sp_HB \
+  --legacy-ex9-symmetry-projection \
   --json-out ex9-comparison.json
 ```
 
@@ -86,9 +87,10 @@ The comparison verifies all of the following:
   transverse one-site magnetizations, and total
   \(\sum_i\langle S_i^z\rangle=1000/2-3=497\);
 - agreement between the Cartesian and ladder correlator output formats;
-- absolute differences from all archived reference values, with default
-  tolerances `1e-7` for energy and `1e-5` for observables (record any
-  scientifically justified tolerance changes).
+- absolute differences from archived reference values (energy tolerance
+  `1e-7`, observable tolerance `1e-8`). The legacy ladder +-/-+ entries
+  require the explicitly enabled real/even-reflection projection, while
+  both the raw and symmetry-projected differences remain reported.
 
 Use `python3 tests/verify_ex9.py` without `--actual` to check **only the
 archived reference fixture**. That fast check is suitable for CI, but it
@@ -101,3 +103,58 @@ If the full calculation is too slow, record the timed-out stage separately.
 Optimize or parallelize the pair-correlation measurement only with
 corresponding small-system independent-operator tests; do not change the
 scientific benchmark or skip `cal_cf=1` merely to obtain a green check.
+
+## Completed two-environment ex9 audit (19 November 2026)
+
+Full ex9 calculations were completed with unchanged numerical source from
+official main commit `63f81c198df6adfa992932e1b7c7fa5c359c8c43`.
+The GitHub Actions audit checkout `035d81fa225e2cf362199f3e4b8d1a10a3da4ef2`
+differs from main **only** by the audit workflow. Both executions used
+GNU Fortran 14, `-O2 -fopenmp`, two OpenMP threads, one BLAS thread and
+the supplied 1000-site/three-magnon input:
+
+- Ubuntu 24.04, LP64 OpenBLAS/LAPACK:
+  [full ex9 evidence run #44514651378](https://github.com/ueda1984/ED2/actions/runs/44514651378),
+  6:50.75 wall-clock elapsed, 140 Lanczos steps;
+- Debian/GNU Fortran 14.2, system LP64 BLAS/LAPACK:
+  9:45.04 wall-clock elapsed; independently rebuilt from the same archived
+  source snapshot.
+
+The first run produced all four numerical output files but its historical
+**raw** ladder comparison failed. This is a genuine archived-fixture
+inconsistency, **not** an incomplete ex9 calculation. The previous
+`calcu_cf` averaged only translation generators 1--3, omitting reflection
+generators 4--6. The historical `two_body_cf_z+-.dat` consequently violates
+the operator-adjoint identity
+`<S^-_i S^+_j> = conj(<S^+_i S^-_j>)`
+by as much as `2.7829938541e-5`. For the real, zero-momentum and
+even-reflection ex9 state, these values must moreover be equal and real.
+
+The corrected implementation produces Hermitian, real, pair-exchange
+symmetric ladder correlations. The historical two channels are projected
+**for comparison only** to their common real arithmetic mean, with
+imaginary parts set to zero; all historical archive files remain untouched.
+The explicit CLI flag
+`--legacy-ex9-symmetry-projection` enables this *ex9-specific* projection,
+and always records the unsymmetrized raw discrepancy.
+
+| Full output comparison | Maximum absolute discrepancy |
+| --- | ---: |
+| Ubuntu vs Debian: energy | `6.82e-13` |
+| Ubuntu vs Debian: all 1000 local magnetizations | `2.07e-12` |
+| Ubuntu vs Debian: Cartesian correlations (9 pairs) | `4.66e-12` |
+| Ubuntu vs Debian: ladder correlations (9 pairs) | `9.32e-12` |
+| Ubuntu vs raw historical ladder archive | `1.39150e-5` |
+| Ubuntu vs **symmetry-projected** historical ladder | `1.89112e-11` |
+| Debian vs symmetry-projected historical ladder | `9.59420e-12` |
+
+The matched energy is `736.7224213680655` (sector-specific);
+`sum_i <S^z_i>=497`. The new runs are independent builds/environments of
+the same code, **not** independent algorithms or independent verification
+of every Hamiltonian term. They resolve the ex9 benchmark reproduction
+question with the historical reference discrepancy explicitly documented.
+
+The former `examples/ref_data/cubic_sp_HB` directory remains a historical
+fixture. Do not overwrite or silently loosen comparisons to make it
+appear to match. A future immutable release should separately archive
+the newly computed outputs, build logs and source checksums.

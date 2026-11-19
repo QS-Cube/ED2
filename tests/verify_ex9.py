@@ -59,6 +59,26 @@ def cartesian_from_ladder(row):
     ]
 
 
+def zpm_hermiticity_gap(rows):
+    # For distinct sites, (S^-_i S^+_j)^dag = S^+_i S^-_j.
+    return max(abs(complex(row[12], row[13]) -
+                   complex(row[16], -row[17])) for row in rows)
+
+
+def symmetrize_historical_zpm(row):
+    # EX9 ONLY: the real k=0, even-reflection state has equal real
+    # +- and -+ channels. The old archive included translations but
+    # omitted reflection generators in the correlation average.
+    # Preserve the unmodified archive and project only these channels.
+    result = list(row)
+    symmetric = 0.5 * (row[12] + row[16])
+    result[12] = symmetric
+    result[16] = symmetric
+    result[13] = 0.0
+    result[17] = 0.0
+    return result
+
+
 def check_physics(data, tolerance=2e-7):
     energy, mag, xyz, zpm = (data[k] for k in ("energy", "mag", "xyz", "zpm"))
     if energy[0][0] != 1:
@@ -86,20 +106,33 @@ def check_physics(data, tolerance=2e-7):
     if largest_identity_error > tolerance:
         raise ValueError(f"Ladder/Cartesian consistency discrepancy {largest_identity_error}")
     return {"ground_energy": energy[0][1], "total_Sz": sz,
-            "max_ladder_cartesian_error": largest_identity_error}
+            "max_ladder_cartesian_error": largest_identity_error,
+            "max_ladder_hermiticity_gap": zpm_hermiticity_gap(zpm)}
 
 
-def compare(actual, reference, energy_atol, observable_atol):
+def compare(actual, reference, energy_atol, observable_atol,
+            legacy_ex9_projection=False):
     differences = {}
     for name in TABLES:
         start = 1 if name in ("energy", "mag") else 2
+        raw_error = max(abs(a[k] - b[k])
+                        for a, b in zip(actual[name], reference[name])
+                        for k in range(start, len(a)))
+        comparison_ref = (list(map(symmetrize_historical_zpm, reference[name]))
+                          if name == "zpm" and legacy_ex9_projection
+                          else reference[name])
         error = max(abs(a[k] - b[k])
-                    for a, b in zip(actual[name], reference[name])
+                    for a, b in zip(actual[name], comparison_ref)
                     for k in range(start, len(a)))
         limit = energy_atol if name == "energy" else observable_atol
-        differences[name] = {"max_abs_error": error, "atol": limit}
+        differences[name] = {"max_abs_error": error, "raw_max_abs_error": raw_error,
+                             "atol": limit,
+                             "historical_symmetry_projection":
+                             name == "zpm" and legacy_ex9_projection}
         if error > limit:
-            raise ValueError(f"{name}: computed/archive difference {error} exceeds {limit}")
+            raise ValueError(f"{name}: computed/reference difference {error} exceeds {limit}"
+                             + (" after historical symmetry projection"
+                                if name == "zpm" and legacy_ex9_projection else ""))
     return differences
 
 
@@ -111,7 +144,10 @@ def main():
     parser.add_argument("--actual", type=Path,
                         help="Completed ex9 output directory; omit for archive-only validation")
     parser.add_argument("--energy-atol", type=float, default=1e-7)
-    parser.add_argument("--observable-atol", type=float, default=1e-5)
+    parser.add_argument("--observable-atol", type=float, default=1e-8)
+    parser.add_argument("--legacy-ex9-symmetry-projection", action="store_true",
+                        help="Compare to the historical ladder archive after the "
+                             "exact real even-reflection projection; report raw differences")
     parser.add_argument("--json-out", type=Path)
     args = parser.parse_args()
     report = {"mode": "archive_only", "reference": str(args.reference.resolve())}
@@ -126,7 +162,16 @@ def main():
             report["mode"] = "computed_vs_archive"
             report["actual"] = str(args.actual.resolve())
             report["observed_checks"] = check_physics(observed)
-            report["comparison"] = compare(observed, ref, args.energy_atol, args.observable_atol)
+            if report["observed_checks"]["max_ladder_hermiticity_gap"] > 1e-8:
+                raise ValueError("Fresh ex9 violates ladder-operator Hermiticity")
+            if args.legacy_ex9_symmetry_projection:
+                # Pair-exchange symmetry plus Hermiticity makes these channels real.
+                if max(abs(row[k]) for row in observed["zpm"]
+                       for k in (13, 17)) > 1e-8:
+                    raise ValueError("Fresh ex9 violates real even-reflection sector")
+            report["comparison"] = compare(
+                observed, ref, args.energy_atol, args.observable_atol,
+                legacy_ex9_projection=args.legacy_ex9_symmetry_projection)
         report["status"] = "PASS"
     except (OSError, ValueError) as error:
         report.update(status="FAIL", error=str(error))
