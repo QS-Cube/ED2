@@ -74,6 +74,10 @@ program main
     else
       write(*,'(" ### Read input_TRLan. ")')
       call read_input_TRLan
+      ! Observables below always use the first supplied vector as the ground state.
+      ! A restart beginning at an excited-state index would silently relabel it.
+      if((cal_lm==1.or.cal_cf==1).and.i_vec_min/=1) &
+        error stop 'TRLan restart observables require i_vec_min=1'
       !
       write(*,'(" ### Read wavefunctions. ")')
       call read_wf(THS,i_vec_min,i_vec_max,NOE)

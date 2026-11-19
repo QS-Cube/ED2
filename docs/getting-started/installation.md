@@ -1,181 +1,79 @@
 # Installation Guide
 
-This page provides a **practical, command‑oriented installation guide** for QS³‑ED2.
-Conceptual overview, design philosophy, and citation information are documented on the main documentation home page.
-
-This guide focuses strictly on:
-
-- Building the code
-- Verifying the build
-- Running examples
-- Ensuring reproducibility on HPC systems
-
----
+Build ED2 from a clean source checkout, then validate the executable on small
+inputs before using a larger model. The commands below use GNU Fortran and
+LP64 BLAS/LAPACK on Linux.
 
 ## 1. Requirements
 
-### Required
+A Git checkout needs:
 
-- Fortran compiler (tested with `ifort`, `gfortran`)
-- BLAS / LAPACK
-  - OpenBLAS (preferred)
-  - Intel MKL (automatic fallback supported)
-- GNU Make
-- POSIX shell
+- Git and a POSIX shell;
+- a C compiler, GNU Make, GNU Autoconf (2.69 or later), and Automake;
+- GNU Fortran with OpenMP support;
+- development libraries for LP64 BLAS and LAPACK.
 
-### Optional (recommended for HPC)
+The C compiler is required by `configure` even though the numerical solver is
+Fortran. On Debian/Ubuntu, the following packages supply these prerequisites:
 
-- Intel MKL
-- Environment modules
+```bash
+sudo apt-get update
+sudo apt-get install git build-essential gfortran autoconf automake libopenblas-dev liblapack-dev
+```
 
----
+On a managed cluster, use the corresponding compiler and BLAS/LAPACK modules
+provided by the administrator. Record the selected module versions.
 
-## 2. Obtain the Source
+The 19 November 2026 audit built a clean checkout on Debian 13 with GNU
+Fortran 14.2 and the system LP64 BLAS/LAPACK libraries. The existing CI also
+exercises GNU Fortran 13 and 14 on Ubuntu 24.04. This does not establish that
+every compiler, operating system, or BLAS variant is supported.
+
+The configure script has a legacy `ifort` path, including an MKL option. That
+path was not executed in this audit. `ifx` is not in the automatic compiler
+search and has no dedicated default-flag/MKL branch here; do not infer support
+by substituting its name in the GNU commands. The explicit Fortran interfaces
+require **LP64** integer arguments; ILP64 BLAS/LAPACK is not supported by these
+interfaces.
+
+## 2. Obtain and build the source
 
 ```bash
 git clone https://github.com/QS-Cube/ED2.git
 cd ED2
-```
-
-If building from a fresh Git checkout:
-
-```bash
+git rev-parse HEAD
 autoreconf -vfi
+./configure FC=gfortran FCFLAGS="-O2 -fopenmp"
+make -j2
 ```
 
----
+Record the printed commit hash. `main` can change after the checkout was
+created. These commands build `source/QS3ED2` and the `mk_input` helper in each
+`script_*` directory. The helpers are needed to generate the supplied examples.
+Running `make` alone does not install the executable into a directory on `PATH`.
 
-## 3. Configure
+The explicit `-O2 -fopenmp` flags are the reproducibility-oriented starting
+point used by the strict cache-equivalence tests. Omitting `FCFLAGS` with a
+recognized GNU compiler selects the historical `-Ofast -fopenmp` defaults.
+`-Ofast` allows floating-point reassociation, so bitwise agreement between
+cache layouts is not guaranteed. See [Performance and memory](../user-guide/performance-and-memory.md).
 
-### Basic
+### BLAS/LAPACK selection
 
-```bash
-./configure
-```
+For the default `--with-lapack=lapack` configuration, `configure` searches for
+BLAS in this order: `-lopenblas`, `-lblas`, then `-lf77blas`. It separately
+checks `-llapack`. Only when an `ifort` compiler is selected and those BLAS
+checks fail does it attempt the MKL fallback `-qmkl=parallel`.
 
-or explicitly specify compiler:
+The explicit `--with-lapack=mkl` path currently accepts `FC=ifort` only.
+Installing a library or setting `LIBS` does not prove that its ABI or all
+required symbols match. Check `config.log`, the final link command, and the
+runtime tests. For libraries outside standard search paths, supply the
+appropriate `LDFLAGS` and module environment and retain the resulting log.
 
-```bash
-./configure FC=gfortran
-# or
-./configure FC=ifort
-```
+## 3. Set threads before running tests
 
-### BLAS / LAPACK detection
-
-The configure script attempts, in order:
-
-1. OpenBLAS
-2. Generic BLAS / LAPACK
-3. Intel MKL (`-qmkl=parallel`)
-
-Manual override examples:
-
-```bash
-./configure LIBS="-lopenblas"
-```
-
-```bash
-./configure LIBS="-qmkl=parallel"
-```
-
----
-
-## 4. Build
-
-```bash
-make -j
-```
-
-This produces:
-
-```
-source/QS3ED2
-```
-
-Important design choices:
-
-- The executable is **not installed into PATH**
-- Example scripts locate the binary explicitly
-- No recompilation occurs inside example runs
-
-This avoids environment‑dependent execution failures on HPC systems.
-
----
-
-## 5. Regression Tests
-
-### Lightweight smoke test
-
-```bash
-make check
-```
-
-Runs Example 1 only.
-Intended for:
-
-- CI
-- quick validation
-
-!!! warning "Heavy regression case"
-
-    `make check-long` runs the historical ex1–ex9
-    examples. The final ex9 is a large 1000-site
-    three-magnon workload, intended for systems with
-    sufficient CPU resources. On an ordinary workstation,
-    first run `make check` and the ex1–ex8 subset, then
-    schedule ex9 on suitable resources if needed.
-
-### Extended regression suite
-
-```bash
-make check-long
-```
-
-Runs Examples 1–9 sequentially.
-
-Recommended for:
-
-- new clusters
-- compiler changes
-- BLAS / MKL changes
-
----
-
-## 6. Running Examples Manually
-
-Example:
-
-```bash
-cd script_chain
-./run.sh
-```
-
-All example scripts:
-
-- use the already built executable
-- never recompile sources
-- never rely on PATH
-- accept explicit override via `ED2_EXE`
-
-Example:
-
-```bash
-ED2_EXE=../source/QS3ED2 ./run.sh
-```
-
-Helper programs (`mk_input`) are built at `make` time and executed directly by scripts.
-
----
-
-## 7. Thread Control (IMPORTANT)
-
-QS³‑ED2 uses:
-
-- OpenMP in the main solver
-- threaded BLAS / LAPACK
-
-To avoid nested parallelism:
+Use one OpenMP thread and one BLAS thread for the first validation:
 
 ```bash
 export OMP_NUM_THREADS=1
@@ -183,87 +81,145 @@ export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 ```
 
-Users may tune these for benchmarking.
+For later timing experiments, change `OMP_NUM_THREADS` deliberately and keep
+the BLAS thread count under control. Record both settings; nested threading
+can change runtime substantially.
 
----
+## 4. Run the smoke and example checks
 
-## 8. Reproducibility Checklist
-
-For numerical reproducibility, record:
-
-- compiler name and version
-- BLAS / LAPACK implementation and version
-- OpenMP thread count
-- BLAS thread count
-- success of `make check` and `make check-long`
-
-Floating‑point roundoff may vary across systems, but physical observables should remain consistent within numerical precision.
-
----
-
-## 9. Cleaning
+From the repository root:
 
 ```bash
-make clean
+make check
 ```
 
-Remove configuration:
+Expected harness output includes `PASS: test_ex1.sh`. This runs the chain
+example in a temporary directory, checks that the requested output files are
+nonempty, and validates every nonblank row of `eigenvalues.dat`: exactly two
+columns, a positive integer state index, and finite-number energy syntax.
+Malformed rows, including `NaN`, `Inf`, and overflow asterisks, fail this
+check. The temporary results are removed afterward. Despite the helper
+filename `test_common_strict.sh`, this is **not a comparison against reference
+energies or a proof of solver convergence**.
+
+Run the CPU-feasible historical examples separately:
 
 ```bash
-make distclean
+make -C tests check-long \
+  LONG_TESTS="test_ex1.sh test_ex2.sh test_ex3.sh test_ex4.sh test_ex5.sh test_ex6.sh test_ex7.sh test_ex8.sh"
 ```
 
----
+These scripts populate the corresponding `examples/` directories. The
+long-test wrapper performs the same energy-row syntax checks and reports
+`E0` from the second column of the first row. Column 1 is the state index;
+column 2 is the energy. These execution and format checks do not compare
+physical reference values. Inspect the actual energies, solver diagnostics,
+and applicable independent references.
 
-## 10. Installation (Optional)
+!!! warning "The complete suite includes an HPC workload"
 
-Installation is not required for normal usage.
+    `make check-long` includes ex9 (`cubic_sp_HB`): a 1000-site cubic model
+    in a three-magnon sector. Treat it as a separate resource-dependent
+    calculation, not an installation smoke test. Read the
+    [ex9 page](../examples/cubic_sp_HB.md) before scheduling it.
 
-If desired:
+### Independent small-system physics checks
+
+The additional audit regression builds spin matrices and tensor-product
+Hamiltonians independently with NumPy, then compares ED2 energies,
+wavefunctions/residuals, and observables on small models. Python and NumPy are
+only needed for this additional test, not for building the solver:
 
 ```bash
+sudo apt-get install python3 python3-numpy
+python3 tests/audit_physics_regression.py \
+  --exe "$PWD/source/QS3ED2" \
+  --output "$PWD/physics-validation" \
+  --with-iterative --field-cache-variants
+```
+
+The output directory must not already exist; choose a new name on a later run.
+Read `physics-validation/summary.json` and preserve the per-case logs. Passing
+these cases validates their tested models and settings; it does not establish
+convergence or symmetry validity for every user input.
+
+### Bounds-checked I/O and basis checks
+
+A separate regression uses only Python's standard library and GNU Fortran:
+
+```bash
+python3 tests/audit_runtime_regression.py \
+  --fc gfortran --output "$PWD/runtime-validation"
+```
+
+It builds isolated test drivers with `-fcheck=all`, checks wavefunction
+round-trips with three and twelve saved vectors, verifies that two supplied
+states produce independent site-magnetization results with one/four threads,
+and compares representative counts against an analytical symmetry count with
+one/four threads and redundant generators. This comprises eight cases. Use an output directory that does not
+already exist, and preserve its `summary.json` and logs.
+
+## 5. Run a supplied example manually
+
+Keep the parent shell at the repository root:
+
+```bash
+(cd script_chain && ./run.sh)
+head -n 5 examples/chain/eigenvalues.dat
+```
+
+The subshell changes directory because `mk_input` reads `fort.30` from its
+working directory. Do not replace this with `./script_chain/run.sh` from an
+arbitrary directory. The script uses the already compiled solver and helper;
+it does not recompile them.
+
+Generated files are placed in `examples/chain/`, including `input.dat`,
+interaction lists, `output.dat`, `eigenvalues.dat`, and requested observable
+files. The script uses `source/QS3ED2` by default. To select another executable,
+pass an absolute path through `ED2_EXE` when invoking the script.
+
+For direct execution of a prepared input, the path from that example directory
+is two levels back to the source executable:
+
+```bash
+(cd examples/chain && ../../source/QS3ED2 < input.dat > output-rerun.dat)
+```
+
+Direct solver runs append energy and observable tables. The example script
+clears `eigenvalues.dat` but does not clear every observable file. Archive
+previous results and use a fresh output directory when independent runs are
+required; otherwise records from multiple runs can be concatenated. See
+[Outputs](../user-guide/outputs.md).
+
+## 6. Optional installation
+
+Running from the build tree is sufficient for the supplied examples. If an
+installed executable is wanted, select a writable prefix before building:
+
+```bash
+./configure FC=gfortran FCFLAGS="-O2 -fopenmp" --prefix="$PWD/local-install"
+make -j2
 make install
 ```
 
-Prefix can be set via:
+This installs `local-install/bin/QS3ED2`. It does not automatically add that
+directory to `PATH`. The example generators are `noinst_PROGRAMS`, so retain
+the source tree and built helpers when using the example scripts. Choose a
+new installation prefix if an earlier installation must be preserved.
 
-```bash
-./configure --prefix=/path/to/install
-```
+## 7. Troubleshooting and rebuilding
 
----
+| Symptom | Check |
+|---|---|
+| `autoreconf: command not found` | Install Autoconf and Automake before the first build. |
+| No acceptable C compiler | Install the C toolchain; `configure` requires it. |
+| BLAS or LAPACK not found | Install the development libraries or load the correct modules; inspect `config.log`. |
+| Missing `source/QS3ED2` or `mk_input` | Complete `make -j2` at the repository root. |
+| Missing `fort.30` | Run the script from its own `script_*` directory as shown above. |
+| Missing `examples/chain` after `make check` | The smoke test uses a disposable directory; run the example script explicitly. |
+| Outputs exist but energies look wrong | Check model signs, projection/symmetries, solver diagnostics, and the independent small-system tests. |
 
-## 11. Troubleshooting
-
-### BLAS not detected
-
-```bash
-./configure LIBS="-lopenblas"
-```
-
-or
-
-```bash
-./configure LIBS="-qmkl=parallel"
-```
-
-### OpenMP
-
-Ensure compiler supports OpenMP:
-
-- ifort: enabled by default
-- gfortran: may require `-fopenmp`
-
-### Test failures
-
-```bash
-make distclean
-autoreconf -vfi
-./configure
-make -j
-make check-long
-```
-
----
-
-This installation procedure is designed for portability, reproducibility, and HPC robustness.
+Use `make clean` to remove compiled products. Before switching compiler,
+compiler flags, or library ABI, use `make distclean`, then repeat the configure
+and build steps. Preserve input files and results separately; a clean build is
+not a substitute for checking numerical convergence.

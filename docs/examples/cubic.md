@@ -35,11 +35,36 @@ The ground state is computed using the **Lanczos method**, and the program evalu
     The numerical values shown in this document are taken from the
     reference output stored in
 
-    `examples/ref_dat/cubic/output.dat`.
+    `examples/ref_data/cubic/output.dat`.
 
-    These files are provided as reference data for documentation
-    and regression testing. The exact numerical values may vary
-    slightly depending on the compilation environment and hardware.
+    These are archived reference data, not a measurement on your current
+    build. The original compiler, flags, and hardware are not recorded
+    alongside every fixture. Numerical values and iteration counts can vary.
+    The bundled example smoke tests check output production; a successful
+    smoke test alone does not establish agreement with these energies.
+
+## Running this example
+
+After completing the [installation](../getting-started/installation.md),
+run the following from the repository root:
+
+```sh
+(cd script_cubic && ./run.sh)
+```
+
+The script generates `examples/cubic/input.dat` and its companion
+files, then runs the already built solver. Copy the generated input and
+output files before rerunning: some observable files append new records.
+
+!!! warning "Projected calculation"
+
+    The listed anisotropic couplings and transverse fields do not conserve
+    total $S^z$. The `NODmin=0, NODmax=3` window therefore defines the
+    projected operator $P H P$, followed by the stated momentum projection.
+    Every “ground-state energy” below means the lowest energy **within that
+    chosen subspace**, not the unrestricted many-spin ground state.
+    Increase the occupation window and compare momentum sectors before
+    drawing conclusions about the full physical model.
 
 ---
 
@@ -360,14 +385,17 @@ $$
 3.291959953219396 \times 10^{1}
 $$
 
-Residual
+Dimensionless variance diagnostic
 
 $$
 |1-(\langle GS|H|GS\rangle)^2 / \langle GS|H^2|GS\rangle|
 =0.
 $$
 
-This indicates convergence to machine precision.
+This is a dimensionless variance diagnostic, not the norm
+$\|H\psi-E\psi\|$. Its cancellation and dependence on the energy origin
+prevent interpreting a value near machine epsilon as machine-precision
+eigenvector accuracy. Check a direct residual when accuracy matters.
 
 ---
 
@@ -398,7 +426,7 @@ list_ij_cf.dat
 
 # 14. Runtime
 
-Measured runtime
+Runtime recorded in the archived reference output
 
 ```
 Time: 2.265 sec

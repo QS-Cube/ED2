@@ -223,10 +223,10 @@ contains
     if(wr_wf /= 1) return
 
     do i_vec=i_vec_min, i_vec_max
-      write(file_name,'(A100,A2,I1,A4)')trim(adjustl(FILE_wf)),'wf',i_vec,'.bin'
+      write(file_name,'(A,A,I0,A)')trim(adjustl(FILE_wf)),'wf',i_vec,'.bin'
       write(*,*) " Write wave functions (",i_vec,"-th state) "
       print *, file_name
-      open(10, file=trim(adjustl(file_name)), status='unknown', action='write', form='unformatted')
+      open(10, file=trim(adjustl(file_name)), status='replace', action='write', form='unformatted')
       write(10) psi(1:dim,i_vec)
       close(10)
     end do
@@ -254,13 +254,13 @@ contains
 
     allocate(psi(1:dim,i_vec_min:i_vec_max))
     do i_vec=i_vec_min, i_vec_max
-      write(file_name,'(A100,A2,I1,A4)')trim(adjustl(FILE_wf)),'wf',i_vec,'.bin'
+      write(file_name,'(A,A,I0,A)')trim(adjustl(FILE_wf)),'wf',i_vec,'.bin'
       write(*,*) " read wave functions (",i_vec,"-th state) "
-      open(10, file=trim(adjustl(file_name)), form='unformatted')
+      open(10, file=trim(adjustl(file_name)), status='old', action='read', form='unformatted')
       read(10) psi(1:dim,i_vec)
       close(10)
-      write(*,*) "write psi(1:10,i_vec)"
-      write(*,*) psi(1:10,i_vec)
+      write(*,*) "first wavefunction coefficients"
+      write(*,*) psi(1:min(10,dim),i_vec)
       write(*,*) " finish reading wave function!"
     end do
 

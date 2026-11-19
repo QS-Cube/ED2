@@ -1,226 +1,179 @@
-# ED2 Output Files
+# ED2 output files
 
-This page documents the concrete output files produced by QS³-ED2,
-using `examples/chain` as a canonical reference.
+ED2 writes energies and observables as text, and optional wavefunctions as
+**Fortran unformatted binary**. Output names and column order matter when
+processing the results. The writers are defined in
+[`input_param.f90`](https://github.com/QS-Cube/ED2/blob/main/source/input_param.f90)
+and [`get_expectation_values.f90`](https://github.com/QS-Cube/ED2/blob/main/source/get_expectation_values.f90).
 
-All physics quantities are written in plain-text format and are intended
-to be stable across versions for reproducibility.
+## Files and repeated runs
 
----
+| Input setting | File | Behavior |
+| --- | --- | --- |
+| A completed diagonalization | `OUTDIR` + `eigenvalues.dat` | Appends eigenstate index and energy. |
+| `cal_lm=1` | `OUTDIR` + `local_mag.dat` | Appends local magnetizations for one vector. |
+| `cal_cf=1` | `OUTDIR` + `two_body_cf_xyz.dat` | Appends Cartesian correlations for the requested pairs. |
+| `cal_cf=1` | `OUTDIR` + `two_body_cf_z+-.dat` | Appends nine complex correlations as real/imaginary pairs. |
+| `wr_wf=1` | `FILE_wf` + `wfN.bin`, and `energy.dat` | Writes saved eigenvectors and their energy table. |
+| Shell redirection | e.g. `output.dat` | Captures standard output only; the user chooses the name. |
 
-## Example: `examples/chain`
+`OUTDIR` and `FILE_wf` are prefixes: include a trailing `/` for a directory,
+and create that directory before running. No timestamp or run delimiter is
+inserted in the appended tables. Repeating a calculation in the same output
+directory can therefore concatenate several runs into one file. Use a new
+output directory or deliberately archive/remove previous result files.
+The supplied example scripts manage their own output directories; inspect the
+script before rerunning it if you need to preserve a prior result.
 
-A typical ground-state calculation with
+A restart with `re_wf=1` reads saved energies and vectors. It does not append a
+new `eigenvalues.dat` table in the iterative paths. `eigvec` is not an input
+flag; wavefunction output is controlled by `wr_wf`.
 
-- `cal_lm = 1`
-- `cal_cf = 1`
-- eigenvectors disabled
+## Energy eigenvalues
 
-produces:
-
-```
-examples/chain/
- ├ input.dat
- ├ eigenvalues.dat
- ├ local_mag.dat
- ├ two_body_cf_xyz.dat
- ├ two_body_cf_z+-.dat
- └ output.dat   (stdout redirect)
-```
-
-These correspond to:
-
-- energy eigenvalues
-- local magnetization
-- two-body spin correlations (Cartesian basis)
-- two-body spin correlations ($z,+,-$ basis)
-- human-readable diagnostic log
-
----
-
-## Overview
-
-ED2 constructs the many-body Hilbert space explicitly and computes
-eigenstates of the Hamiltonian.  Unless otherwise specified, observables
-are evaluated in the lowest-energy eigenstate.
-
-Generated files depend on input flags such as
-
-```
-cal_lm
-cal_cf
-eigvec
-```
-
-The detailed specification of all input keys and auxiliary files
-(`FILE_*`, `list_*.dat`) is given in `input-format.md`.
-
----
-
-## Energy Eigenvalues
-
-### File: `eigenvalues.dat`
-
-This file contains the computed energy eigenvalues.
-
-### Format
+`eigenvalues.dat` has two columns:
 
 | Column | Meaning |
-|--------|---------|
-| 1 | Eigenstate index (1-based) |
-| 2 | Energy $E_n$ |
+| --- | --- |
+| 1 | Computed eigenstate index, starting at 1 for each run |
+| 2 | Energy in the same units as the Hamiltonian coefficients |
 
-Properties:
+`ALG=1` writes one energy, `ALG=2` writes `NOE`, and `ALG=3` writes the full
+spectrum of the **selected projected space**. Energies within each successful
+run are in ascending order. The first value is the ground state of that space;
+it is the full-system ground state only if the chosen space contains it.
+Compare other symmetry sectors when a global ground state is required.
 
-- Energies are sorted in ascending order: $E_1 \le E_2 \le \cdots$
-- The first row corresponds to the ground state $E_1$.
-- Units are identical to the Hamiltonian parameters.
+## Local magnetization
 
----
-
-## Local Magnetization (`cal_lm = 1`)
-
-### File: `local_mag.dat`
-
-This file contains expectation values of local spin operators
-evaluated in the lowest eigenstate: $\langle S_i^x \rangle, \langle S_i^y \rangle, \langle S_i^z \rangle.$
-
-### Format
+`local_mag.dat` has four columns:
 
 | Column | Meaning |
-|--------|---------|
-| 1 | Site index $i$ |
-| 2 | $\langle S_i^x \rangle$ |
-| 3 | $\langle S_i^y \rangle$ |
-| 4 | $\langle S_i^z \rangle$ |
+| --- | --- |
+| 1 | Site `i` |
+| 2 | `⟨S_i^x⟩` |
+| 3 | `⟨S_i^y⟩` |
+| 4 | `⟨S_i^z⟩` |
 
-Remarks:
+The main program evaluates one vector, normally the lowest state. It averages
+symmetry-equivalent sites using the supplied permutation operations. This
+requires valid symmetries of the model. The magnitude of a small nonzero value
+must be judged against solver accuracy and model scales; `1e-8` is not a
+universal definition of zero. Degenerate states can have different local
+moments even when their energies agree.
 
-- Values of order $\sim 10^{-8}$ indicate vanishing moments
-  within numerical precision.
-- If the Hamiltonian preserves spin symmetry, local moments may vanish
-  even in symmetry-broken phases due to finite-size effects.
+## Cartesian two-site correlations
 
----
-
-## Two-Body Correlation Functions (`cal_cf = 1`)
-
-ED2 evaluates pairwise spin correlations for all site pairs specified
-in the pair list file (see `FILE_two_cf` in `input-format.md`).
-
-### File: `two_body_cf_xyz.dat`
-
-This file contains the full Cartesian correlation tensor $\langle S_i^\alpha S_j^\beta \rangle, \qquad \alpha,\beta \in \{x,y,z\}.$
-
-### Format
+`two_body_cf_xyz.dat` has **11 real columns**. The order is column-major in
+the spin-component tensor, with the component on the first site varying fastest:
 
 | Column | Meaning |
-|--------|---------|
-| 1 | Site $i$ |
-| 2 | Site $j$ |
-| 3 | $\langle S_i^x S_j^x \rangle$ |
-| 4 | $\langle S_i^x S_j^y \rangle$ |
-| 5 | $\langle S_i^x S_j^z \rangle$ |
-| 6 | $\langle S_i^y S_j^x \rangle$ |
-| 7 | $\langle S_i^y S_j^y \rangle$ |
-| 8 | $\langle S_i^y S_j^z \rangle$ |
-| 9 | $\langle S_i^z S_j^x \rangle$ |
-|10 | $\langle S_i^z S_j^y \rangle$ |
-|11 | $\langle S_i^z S_j^z \rangle$ |
+| --- | --- |
+| 1 | Site `i` |
+| 2 | Site `j` |
+| 3 | `⟨S_i^x S_j^x⟩` |
+| 4 | `⟨S_i^y S_j^x⟩` |
+| 5 | `⟨S_i^z S_j^x⟩` |
+| 6 | `⟨S_i^x S_j^y⟩` |
+| 7 | `⟨S_i^y S_j^y⟩` |
+| 8 | `⟨S_i^z S_j^y⟩` |
+| 9 | `⟨S_i^x S_j^z⟩` |
+| 10 | `⟨S_i^y S_j^z⟩` |
+| 11 | `⟨S_i^z S_j^z⟩` |
 
-Thus each row represents the full $3\times3$ spin correlation tensor
-for a fixed pair $(i,j)$.
+This ordering is especially important for DM models, where off-diagonal
+correlations need not be symmetric. Rows follow the requested pairs in
+`FILE_two_cf`. If a pair is internally sorted, the writer restores the original
+site order and transposes the tensor accordingly. Use distinct sites; the
+implementation is a two-site formula, not a general same-site operator-product
+calculator.
 
----
+## Correlations in the ladder-operator basis
 
-### File: `two_body_cf_z+-.dat`
+The filename is `two_body_cf_z+-.dat`, but the exact serialized order below
+must be used. For `S^±=S^x±iS^y`, each complex value is written as two adjacent
+real columns, **real part then imaginary part**. There are 20 numeric columns:
 
-This file expresses correlations in the basis $S^z, S^+, S^-$, where $S^\pm = S^x \pm i S^y$.
+| Columns | Meaning |
+| --- | --- |
+| 1, 2 | Sites `i, j` |
+| 3, 4 | `Re, Im ⟨S_i^z S_j^z⟩` |
+| 5, 6 | `Re, Im ⟨S_i^- S_j^z⟩` |
+| 7, 8 | `Re, Im ⟨S_i^+ S_j^z⟩` |
+| 9, 10 | `Re, Im ⟨S_i^z S_j^-⟩` |
+| 11, 12 | `Re, Im ⟨S_i^- S_j^-⟩` |
+| 13, 14 | `Re, Im ⟨S_i^+ S_j^-⟩` |
+| 15, 16 | `Re, Im ⟨S_i^z S_j^+⟩` |
+| 17, 18 | `Re, Im ⟨S_i^- S_j^+⟩` |
+| 19, 20 | `Re, Im ⟨S_i^+ S_j^+⟩` |
 
-It contains matrix elements such as $ \langle S_i^z S_j^z \rangle, \langle S_i^z S_j^+ \rangle, \langle S_i^+ S_j^- \rangle, \text{etc.}$
+The Cartesian file keeps the real parts after the basis conversion. For
+distinct sites the Cartesian products are Hermitian, so imaginary parts should
+vanish in an accurately normalized state. The correlation routine averages
+pair orbits generated by the supplied operations; this is not an automatic
+check that those symmetries are valid.
 
-This representation is particularly useful for:
+## Saved wavefunctions and restart
 
-- models with Dzyaloshinskii–Moriya interactions,
-- non-collinear magnetic order,
-- chiral correlations.
+With `wr_wf=1`, files are named `wf1.bin`, `wf2.bin`, and so on, under
+`FILE_wf`. They contain a Fortran sequential unformatted record holding the
+complex vector. They are **not** text `eigenvec_*.dat` files, and do not contain
+the product-basis labels or a complete model description. `energy.dat` is a
+separate text table with state indices and energies.
 
-Each row corresponds to a site pair $(i,j)$,
-followed by all $z,+,-$ operator combinations.
+The vector components use ED2's ordered **symmetry-adapted representative
+basis** when spatial symmetries are enabled. They are not directly amplitudes
+for every product state of the unreduced Hilbert space. To interpret or restart
+a vector, retain the exact model files, sector, occupation limits, local spins,
+source revision, and compatible compiler/runtime binary format. The binary
+format is not a portable interchange or archival format.
 
----
+`ALG=1` saves/reads vector 1. `ALG=2` saves/reads `i_vec_min..i_vec_max` and
+uses `NOE` for the energy table. With a TRLan restart, `i_vec_min=1` is
+required whenever local magnetizations or correlations are requested; an
+excited-state-only restart is rejected to avoid mislabeling its observables.
+`ALG=3` writes all vectors if requested, but does not implement the
+`re_wf=1` restart path. Existing saved files can be overwritten.
 
-## Eigenvectors (optional)
+## Standard output and convergence
 
-If wr_wf = 1, ED2 writes files of the form
+For example:
 
+```bash
+../../source/QS3ED2 < input.dat > output.dat 2> error.log
 ```
-eigenvec_XXXX.dat
-```
 
-containing eigenvector components in the explicit many-body basis.
+The log includes echoed input, the product-space and projected dimensions,
+cache diagnostics for iterative solvers, and solver iteration information.
+Read both the log and standard error: some legacy Fortran `stop` paths do not
+provide a reliable nonzero process status.
 
-Let $\{ |b_k\rangle \}$ denote the internally constructed basis.
-The eigenvector is written as
+The conventional Lanczos log prints `⟨ψ|H|ψ⟩` and
+`|1-⟨H⟩²/⟨H²⟩|`. The latter is a dimensionless variance-related diagnostic,
+not a residual norm; it is ill-conditioned near zero energy and is omitted
+when the denominator vanishes. The explicit line
+`Residual norm ||H psi - E psi||` reports the Euclidean residual norm.
+TRLan likewise prints `Residual norm for state N` for each reported eigenpair,
+in addition to relative energy changes and `⟨ψ|H|ψ⟩`.
+
+The residuals are diagnostics, not the stopping criterion: both iterative
+solvers still use changes in Ritz energies. Exhausting the iteration/restart
+limit before this test succeeds now causes a nonzero error exit, rather than
+writing final result files. The one-step Lanczos limit also rejects an
+unconverged vector. `TRLan Krylov breakdown` is a nonzero
+error exit; use dense `ALG=3` for small degenerate spaces that this
+single-vector restart algorithm cannot handle.
+
+For a normalized saved vector, an independent check can evaluate
 
 $$
-|\psi_n\rangle = \sum_k c_k^{(n)} |b_k\rangle.
+r = \|H\psi-E\psi\|_2,
+\qquad
+\epsilon_{\mathrm{norm}} = |\langle\psi|\psi\rangle-1|.
 $$
 
-Notes:
-
-- Basis ordering follows ED2’s internal convention.
-- Indices correspond directly to the constructed Hilbert space
-  (no hidden symmetry projection).
-- Files may become very large for large Hilbert spaces.
-
----
-
-## Standard Output (`output.dat`)
-
-When standard output is redirected, `output.dat` contains:
-
-- model and lattice information,
-- Hilbert-space dimension $\dim \mathcal{H}$,
-- solver configuration,
-- Lanczos / TRLan iteration history,
-- convergence diagnostics.
-
-This file is intended for human inspection and debugging.
-
----
-
-## Mapping Between Input Flags and Outputs
-
-| Input flag | Generated files |
-|------------|-----------------|
-| `cal_lm = 1` | `local_mag.dat` |
-| `cal_cf = 1` | `two_body_cf_xyz.dat`, `two_body_cf_z+-.dat` |
-| `wr_wf = 1`  | `eigenvec_*.dat` |
-
-The precise definitions of `FILE_spin`, `FILE_NODmax`,
-`FILE_two_cf`, and other auxiliary input files are given in
-`input-format.md`.
-
----
-
-## Reproducibility Checklist
-
-For published calculations, archive:
-
-- all input files (`input.dat` and referenced `list_*.dat`),
-- all output `.dat` files used in analysis,
-- ED2 git commit hash,
-- compiler and BLAS/LAPACK versions,
-- OpenMP configuration.
-
-These records ensure that numerical results can be independently reproduced.
-
----
-
-## Minimal Workflow
-
-1. Prepare `input.dat` and required `list_*.dat` files.
-2. Run ED2.
-3. Inspect `eigenvalues.dat` for ground-state energy $E_1$.
-5. Verify convergence using `output.dat`.
+Use residuals with a stated energy scale and tolerance, compare small systems
+with dense diagonalization, and allow for arbitrary phases or rotations
+inside a degenerate eigenspace. Preserve the source commit, compiler flags,
+BLAS/LAPACK versions, thread counts, full input deck, and result files alongside
+the scientific analysis.

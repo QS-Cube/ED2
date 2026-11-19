@@ -1,178 +1,163 @@
 # ED2 (QS³-ED2)
+
 **Exact Diagonalization for Quantum Spin Systems**
 
-ED2 (QS³-ED2) is a **Fortran-based Exact Diagonalization (ED) code** for numerical studies of
-**quantum spin lattice models**. The project targets
+ED2 is a Fortran code for quantum spin lattice calculations with site-dependent
+spins, anisotropic exchange, Dzyaloshinskii–Moriya interactions, fields, and
+explicit spatial-symmetry inputs. It provides dense diagonalization and
+Lanczos-type solvers, with shared-memory OpenMP parallelism and LP64
+BLAS/LAPACK. It has no MPI dependency.
 
-- reproducible research,
-- shared-memory performance via OpenMP,
-- minimal external dependencies.
+## Documentation and source scope
 
----
+The official documentation is [ED2 on Read the Docs](https://ed2.readthedocs.io/en/latest/).
+Start with the [installation guide](docs/getting-started/installation.md) and
+[quickstart](docs/getting-started/quickstart.md), then consult the
+[input](docs/user-guide/input-format.md) and [output](docs/user-guide/outputs.md)
+references.
 
-## Key features
+The general complex-CSR cache, coefficient-certified capacity, padded-cache
+release, and two-pass construction were merged into official `main` in
+[PR #1](https://github.com/QS-Cube/ED2/pull/1) on 19 November 2026. All four
+controls remain **off by default**. See
+[performance and memory](docs/user-guide/performance-and-memory.md) for their
+prerequisites and allocation accounting. Separate cubic-specific experimental
+fork features are not implied by this merge. Record the actual source commit;
+`main` and Read the Docs `latest` are moving references, not release identifiers.
 
-- **General quantum spin Hamiltonians**
-  - Heisenberg / XYZ-type interactions
-  - External magnetic fields
-- **Controlled Hilbert-space truncation**
-  - Restriction by excitation number (e.g. number of spin-down states)
-  - Efficient access to dilute or constrained sectors
-- **Numerical solvers**
-  - Full diagonalization for very small systems
-  - Lanczos-type iterative solvers for larger Hilbert spaces
-- **Parallelization**
-  - Shared-memory parallelism via **OpenMP**
-  - No MPI dependency (single-node execution model)
-- **Linear algebra backends**
-  - BLAS/LAPACK (OpenBLAS, Intel MKL, or vendor implementations)
+## Build with GNU Fortran
 
----
-
-## Documentation
-
-Official documentation:
-
-https://ed2.readthedocs.io/en/latest/
-
-**Source and release status (19 November 2026):** The general caching and
-memory-management improvements described below were merged into
-[`QS-Cube/ED2:main`](https://github.com/QS-Cube/ED2) in
-[PR #1](https://github.com/QS-Cube/ED2/pull/1). The optional controls
-remain **off by default**. Older tags, installed executables, and the
-currently deployed Read the Docs version may not include these changes;
-check the actual source commit before enabling a feature. Separate
-cubic-specific development experiments are not part of this merge.
-
-Includes:
-
-- [General Hamiltonian cache tuning](docs/user-guide/performance-and-memory.md),
-  including complex CSR, coefficient-certified capacities and two-pass build
-- [Lattice-specific optimization tips](docs/examples/optimization-tips.md)
-
-- Installation instructions
-- Quickstart examples
-- Input / output specifications
-- Reproducible reference examples
-- Validation benchmarks
-- Algorithmic background
-
----
-
-## Requirements
-
-- Linux (x86_64)
-- Fortran compiler
-  - GNU Fortran (`gfortran`, GCC ≥ 10 recommended)
-  - Intel oneAPI Fortran (`ifort` / `ifx`)
-- BLAS/LAPACK (OpenBLAS or Intel MKL)
-- OpenMP-capable compiler
-
----
-
-## Build & Installation (Autotools)
-
-ED2 uses GNU Autotools.
+A Git checkout requires Git, a C compiler, GNU Make, Autoconf (2.69 or later),
+Automake, GNU Fortran with OpenMP, and LP64 BLAS/LAPACK development libraries.
+On Debian/Ubuntu:
 
 ```bash
+sudo apt-get update
+sudo apt-get install git build-essential gfortran autoconf automake libopenblas-dev liblapack-dev
 git clone https://github.com/QS-Cube/ED2.git
 cd ED2
+git rev-parse HEAD
 autoreconf -vfi
-./configure FC=ifort     # or FC=gfortran
-make -j
+./configure FC=gfortran FCFLAGS="-O2 -fopenmp"
+make -j2
 ```
 
-BLAS/LAPACK:
+This builds `source/QS3ED2` and the `script_*/mk_input` helpers. No executable
+installation is required to run the examples. Optional `make install` installs
+`QS3ED2` under the configured `prefix/bin`; see the installation guide for a
+writable local prefix.
 
-- OpenBLAS is detected automatically when available.
-- Otherwise Intel MKL is used as fallback (via `-qmkl`).
+The default BLAS search is OpenBLAS, BLAS, then f77blas, with a separate LAPACK
+check. The legacy `ifort` path has an MKL option but was not executed in the
+19 November 2026 audit. `ifx` has no dedicated automatic configuration here.
+ILP64 libraries are incompatible with the declared LP64 interfaces.
 
-No PATH dependency is assumed for the ED2 executable.
+The audit used Debian 13/GNU Fortran 14.2 and system BLAS/LAPACK. The repository
+CI also exercises GNU Fortran 13 and 14 on Ubuntu 24.04; this is not a blanket
+claim of portability to all compilers and platforms.
 
----
+## Run and inspect an example
 
-## Testing
-
-Two test levels are provided.
-
-### Lightweight regression test
+Set thread counts before validation:
 
 ```bash
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
 make check
+(cd script_chain && ./run.sh)
+head -n 5 examples/chain/eigenvalues.dat
 ```
 
-Runs a minimal smoke test (ex1 only).
-This is intended to be fast and suitable for CI.
+`make check` runs ex1 in a disposable directory, checks nonempty outputs, and
+requires a positive state index and finite-number energy syntax on every row
+of `eigenvalues.dat`.
+The explicit script invocation leaves inputs, logs, energies and observables
+under `examples/chain/`. Invoke each script from its own directory because the
+input generator reads `fort.30` from the working directory.
 
-### Extended regression suite
+In `eigenvalues.dat`, column 1 is the state index and column 2 is the energy.
+Direct runs append energy and observable records; the example script clears
+only its energy table. Use fresh output directories when preserving separate
+calculations. A nonempty file or zero process exit status alone is not a
+numerical-accuracy check.
+
+### Additional validation
+
+The historical ex1–ex8 execution suite is:
 
 ```bash
-make check-long
+make -C tests check-long \
+  LONG_TESTS="test_ex1.sh test_ex2.sh test_ex3.sh test_ex4.sh test_ex5.sh test_ex6.sh test_ex7.sh test_ex8.sh"
 ```
 
-Runs examples ex1–ex9 sequentially.
-This performs full physical workflows and may take longer.
+Both wrappers reject malformed energy rows, including `NaN`/`Inf` output;
+they do not compare reference energies. For independent small-system
+physics checks, install Python 3 and NumPy, then run:
 
-`check-long` is intentionally implemented outside Automake’s test harness to improve robustness on HPC systems.
-
----
-
-## Directory layout
-
-```
-source/     Fortran source code
-examples/   Reference physical examples
-tests/      Regression tests (ex1–ex9)
-tools/      Auxiliary scripts
-docs/       Documentation sources
+```bash
+python3 tests/audit_physics_regression.py \
+  --exe "$PWD/source/QS3ED2" \
+  --output "$PWD/physics-validation" \
+  --with-iterative --field-cache-variants
 ```
 
----
+Use a new output directory and retain `summary.json` and the case logs. These
+checks cover the tested cases, not all possible inputs. The unqualified
+`make check-long` additionally runs ex9, a 1000-site cubic three-magnon
+calculation that requires separate resource planning.
 
-## Reproducibility
+For bounds-checked wavefunction I/O, site-magnetization output for multiple
+vectors, and basis-allocation checks, a separate runner needs only Python's
+standard library and GNU Fortran:
 
-For published results, please record:
-
-- QS³-ED2 version or Git commit hash
-- Compiler name and version
-- BLAS/LAPACK backend
-- OpenMP environment (OMP_NUM_THREADS etc.)
-- Input files
-
-ED2 is designed so all examples can be reproduced from a clean `git clone`.
-
----
-
-## Citation
-
-Before DOI assignment:
-
-```
-ED2 (QS³-ED2), QS-Cube/ED2, GitHub repository,
-version <tag> or commit <hash>.
+```bash
+python3 tests/audit_runtime_regression.py \
+  --fc gfortran --output "$PWD/runtime-validation"
 ```
 
-After DOI release, please use the Zenodo DOI.
+It builds isolated test drivers with runtime bounds checking and compares
+wavefunction round-trips and representative counts against independent
+references. Use a new output directory for this runner too.
 
-A `CITATION.cff` file is provided.
+## Physical conventions
 
----
+Input fields enter the Hamiltonian as **`+h.S`**. For a physical Zeeman term
+`-B.S`, set input `h=-B`. Bond orientation matters for the DM terms; see the
+input reference before reversing site pairs.
 
-## License
+An excitation restriction is an exact symmetry sector only when the
+Hamiltonian preserves it. Otherwise the code calculates the projected
+operator `P H P`. Spatial permutation inputs must preserve the full model,
+including fields, anisotropies, and local spins. Users must establish these
+conditions and verify solver convergence for their calculation.
 
-MIT License. See `LICENSE`.
+## Source tree
 
----
+| Directory | Contents |
+|---|---|
+| `source/` | Numerical solver and Fortran modules |
+| `input/` | Common input template |
+| `script_*/` | Example generators and run scripts |
+| `examples/` | Generated example inputs and outputs after running scripts |
+| `tests/` | Smoke tests, native cache/ABI regressions, and independent physics checks |
+| `docs/` | MkDocs documentation sources |
 
-## Authors and maintainers
+## Reproducibility and citation
 
-- Hiroshi Ueda
-- Daisuke Yamamoto
+Retain the source commit and any local changes, compiler/version/flags,
+BLAS/LAPACK backend, thread settings, complete input files, solver diagnostics,
+and reference-check results. Consult
+[citation and versioning](docs/reference/citation-versioning.md) and
+[CITATION.cff](CITATION.cff). Until a versioned archival DOI is available, cite
+the repository with the full commit hash used for the calculation.
 
----
+## License and maintainers
 
-## Contributing
+The repository uses the [MIT License](LICENSE).
+Maintainers listed here are Hiroshi Ueda and Daisuke Yamamoto; contributor
+citation metadata is provided in `CITATION.cff`.
 
-Bug reports and pull requests are welcome.
-
-For scientific usage, please ensure sufficient information is provided to guarantee reproducibility.
+Report reproducible problems through [GitHub Issues](https://github.com/QS-Cube/ED2/issues).
+Include the source revision, build configuration, smallest failing input, and
+relevant logs. Contributions can be proposed through pull requests.

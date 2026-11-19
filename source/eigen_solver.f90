@@ -15,13 +15,10 @@ contains
     complex(8),allocatable, intent(out) :: psi(:,:)
     integer, intent(in) :: THS 
     integer :: i
-    read(*,input_TRLan)
-    write(*,input_TRLan)
-
-    if(NOE > NOK) stop "ne must be eaqual or smaller than NOK!"
-    if(NOM < 2*NOK) NOM = 2*NOK
+    call read_input_TRLan
     dim = THS
-    if(dim < NOE .or. dim < NOE .or. dim < NOK .or. dim < NOM) stop 999
+    if(dim<NOE.or.dim<NOK.or.dim<NOM) &
+      error stop 'TRLan requires NOE <= NOK <= NOM <= THS; use ALG=3 for small spaces'
     allocate( psi(dim,NOM+1), ene(NOM) )
     write(*,*) "Reduced THS=", THS 
     write(*,'("************************************************************************************")')
@@ -48,6 +45,11 @@ contains
   subroutine read_input_TRLan 
     read(*,input_TRLan)
     write(*,input_TRLan)
+    if(NOE<1.or.NOK<NOE.or.maxitr<1.or.lnc_ene_conv<=0.0d0) &
+      error stop 'Invalid TRLan eigenvalue count, retained count, iterations, or tolerance'
+    if(NOM<2*NOK)NOM=2*NOK
+    if(i_vec_min<1.or.i_vec_max<i_vec_min.or.i_vec_max>NOE) &
+      error stop 'TRLan vector range must satisfy 1 <= i_vec_min <= i_vec_max <= NOE'
   end subroutine read_input_TRLan
 
   subroutine Full_diag_routines(ene,psi,THS) 
@@ -82,7 +84,7 @@ contains
     real(8),allocatable::rwork_lanc(:)
     integer :: count_ne, info, lwork, lrwork,liwork, tritr, flag
     integer :: i, j, ell
-    real(8) :: eps, abstol, max_conv,tmp(2)
+    real(8) :: abstol, max_conv,tmp(2), hnorm
     integer t1,t2,t3,t4,t_rate,t_max
     complex(8) :: prdct 
     flag = 0
@@ -100,10 +102,12 @@ contains
     end do
     !
     beta(0) = dznrm2( dim, psi(1,1), 1 )
+    if(beta(0)<=tiny(1.0d0))error stop 'TRLan starting vector has zero norm'
     do i = 1, NOM
       call zdscal( dim, 1.0d0/beta(i-1), psi(1,i), 1 )
       call system_clock(t1)
       call ham_to_vec_wave_vector(Qk(:,1),psi(:,i),dim,NODmax,NODmin,list_s,list_r,explist) 
+      hnorm = dznrm2(dim,Qk(1,1),1)
       call system_clock(t2,t_rate, t_max)
       alpha(i) = dble(zdotc(dim,psi(1,i),1,Qk(:,1),1))
       if(i > 1)then
@@ -121,16 +125,18 @@ contains
         !
       end if
       beta(i) = dznrm2( dim, psi(1,i+1), 1 )
+      call require_krylov_direction(beta(i),hnorm)
     end do
     !
     call zdscal( dim, 1.0d0/beta(NOM), psi(1,NOM+1), 1 )
     !
     abstol = 2.0d0*dlamch('S')
     allocate(iwork_lanc(5*NOM), ifail_lanc(NOM), rwork_lanc(5*NOM))
-    call dstevx('V', 'A', NOM, alpha, beta(1), 0.0d0, 1.0d0, 1, NOM, eps, &
+    call dstevx('V', 'A', NOM, alpha, beta(1), 0.0d0, 1.0d0, 1, NOM, abstol, &
       count_ne, ene, coef, NOM, rwork_lanc, iwork_lanc, ifail_lanc, info)
     if(info /= 0)then
-      write(*,*) "error in dstevx in eigen_solver.f90. info =", info; stop
+      write(*,*) "error in dstevx in eigen_solver.f90. info =", info
+      error stop 'TRLan projected eigensolver failed'
     end if
     deallocate(iwork_lanc, ifail_lanc, rwork_lanc)
     allocate(ifail_lanc(2*NOM))
@@ -149,7 +155,8 @@ contains
       call zgemm('N', 'N', dim, NOK, NOM, (1.0d0,0.0d0), &
         psi, dim, ccoef, NOM, (0.0d0,0.0d0), Qk, dim)
       call zcopy(dim*NOK,Qk,1,psi,1)
-      conv(1:NOK) = abs(calpha(1:NOK)/ene(1:NOK) - 1.0d0)
+      conv(1:NOK) = abs(calpha(1:NOK)-ene(1:NOK)) / &
+        max(abs(calpha(1:NOK)),abs(ene(1:NOK)),tiny(1.0d0))
       max_conv = maxval(conv)
       if(max_conv < lnc_ene_conv)then
         flag = flag + 1
@@ -160,7 +167,7 @@ contains
         tritr, ene(NOK), max_conv, flag
       if(flag == 2) exit
       if(tritr == maxitr)then
-        write(*,*) "tritr = maxitr in trlanczos!"; exit
+        error stop 'TRLan restart limit reached before convergence'
       end if
       call zcopy(dim,psi(1,NOM+1),1,psi(1,NOK+1),1)
       calpha(1:NOK) = cmplx(ene(1:NOK),0.0d0,8)
@@ -169,6 +176,7 @@ contains
       i = NOK+1
       call ham_to_vec_wave_vector(Qk(:,1),psi(:,i),dim,&
         NODmax,NODmin,list_s,list_r,explist) 
+      hnorm = dznrm2(dim,Qk(1,1),1)
       calpha(i) = zdotc(dim,psi(1,i),1,Qk(1,1),1)
       do j=1, NOK
         call zaxpy(dim, -cbeta(j),psi(1,j),1,Qk(1,1),1)
@@ -180,10 +188,12 @@ contains
       !
       call full_reorthogonalization_complex
       cbeta(i) = cmplx(dznrm2( dim, psi(1,i+1), 1 ),0.0d0,8)
+      call require_krylov_direction(abs(cbeta(i)),hnorm)
       do i = NOK+2, NOM
         call zscal( dim, (1.0d0,0.0d0)/cbeta(i-1), psi(1,i), 1 )
         call ham_to_vec_wave_vector(Qk(:,1),psi(:,i),dim,&
           NODmax,NODmin,list_s,list_r,explist)
+        hnorm = dznrm2(dim,Qk(1,1),1)
         calpha(i) = zdotc(dim,psi(1,i),1,Qk(:,1),1)
         !$OMP parallel do private(ell)
         do ell = 1, dim
@@ -192,6 +202,7 @@ contains
         !
         call full_reorthogonalization_complex 
         cbeta(i) = cmplx(dznrm2( dim, psi(1,i+1), 1 ),0.0d0,8)
+        call require_krylov_direction(abs(cbeta(i)),hnorm)
       end do
       call zscal( dim, (1.0d0,0.0d0)/cbeta(NOM), psi(1,NOM+1), 1 )
       T = (0.0d0,0.0d0)
@@ -226,10 +237,20 @@ contains
         prdct=prdct+conjg(psi(i,j))*Qk(i,j)
       end do
       print *, j, prdct  
+      Qk(:,j) = Qk(:,j) - ene(j)*psi(:,j)
+      write(*,'("Residual norm for state ",i0," = ",es25.15)') j,dznrm2(dim,Qk(1,j),1)
     end do
 
     return
   contains
+    subroutine require_krylov_direction(norm,scale)
+      real(8), intent(in) :: norm,scale
+      ! This single-vector restart implementation cannot construct missing
+      ! directions in a degenerate invariant subspace. Fail before division
+      ! by zero or amplification of roundoff creates invalid eigenvectors.
+      if(norm<=32.0d0*epsilon(1.0d0)*max(scale,tiny(1.0d0))) &
+        error stop 'TRLan Krylov breakdown: use ALG=3 for a small degenerate space'
+    end subroutine require_krylov_direction
     !
     subroutine full_reorthogonalization_complex 
       do j = 1, i-1 
@@ -323,6 +344,7 @@ contains
       if(jobz=='V') call zcopy(n*n,z,1,a,1)
     else 
       print *, "Failure in ZHEEVR. INFO =", info
+      error stop 'Full diagonalization failed'
     end if
   end subroutine fulldia_routines_with_momentum
 

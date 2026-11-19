@@ -7,8 +7,9 @@
 > history; they do not establish a separately tagged release or a
 > measured reduction in whole-process peak RSS.
 
-Status: independent main-based integration branch, not the older
-cubic-specific PR13–21 stack. The existing ED2 default path is unchanged.
+Status: integrated into official `main`, with the original development
+history recorded below. This general implementation is independent of the
+older cubic-specific PR13–21 stack. The ED2 default path is unchanged.
 
 ## User interface and scope
 
@@ -28,12 +29,17 @@ complex** Hamiltonians: Dzyaloshinskii--Moriya interactions,
 Cartesian fields and arbitrary model-compatible projected
 Hilbert sectors are not excluded by design.
 
-The original padded arrays `wk_loc` and `wk_ele` remain intact
-and allocated; a **separate** CSR-like array copies every
+With only `ED2_CSR_COMPLEX_CACHE=1` enabled, the original padded arrays
+`wk_loc` and `wk_ele` remain allocated; a **separate** CSR-like array copies every
 non-sentinel row entry in original order, *including stored zero
 coefficients*. We neither fuse duplicate indices nor reorder
 floating-point operations. The existing complex Krylov vector
 path is unchanged.
+
+The separately optional [padded-cache release](csr-release-padded-main.md)
+and [direct two-pass construction](direct-complex-csr-two-pass.md) change
+which cache arrays remain allocated. Their prerequisites and memory
+accounting are documented separately.
 
 Therefore this is an extra-memory versus repeated-matvec
 tradeoff, **not** a reduction in the program's total memory
@@ -66,21 +72,28 @@ and only introduces:
   with both real and truly complex DM terms. It verifies
   identical generated input SHA256, identical full H*x
   SHA256, exact output vector length and full-cache
-  provenance, and checks old standalone TRLan spectra
-  against a separately constructed dense Hamiltonian H for
-  N4/N6, with an absolute complex-vector tolerance of 1e-10.
-  The original TRLan can stop before accurate convergence even
-  when started from the same seed, so *its* final eigenvalues
-  are deliberately not used as the opt-in H*x proof.
-  Every individual native H*x bit is still required to match
-  the legacy cached matvec exactly; the dense reference uses
-  a distinct ED2 full-H construction path.
+  provenance. For N4/N6 the native driver also compares H*x
+  against a separately constructed dense Hamiltonian H, with
+  an absolute complex-vector tolerance of 1e-10. This test
+  does not run TRLan or certify its eigenvalues or convergence.
+  With the CI's `-O2 -fopenmp` build, every native H*x bit is
+  required to match the legacy cached matvec exactly. The dense
+  reference uses a distinct ED2 full-H construction path; it is
+  an operator-action check, not an independent solver benchmark.
   Partial cache and malformed/oversized flags are
   independently checked to fail closed.
 - `.github/workflows/main-generic-csr.yml`:
   two-compiler original-main build, old `make check`
-  and `make check-long`, full native H*x reference
+  and the explicitly selected `ex1`–`ex8` subset of `make check-long`,
+  full native H*x reference
   comparisons and archived run logs.
+
+The strict bitwise policy above applies to `-O2`, not to arbitrary
+compiler optimizations. The historical `-Ofast` default permits
+reassociation between the padded and CSR multiplication loops. The
+[release regression policy](csr-release-padded-main.md#compiler-floating-point-optimization-policy)
+requires exact CSR-retained/CSR-released agreement and checks padded/CSR
+agreement to `1e-12*max(1,max(|H*x|))` in that mode.
 
 The branch does **not** import PR17–21 cubic source
 modifications, newer two-stage Krylov enhancements,

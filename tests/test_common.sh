@@ -1,9 +1,8 @@
 #!/bin/sh
 set -eu
 
-# Wrapper for strict/relaxed testing.
-# - default (make check): strict comparison via test_common_strict.sh
-# - LONGTEST=1 (make check-long): relaxed mode (no strict diff; only sanity)
+# Wrapper for isolated and in-tree example execution checks.
+# Both modes check files and finite energy syntax, not reference accuracy.
 
 script_dir="$1"
 out_rel="$2"
@@ -23,7 +22,7 @@ else
   ed2="$top/source/QS3ED2"
 fi
 
-# Strict mode: delegate to the original script untouched
+# Default mode: delegate to the isolated example runner.
 if [ "${LONGTEST:-0}" != "1" ]; then
   exec "$(dirname "$0")/test_common_strict.sh" "$@"
 fi
@@ -39,14 +38,8 @@ eig="$top/$eig_rel"
 [ -s "$out" ] || { echo "ERROR: missing/empty output file: $out" >&2; exit 1; }
 [ -s "$eig" ] || { echo "ERROR: missing/empty eigenvalues file: $eig" >&2; exit 1; }
 
-# Minimal parse check: first token in eigenvalues.dat looks like a number
-e0=$(awk 'NR==1{print $1; exit}' "$eig" 2>/dev/null || true)
-case "$e0" in
-  ""|*[!0-9eE+.-]*)
-    echo "ERROR: failed to parse numeric E0 from $eig (got: '$e0')" >&2
-    exit 1
-    ;;
-esac
+awk -f "$top/tests/check_eigenvalues.awk" "$eig" || exit 1
+e0=$(awk 'NR==1{print $2; exit}' "$eig")
 
 echo "OK (LONGTEST): $script_dir generated outputs (E0=$e0)"
 exit 0

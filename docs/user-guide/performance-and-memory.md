@@ -7,7 +7,9 @@ These options are **disabled by default**. Tagged releases, previously
 built executables, and deployed documentation may lag upstream `main`;
 check the executable's source commit before enabling an option.
 
-No optimization listed below changes the physical Hamiltonian.
+These cache options preserve the Hamiltonian action of the corresponding
+physical row generator. They do not validate the input model or correct an
+invalid symmetry projection.
 Most controls are intentionally **off by default**; explicit opt-in
 and a suitable verification run are recommended. A valid spatial
 symmetry must commute with the entire Hamiltonian, including all
@@ -39,7 +41,7 @@ variables:
 | Setting | Meaning | Caution |
 | --- | --- | --- |
 | `wk_dim=-1` | Cache the entire projected Hamiltonian | May require considerable memory |
-| `wk_dim=1` or another smaller positive integer | Cache only the specified initial rows and calculate the remainder on demand | CSR options requiring a full cache are incompatible |
+| `wk_dim=0` or a smaller positive integer | Cache no rows or only the specified initial rows, and calculate the remainder on demand | CSR options requiring a full cache are incompatible |
 | `MNTE=-1` | Automatically choose the historical conservative row capacity | Often overallocates when most transition coefficients vanish |
 | `MNTE>=0` | Explicit number of non-diagonal transition slots per row | Too small can terminate with `MNTE is too small` |
 
@@ -60,8 +62,10 @@ tagged release or an existing executable includes them.
 | `ED2_CSR_RELEASE_PADDED_CACHE=1` | Releases the original padded arrays **after** successful CSR construction | Requires complex CSR. Reduces long-lived cache payload; the old arrays cannot be read by external clients afterwards. Does **not** reduce the initial construction peak |
 | `ED2_CSR_DIRECT_BUILD=1` | Builds exact ordered complex CSR directly in **two physical row-generation passes**, using 64-row staging batches rather than a complete padded matrix | Requires both CSR and release flags, and a full cache. Uses less simultaneous cache-array payload but computes each row twice; may be slower during initialization |
 
-All flags are omitted/zero by default. Invalid values or incompatible
-prerequisites are rejected. **`ED2_CSR_DIRECT_BATCH_ROWS` is not
+All flags are omitted/zero by default. In the iterative cache path
+(`ALG=1` or `ALG=2`), invalid values or incompatible prerequisites are rejected.
+The dense solver (`ALG=3`) does not use or validate these cache options.
+An unrelated or misspelled environment-variable name is not checked. **`ED2_CSR_DIRECT_BATCH_ROWS` is not
 included in this main-branch interface**; batch-size tuning is a
 separate experimental PR and must not be documented as an available
 release feature.
@@ -92,13 +96,15 @@ width = 1 + 2*NO_one + 8*NO_two
 
 This is a capacity bound on *possible transition records*, not the
 number of physically nonzero matrix elements. The coefficient-based
-bound reduces the row allocation based on exactly zero operator
-channels. It retains the original coefficients and transition order.
+bound reduces the row allocation using the physical row generator's existing
+coefficient condition `abs(c)>1e-15`. It retains the same coefficients and
+transition order. This is not a claim that every nonzero real-number coupling
+is retained: the physical generator already has that absolute cutoff.
 
 The compressed CSR form stores a one-based row pointer array plus
 ordered target indices and complex coefficients. Stored zero
-coefficients are retained: the optimization **does not apply a
-numerical threshold** or reorder the Hamiltonian action.
+coefficients are retained: CSR conversion **does not add a drop tolerance**
+or reorder the Hamiltonian action.
 
 Direct two-pass CSR prints a marker like
 
@@ -150,11 +156,15 @@ workload**. On ordinary CI machines, the project runs the lighter
 historical ex1–ex8 cases independently; do not describe the complete
 `make check-long` suite as a short smoke test.
 
-For scientific work, inspect eigensolver residuals and compare
+For scientific work, inspect the printed eigensolver residual norms and
+independently verify representative cases, then compare
 independent small-system spectra, including nonzero DM models.
-For numerical proof, the repository's native tests check **two independent complex
+The repository's native tests check **two independent complex
 input vectors and the complete output bit patterns**, plus
-independently constructed dense Hamiltonians for small systems.
+dense Hamiltonians assembled by a separate ED2 routine for small systems.
+That cross-path agreement is useful, but both paths share model conventions;
+an independent spin-matrix construction is also needed to validate those
+conventions.
 
 ## Which option should I select?
 

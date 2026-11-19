@@ -1,128 +1,135 @@
-# Theory and Algorithms
+# Theory and algorithms
 
-This page summarizes the theoretical background and numerical algorithms implemented in ED2.
+ED2 constructs a quantum-spin Hamiltonian in a selected basis and solves its
+Hermitian eigenvalue problem. The result is exact up to numerical error **for
+the retained space**. A truncation that is not an invariant subspace of the
+physical Hamiltonian is an approximation to the full problem.
 
----
+## Local spins and occupation basis
 
-## Exact Diagonalization overview
-
-Exact Diagonalization (ED) solves the many-body eigenvalue problem
-
-$$
-H |\psi_n\rangle = E_n |\psi_n\rangle
-$$
-
-by representing the Hamiltonian $H$ as a matrix in a chosen basis and computing its eigenvalues
-and eigenvectors exactly (up to numerical precision).
-
----
-
-## Hilbert-space construction
-
-### Local basis
-
-Each lattice site is associated with a local spin basis $|m_i\rangle$, where
+Site `i` has spin `S_i` and magnetic quantum numbers
+`m_i=-S_i,-S_i+1,...,S_i`. Different sites may have different spins. Define
+`n_i=S_i-m_i`, measured from the fully polarized state. Before restrictions,
 
 $$
-m_i = -S, -S+1, \ldots, S .
+\dim\mathcal H_{\mathrm{full}}=\prod_i(2S_i+1).
 $$
 
-The full Hilbert space for a system of $L$ sites has dimension
+ED2 enumerates states satisfying the local caps in `FILE_NODmax` and
+`NODmin <= sum_i n_i <= NODmax`. For equal spins this reduces to the familiar
+full-space dimension `(2S+1)^NOS` only when no states are excluded.
+
+When `[H, S^z_total]=0`, a fixed occupation selects an exact magnetization
+sector. If transverse fields, unequal `Jx,Jy`, or other nonconserving terms
+couple that sector to excluded states, the calculation instead solves `P H P`,
+where `P` projects onto the retained states. Convergence with respect to the
+occupation window must then be checked independently of eigensolver convergence.
+
+## Spatial symmetry projection
+
+Up to six commuting site permutations are supplied explicitly, each with an
+order `L_m`, sector `M_m`, and site-image list. The code finds representative
+product states, computes their orbit normalization, and assembles the matrix
+in the resulting symmetry-adapted basis. The phase convention is
 
 $$
-\dim \mathcal{H}_{\mathrm{full}} = (2S + 1)^L .
+T_m|\Psi\rangle=e^{-2\pi iM_m/L_m}|\Psi\rangle.
 $$
 
----
+Translations and compatible point-group operations can be used when they
+preserve the full Hamiltonian and the retained basis. Site-dependent spins,
+fields, oriented DM vectors, and the local occupation caps all enter this
+condition. Geometry alone is insufficient, and ED2 does not automatically
+verify commutation with `H`.
 
-## Symmetry decomposition
+A general point group is not necessarily Abelian. The scalar sector labels do
+not implement arbitrary multidimensional irreducible representations or
+arbitrary noncommuting generators. There is also no separate spin-inversion
+parity input in this version. Symmetry reduction factors depend on orbit sizes
+and the chosen character; division by the number of sites is only a rough
+estimate in suitable translation sectors.
 
-ED2 explicitly exploits **lattice and internal symmetries** to decompose the Hilbert space
-into independent symmetry sectors. Calculations are performed within selected sectors,
-leading to block-diagonal Hamiltonian matrices and substantial reductions in computational cost.
+## Hamiltonian conventions
 
-### Translation symmetry
+The implemented model has XYZ exchange, directed DM coupling, symmetric
+off-diagonal exchange, and a **positive** field coefficient `+h_i.S_i`. A
+physical Zeeman coupling `-B_i.S_i` therefore requires `h_i=-B_i`. The complete
+bond-column order and orientation rules are in the
+[input reference](../user-guide/input-format.md#hamiltonian-lists-and-sign-conventions).
 
-For translationally invariant lattices with periodic boundary conditions, ED2 can enforce
-translation symmetry and work in fixed **crystal-momentum sectors**.
-Basis states are classified according to their momentum quantum number $k$, and only states
-belonging to the selected momentum sector are retained.
+Off-diagonal channel coefficients are tested against the implementation's
+absolute threshold `1e-15`. Terms below that threshold are omitted during
+physical row generation. Optional CSR conversion adds no further drop
+tolerance and preserves occupied records and their order.
 
-This symmetry reduces the effective Hilbert-space dimension by approximately a factor of the
-number of lattice sites.
+## Matrix storage and multiplication
 
-### Point-group symmetries
+For `ALG=1` and `ALG=2`, `wk_dim` controls how many initial matrix rows are
+cached. The remaining rows are generated each time the Hamiltonian acts on a
+vector. `MNTE` sets the padded row capacity, not the Hilbert-space dimension.
 
-If the lattice geometry admits point-group symmetries (e.g., reflections or rotations),
-ED2 can project the Hilbert space onto irreducible representations of the corresponding
-point group.
+The optional coefficient bound, complex CSR cache, padded-cache release, and
+two-pass direct CSR build change storage and construction. They do not repair
+an invalid physical input or symmetry. Direct CSR requires a full cache and
+performs two physical row-generation passes. See
+[performance and memory](../user-guide/performance-and-memory.md) for the exact
+prerequisites and the distinction between cache-array payload and process RSS.
 
-This allows further block-diagonalization of the Hamiltonian and facilitates the
-classification of eigenstates by symmetry.
+For `ALG=3`, ED2 explicitly constructs the dense complex Hermitian matrix and
+calls LAPACK `ZHEEVR`. Dense storage grows quadratically with the projected
+dimension and includes eigensolver work arrays and eigenvectors.
 
-### Spin-inversion symmetry
+## Iterative solvers and their limits
 
-For spin-$1/2$ systems without explicit symmetry-breaking fields, ED2 can exploit
-**spin-inversion symmetry**, defined by simultaneous inversion of all spins
-($S_i^z \rightarrow -S_i^z$).
+`ALG=1` is a conventional Lanczos implementation for one lowest state. It
+stores a small number of full vectors, diagonalizes the tridiagonal Krylov
+matrix, and reconstructs the eigenvector in another pass. Its stopping test
+uses relative changes between successive lowest Ritz estimates, not an
+explicit residual criterion. The first Ritz estimate is recorded but cannot
+itself satisfy convergence because there is no previous estimate. A numerically closed Krylov subspace is handled without
+normalizing a zero vector; a one-dimensional invariant subspace retains its
+complete normalized vector. The implementation does not perform full basis
+reorthogonalization in this path.
 
-The Hilbert space is decomposed into even and odd spin-inversion sectors, which can be
-treated independently.
+`ALG=2` implements thick-restart Lanczos. `NOM` is the Krylov-space size and
+`NOK` is the number of retained Ritz vectors. The implementation performs
+reorthogonalization and checks relative changes in the retained Ritz energies.
+It computes `NOE` reported eigenpairs, subject to the workspace and projected
+dimension constraints listed in the
+[input reference](../user-guide/input-format.md#input_trlan-alg2).
 
----
+Both methods use random initial vectors, with no user-facing seed parameter
+in the public NAMELIST. Their relative energy-change denominators are bounded
+below by `tiny(1d0)` to avoid division by zero. Both print explicit residual
+norms `||Hψ-Eψ||`, which must be assessed separately from the stopping test.
+Finite precision, loss of orthogonality, nearly zero energies, and iteration
+limits still require attention.
 
-## Truncated Hilbert space
+Exhausting the configured iteration or restart limit before convergence
+causes a nonzero error exit. A complete Lanczos basis or a closed invariant
+Krylov subspace can terminate successfully without an energy-change check.
 
-In addition to symmetry decomposition, ED2 supports calculations in a **restricted Hilbert space**
-defined by the number of spin-down (or equivalent) excitations.
+The TRLan implementation stops with a nonzero status if it encounters a
+numerically vanishing Krylov direction. It does not construct additional
+independent vectors to complete a degenerate invariant subspace. Use dense
+`ALG=3` for small problems in this regime. An unchanged energy can coexist
+with a poor eigenvector: check normalization and residuals, compare with
+independently constructed small-system spectra, and distinguish a single
+vector from the whole degenerate eigenspace.
+The [output guide](../user-guide/outputs.md#standard-output-and-convergence)
+explains what the printed diagnostics actually measure.
 
-For spin-$1/2$ systems, define
+## OpenMP and numerical reproducibility
 
-$$
-N_{\downarrow} = \sum_i \frac{1 - \sigma_i^z}{2} .
-$$
+ED2 uses shared-memory OpenMP and has no MPI decomposition. BLAS may have its
+own threads; control those separately to avoid nested oversubscription. Record
+the compiler, optimization flags, BLAS backend, and thread counts. Mathematical
+agreement does not imply bitwise reproducibility across compilers, `-Ofast`
+reassociation, or parallel reductions.
 
-The truncated space is defined by bounds
-
-$$
-N_{\downarrow}^{\min} \le N_{\downarrow} \le N_{\downarrow}^{\max} .
-$$
-
-Only basis states satisfying these conditions are included.
-
----
-
-## Hamiltonian representation
-
-The Hamiltonian is assembled as a sparse matrix in the chosen symmetry-adapted basis.
-Matrix elements are generated on-the-fly during Hamiltonian construction.
-
-Typical Hamiltonian terms include exchange interactions and external fields.
-
----
-
-## Eigenvalue solvers
-
-### Full diagonalization
-
-For very small Hilbert spaces, ED2 can perform full diagonalization using dense
-BLAS/LAPACK routines.
-
-### Lanczos algorithm
-
-For larger systems, ED2 employs Lanczos-type iterative eigensolvers to compute a small number
-of extremal eigenvalues within a given symmetry sector.
-
----
-
-## Computational considerations
-
-By combining symmetry decomposition, Hilbert-space truncation, and iterative solvers,
-ED2 enables calculations that would otherwise be infeasible in the full Hilbert space.
-
----
-
-## Relation to the CPC manuscript
-
-This section corresponds to the algorithmic description presented in the accompanying
-journal manuscript.
+The bundled example smoke tests are useful for detecting execution failures.
+A scientific validation also needs numerical comparisons: spectra, residuals,
+operator conventions, and observables for suitable independent reference
+problems. The implementation and the archived source revision remain the
+reference for the available behavior; a manuscript under preparation does not
+establish that every proposed method is present in the public code.

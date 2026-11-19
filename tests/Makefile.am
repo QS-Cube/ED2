@@ -2,7 +2,12 @@
 
 # make check は軽量（ex1のみ）→ これは Automake ハーネスでOK
 TESTS = test_ex1.sh
+TESTS_ENVIRONMENT = TOP_SRCDIR="$(abs_top_srcdir)" TOP_BUILDDIR="$(abs_top_builddir)"
 EXTRA_DIST = test_ex1.sh test_common.sh \
+             test_common_strict.sh check_eigenvalues.awk \
+             audit_physics_regression.py audit_runtime_regression.py \
+             audit_wavefunction_io.f90 audit_basis_driver.f90 \
+             audit_multivector_local_mag.f90 \
              test_ex2.sh test_ex3.sh test_ex4.sh test_ex5.sh \
              test_ex6.sh test_ex7.sh test_ex8.sh test_ex9.sh \
              cpc_csr_matvec_driver.f90 cpc_csr_main_regression.py \

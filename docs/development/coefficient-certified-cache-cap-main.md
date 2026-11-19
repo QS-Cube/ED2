@@ -121,13 +121,13 @@ the same original/CSR/release, real/complex/tensor, `-O2` versus
 `-Ofast` numerical policies. No PRESTO node, hardware-exclusive
 performance figure, CPC manuscript change or release tag is claimed.
 
-## Long-term engineering option
+## Related direct construction mode
 
-A true *direct-to-CSR streaming constructor* that never holds
-a global padded matrix could further lower the overlap of
-the two representations. That would require refactoring
-the single physical row builder to preserve all source tensor
-terms and their original summation order, with independent
-full-H and physics checks. It is a separate, larger change;
-do not simulate an unavailable peak-RSS improvement by merely
-relabeling this bounded padded allocation.
+The separately optional [direct two-pass CSR constructor](direct-complex-csr-two-pass.md)
+is also integrated into official `main`. It reuses the physical row
+builder and avoids holding a global padded matrix by generating rows in
+fixed batches twice. It requires full caching and both CSR and padded-cache
+release flags; coefficient bounding can additionally reduce its staging
+allocation. This is a separate mechanism from the bounded padded allocation
+described above. Its reported cache-array payload bound must still not be
+interpreted as a measured whole-process peak-RSS reduction.
