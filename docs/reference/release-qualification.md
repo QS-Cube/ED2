@@ -28,7 +28,7 @@ actually exist; otherwise cite the full commit used for each calculation.
    publication date `2026-11-20`. Verify the **actual** publication date
    before issuing a tag. If publication is postponed, edit `date-released`
    to the new actual date and repeat every validation on the new SHA.
-   Review the [release notes](../../RELEASE_NOTES_v1.0.0.md), known limitations,
+   Review the [release notes](https://github.com/QS-Cube/ED2/blob/main/RELEASE_NOTES_v1.0.0.md), known limitations,
    source package, and author/citation metadata.
 6. Freeze the **final** reviewed commit SHA. Run
    `python3 tests/check_release_metadata.py --release-tag v1.0.0`

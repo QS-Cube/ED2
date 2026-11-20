@@ -99,7 +99,9 @@ class ArchiveTests(unittest.TestCase):
         self.root = Path(self.tmp.name) / "source"
         self.root.mkdir()
         files = {
-            "README.md": "Release test fixture\n", "LICENSE": "MIT\n",
+            "README.md": "Release test fixture\n",
+            "RELEASE_NOTES_v1.0.0.md": "v1.0.0 notes fixture\n",
+            "LICENSE": "MIT\n",
             "CITATION.cff": "cff-version: 1.2.0\n",
             "configure.ac": "AC_INIT([QS3-ED2], [1.0.0])\n",
             "Makefile.am": "SUBDIRS = source tests script_chain\n",
@@ -180,6 +182,16 @@ class ArchiveTests(unittest.TestCase):
         self.assertIn("source/new_scientific_module.f90", result["source_sha256"])
         self.assertIn("tests/check_release_metadata.py", result["source_sha256"])
         self.assertIn("configure", result["generated_sha256"])
+
+    def test_missing_versioned_release_notes_rejected(self):
+        self.pack(omit=("RELEASE_NOTES_v1.0.0.md",))
+        with self.assertRaisesRegex(ValueError, "RELEASE_NOTES_v1.0.0.md"):
+            self.audit()
+
+    def test_tampered_versioned_release_notes_rejected(self):
+        self.pack(corrupt="RELEASE_NOTES_v1.0.0.md")
+        with self.assertRaisesRegex(ValueError, "byte mismatch"):
+            self.audit()
 
     def test_missing_solver_rejected(self):
         self.pack(omit=("source/ham2vec.f90",))
