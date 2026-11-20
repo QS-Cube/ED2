@@ -37,6 +37,20 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_unreleased_development(self):
         self.assertEqual(metadata.validate(self.root, None)["mode"], "unreleased_development")
 
+    def test_checked_out_release_tag_metadata_if_versioned(self):
+        # Tag-mode qualification must be tested against the actual checkout,
+        # not only synthetic CFF fixtures. Development/candidate branches
+        # without a release date are intentionally exempt from tag mode.
+        checkout = HERE.parent
+        current = metadata.validate(checkout, None)
+        if current["mode"] != "versioned_metadata":
+            self.skipTest("Full version/date metadata not yet present")
+        tag = "v" + current["version"]
+        tagged = metadata.validate(checkout, tag)
+        self.assertEqual(tagged["mode"], "tag_metadata")
+        self.assertEqual(tagged["version"], current["version"])
+        self.assertEqual(tagged["date_released"], current["date_released"])
+
     def test_approved_candidate_without_pretend_publication_date(self):
         self.citation("version: 1.0.0\n")
         candidate = metadata.validate(self.root, None)
